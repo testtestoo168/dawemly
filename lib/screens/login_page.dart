@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
@@ -35,6 +36,31 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
     _tabCtrl.addListener(() => setState(() { _method = _tabCtrl.index; _error = null; }));
+    _loadSavedCredentials();
+  }
+
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email');
+    final savedPass = prefs.getString('saved_pass');
+    if (savedEmail != null && savedPass != null) {
+      setState(() {
+        _emailCtrl.text = savedEmail;
+        _passCtrl.text = savedPass;
+        _remember = true;
+      });
+    }
+  }
+
+  void _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_remember) {
+      await prefs.setString('saved_email', _emailCtrl.text.trim());
+      await prefs.setString('saved_pass', _passCtrl.text);
+    } else {
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_pass');
+    }
   }
 
   @override
@@ -49,10 +75,24 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       if (!canCheck && !isSupported) { setState(() { _error = 'البصمة غير مدعومة على هذا الجهاز'; _loading = false; }); return; }
       final authenticated = await _localAuth.authenticate(localizedReason: 'استخدم البصمة لتسجيل الدخول', options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false));
       if (!authenticated) { setState(() { _error = 'فشل التحقق من البصمة'; _loading = false; }); return; }
-      if (!ApiService.isLoggedIn) { setState(() { _error = 'سجّل دخول بالبريد أولاً ثم استخدم البصمة'; _loading = false; }); return; }
-      final user = await _auth.getMe();
-      if (user != null) { widget.onLogin(user); } else { setState(() { _error = 'الحساب غير موجود'; _loading = false; }); }
-    } catch (e) { setState(() { _error = 'خطأ في البصمة — سجّل دخول بالبريد أولاً'; _loading = false; }); }
+
+      // If already logged in, just fetch user data
+      if (ApiService.isLoggedIn) {
+        final user = await _auth.getMe();
+        if (user != null) { widget.onLogin(user); return; }
+      }
+
+      // If saved credentials exist, login with them
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('saved_email');
+      final savedPass = prefs.getString('saved_pass');
+      if (savedEmail != null && savedPass != null) {
+        final user = await _auth.loginWithEmail(savedEmail, savedPass);
+        if (user != null) { widget.onLogin(user); return; }
+      }
+
+      setState(() { _error = 'سجّل دخول بالبريد أولاً مع تفعيل "تذكرني" ثم استخدم البصمة'; _loading = false; });
+    } catch (e) { setState(() { _error = 'خطأ: ${e.toString().replaceAll('Exception: ', '')}'; _loading = false; }); }
   }
 
   void _emailLogin() async {
@@ -60,7 +100,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     setState(() { _loading = true; _error = null; });
     try {
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
-      if (user != null) { widget.onLogin(user); } else { setState(() { _error = 'خطأ في تسجيل الدخول'; _loading = false; }); }
+      if (user != null) { _saveCredentials(); widget.onLogin(user); } else { setState(() { _error = 'خطأ في تسجيل الدخول'; _loading = false; }); }
     } catch (e) {
       String msg = e.toString().replaceAll('Exception: ', '');
       if (msg.contains('network') || msg.contains('SocketException') || msg.contains('Connection')) msg = 'لا يوجد اتصال بالإنترنت';
