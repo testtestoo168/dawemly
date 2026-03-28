@@ -1,0 +1,72 @@
+name: rasd_app
+description: "داوِملي — نظام إدارة الحضور والانصراف"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # Firebase
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+  cloud_firestore: ^5.6.5
+  firebase_storage: ^12.4.4
+  firebase_messaging: ^15.1.6
+  
+  # Auth & Biometrics
+  local_auth: ^2.3.0
+  google_sign_in: ^6.2.2
+  
+  # Location
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  google_maps_flutter: ^2.10.0
+  
+  # UI
+  google_fonts: ^6.2.1
+  intl: ^0.20.2
+  flutter_svg: ^2.0.17
+  
+  # Export & Reports
+  pdf: ^3.11.1
+  csv: ^6.0.0
+  http: ^1.2.0
+  flutter_local_notifications: ^18.0.1
+  device_info_plus: ^11.3.3
+  
+  # Face Recognition & Camera
+  camera: ^0.11.0+2
+  google_mlkit_face_detection: ^0.12.0
+  path_provider: ^2.1.5
+  image: ^4.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+  adaptive_icon_background: "#3568C8"
+  adaptive_icon_foreground: "assets/app_icon.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/login_bg.png
+    - assets/dawemly_logo.png
+    - assets/dawemly_logo_small.png
+    - assets/dawemly_logo_medium.png
+    - assets/app_icon.png
+    - assets/app_icon_512.png
+    - assets/app_icon_192.png
+    - assets/fonts/
