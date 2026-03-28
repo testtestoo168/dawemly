@@ -62,12 +62,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
       if (user != null) { widget.onLogin(user); } else { setState(() { _error = 'خطأ في تسجيل الدخول'; _loading = false; }); }
     } catch (e) {
-      String msg = 'خطأ في تسجيل الدخول';
-      final errStr = e.toString();
-      if (errStr.contains('invalid-email') || errStr.contains('البريد')) msg = 'البريد الإلكتروني غير صحيح';
-      else if (errStr.contains('network') || errStr.contains('اتصال')) msg = 'لا يوجد اتصال بالإنترنت';
-      else if (errStr.contains('حسابك مفتوح على جهاز آخر') || errStr.contains('تسجيل الخروج من الجهاز')) msg = errStr.replaceAll('Exception: ', '');
-      else if (errStr.contains('Exception: ')) msg = errStr.replaceAll('Exception: ', '');
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (msg.contains('network') || msg.contains('SocketException') || msg.contains('Connection')) msg = 'لا يوجد اتصال بالإنترنت';
       setState(() { _error = msg; _loading = false; });
     }
   }
