@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
 
@@ -58,7 +57,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     final empId = widget.employee['empId'] ?? '';
     final registered = _faceData?['registered'] == true;
     final photoUrl = _faceData?['photoUrl'] as String?;
-    final registeredAt = _faceData?['registeredAt'] as Timestamp?;
+    final registeredAt = _parseDateTime(_faceData?['registeredAt']);
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -169,7 +168,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                 final matched = v['matched'] == true;
                 final similarity = (v['similarity'] as num?)?.toDouble() ?? 0;
                 final vPhotoUrl = v['photoUrl'] as String?;
-                final ts = v['timestamp'] as Timestamp?;
+                final ts = _parseDateTime(v['timestamp']);
                 final pct = (similarity * 100).toStringAsFixed(0);
 
                 return Container(
@@ -214,14 +213,19 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
 
   Widget _facePlaceholder() => Container(color: C.bg, child: const Icon(Icons.face_outlined, size: 24, color: C.hint));
 
-  String _formatDate(Timestamp ts) {
-    final d = ts.toDate();
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  String _formatDate(DateTime d) {
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 
-  String _formatDateTime(Timestamp ts) {
-    final d = ts.toDate();
+  String _formatDateTime(DateTime d) {
     final h = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
     return '${d.day}/${d.month} — ${h.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'م' : 'ص'}';
   }

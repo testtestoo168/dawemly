@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 
 class AdminRoles extends StatefulWidget {
@@ -10,9 +11,10 @@ class AdminRoles extends StatefulWidget {
 }
 
 class _AdminRolesState extends State<AdminRoles> {
-  final _db = FirebaseFirestore.instance;
   String _selectedRole = 'admin';
   bool _saved = false;
+  bool _loading = true;
+  List<Map<String, dynamic>> _users = [];
 
   final _rolesMeta = const {
     'admin': {'name': 'مدير النظام', 'color': 0xFFF04438, 'desc': 'صلاحيات كاملة — إضافة/حذف/تعديل مستخدمين وإعدادات'},
@@ -29,14 +31,42 @@ class _AdminRolesState extends State<AdminRoles> {
     'employee': {'users': false, 'settings': false, 'reports': false, 'requests': false, 'verify': false, 'delete': false},
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final res = await ApiService.get('users.php?action=list');
+      final list = res['data'] as List<dynamic>? ?? [];
+      setState(() {
+        _users = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
   void _save() async {
     try {
-      await _db.collection('settings').doc('permissions').set({
-        'admin': _perms['admin'], 'moderator': _perms['moderator'], 'employee': _perms['employee'],
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final data = {
+        'admin': _perms['admin'],
+        'moderator': _perms['moderator'],
+        'employee': _perms['employee'],
+      };
+      await ApiService.post('admin.php?action=save_settings', body: {'key': 'permissions', 'value': jsonEncode(data)});
       setState(() => _saved = true);
       Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() => _saved = false); });
+    } catch (_) {}
+  }
+
+  Future<void> _updateUserRole(String docId, String newRole) async {
+    try {
+      await ApiService.post('users.php?action=update_role', body: {'uid': docId, 'role': newRole});
+      await _loadUsers();
     } catch (_) {}
   }
 
@@ -47,58 +77,55 @@ class _AdminRolesState extends State<AdminRoles> {
     final activeName = meta['name'] as String;
     final activePerms = _perms[_selectedRole]!;
     final isWide = MediaQuery.of(context).size.width > 800;
+    final users = _users;
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('users').snapshots(),
-      builder: (context, snap) {
-        final allUsers = snap.data?.docs ?? [];
-        final users = allUsers.map((d) => {'docId': d.id, ...d.data() as Map<String, dynamic>}).toList();
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          // Header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? C.green : C.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
-            Flexible(child: Text('إدارة الصلاحيات', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: C.text))),
-          ]),
-          const SizedBox(height: 24),
+    return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      // Header
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? C.green : C.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
+        Flexible(child: Text('إدارة الصلاحيات', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: C.text))),
+      ]),
+      const SizedBox(height: 24),
 
-          // Role cards — scrollable on mobile
-          if (isWide)
-            Row(children: _rolesMeta.entries.map((e) {
-              final key = e.key; final m = e.value; final color = Color(m['color'] as int);
-              final count = users.where((u) => u['role'] == key).length; final on = _selectedRole == key;
-              return Expanded(child: Padding(padding: EdgeInsets.only(left: key == 'employee' ? 0 : 14), child: _roleCard(key, m, color, count, on)));
-            }).toList())
-          else
-            SizedBox(
-              height: 140,
-              child: ListView(scrollDirection: Axis.horizontal, children: _rolesMeta.entries.map((e) {
-                final key = e.key; final m = e.value; final color = Color(m['color'] as int);
-                final count = users.where((u) => u['role'] == key).length; final on = _selectedRole == key;
-                return Padding(padding: const EdgeInsets.only(left: 10), child: SizedBox(width: 170, child: _roleCard(key, m, color, count, on)));
-              }).toList()),
-            ),
-          const SizedBox(height: 20),
+      // Role cards — scrollable on mobile
+      if (isWide)
+        Row(children: _rolesMeta.entries.map((e) {
+          final key = e.key; final m = e.value; final color = Color(m['color'] as int);
+          final count = users.where((u) => u['role'] == key).length; final on = _selectedRole == key;
+          return Expanded(child: Padding(padding: EdgeInsets.only(left: key == 'employee' ? 0 : 14), child: _roleCard(key, m, color, count, on)));
+        }).toList())
+      else
+        SizedBox(
+          height: 140,
+          child: ListView(scrollDirection: Axis.horizontal, children: _rolesMeta.entries.map((e) {
+            final key = e.key; final m = e.value; final color = Color(m['color'] as int);
+            final count = users.where((u) => u['role'] == key).length; final on = _selectedRole == key;
+            return Padding(padding: const EdgeInsets.only(left: 10), child: SizedBox(width: 170, child: _roleCard(key, m, color, count, on)));
+          }).toList()),
+        ),
+      const SizedBox(height: 20),
 
-          // Panels — side by side on web, stacked on mobile
-          if (isWide)
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: Column(children: [
-                _usersInRole(users, activeColor, activeName),
-                if (_selectedRole != 'employee') ...[const SizedBox(height: 14), _addUsersToRole(users, activeColor, activeName)],
-              ])),
-              const SizedBox(width: 20),
-              Expanded(child: _permissionsPanel(activeColor, activeName, activePerms)),
-            ])
-          else ...[
-            _permissionsPanel(activeColor, activeName, activePerms),
-            const SizedBox(height: 14),
+      // Panels — side by side on web, stacked on mobile
+      if (isWide)
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(children: [
             _usersInRole(users, activeColor, activeName),
             if (_selectedRole != 'employee') ...[const SizedBox(height: 14), _addUsersToRole(users, activeColor, activeName)],
-          ],
-        ]));
-      },
-    );
+          ])),
+          const SizedBox(width: 20),
+          Expanded(child: _permissionsPanel(activeColor, activeName, activePerms)),
+        ])
+      else ...[
+        _permissionsPanel(activeColor, activeName, activePerms),
+        const SizedBox(height: 14),
+        _usersInRole(users, activeColor, activeName),
+        if (_selectedRole != 'employee') ...[const SizedBox(height: 14), _addUsersToRole(users, activeColor, activeName)],
+      ],
+    ]));
   }
 
   Widget _roleCard(String key, Map<String, dynamic> m, Color color, int count, bool on) {
@@ -158,7 +185,7 @@ class _AdminRolesState extends State<AdminRoles> {
       ])),
       if (roleUsers.isEmpty) Padding(padding: const EdgeInsets.all(24), child: Text('لا يوجد مستخدمين في هذا الدور', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
       ...roleUsers.map((u) => Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.div))), child: Row(children: [
-        InkWell(onTap: () => _db.collection('users').doc(u['docId']).update({'role': 'employee'}), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(7), border: Border.all(color: const Color(0xFFFECDCA))), child: const Icon(Icons.close, size: 11, color: C.red))),
+        InkWell(onTap: () => _updateUserRole(u['docId'] ?? u['uid'] ?? '', 'employee'), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(7), border: Border.all(color: const Color(0xFFFECDCA))), child: const Icon(Icons.close, size: 11, color: C.red))),
         const Spacer(),
         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(u['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
@@ -178,7 +205,7 @@ class _AdminRolesState extends State<AdminRoles> {
         Text('اضغط على + لإضافة الموظف لهذا الدور', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
       ])),
       ConstrainedBox(constraints: const BoxConstraints(maxHeight: 200), child: ListView(shrinkWrap: true, children: others.map((u) => Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.div))), child: Row(children: [
-        InkWell(onTap: () => _db.collection('users').doc(u['docId']).update({'role': _selectedRole}), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(7), border: Border.all(color: const Color(0xFFABEFC6))), child: const Icon(Icons.add, size: 11, color: C.green))),
+        InkWell(onTap: () => _updateUserRole(u['docId'] ?? u['uid'] ?? '', _selectedRole), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(7), border: Border.all(color: const Color(0xFFABEFC6))), child: const Icon(Icons.add, size: 11, color: C.green))),
         const Spacer(),
         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(u['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),

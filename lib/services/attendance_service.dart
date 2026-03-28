@@ -1,9 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:local_auth/local_auth.dart';
+import 'api_service.dart';
 
 class AttendanceService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   // ─── Biometric check ───
@@ -38,221 +37,151 @@ class AttendanceService {
     );
   }
 
-  // ─── Check in (حضور) ───
+  // ─── Check in ───
   Future<Map<String, dynamic>> checkIn(String uid, String empId, String name, {String? facePhotoUrl, String authMethod = 'fingerprint'}) async {
-    // Load auth settings
+    // Load auth settings from API
     final settings = await _loadAuthSettings();
     final empOverrides = await _loadEmpAuthOverrides(uid);
-    
+
     final requireBiometric = empOverrides?['authBiometric'] ?? (settings['authFinger'] ?? true);
     final requireLocation = empOverrides?['authLoc'] ?? (settings['authLoc'] ?? true);
 
-    if (requireBiometric) {
+    if (requireBiometric == true) {
       final bioOk = await authenticateBiometric();
       if (!bioOk) return {'success': false, 'error': 'فشل التحقق من البصمة'};
     }
 
     Position? pos;
-    if (requireLocation) {
+    if (requireLocation == true) {
       pos = await getCurrentLocation();
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
     }
 
-    final now = DateTime.now();
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
-    // Save every punch to attendance log
-    final record = {
-      'uid': uid,
-      'empId': empId,
-      'name': name,
-      'type': 'checkIn',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(now),
-      'dateKey': dateKey,
-      'lat': pos?.latitude,
-      'lng': pos?.longitude,
-      'accuracy': pos?.accuracy,
-      'biometric': requireBiometric,
-      'authMethod': authMethod,
-      'facePhotoUrl': facePhotoUrl,
-    };
-
-    await _db.collection('attendance').add(record);
-
-    // Update daily summary
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    if (!dailyDoc.exists) {
-      await dailyRef.set({
-        'uid': uid,
-        'empId': empId,
-        'name': name,
-        'dateKey': dateKey,
-        'firstCheckIn': Timestamp.fromDate(now),
-        'firstCheckInLat': pos?.latitude,
-        'firstCheckInLng': pos?.longitude,
-        'lastCheckOut': null,
-        'totalWorkedMinutes': 0,
-        'sessions': 1,
-        'currentSessionStart': Timestamp.fromDate(now),
-        'isCheckedIn': true,
-        'status': 'حاضر',
-        'checkIn': Timestamp.fromDate(now),
-        'checkInLat': pos?.latitude,
-        'checkInLng': pos?.longitude,
+    try {
+      final result = await ApiService.post('attendance.php?action=checkIn', body: {
+        'lat': pos?.latitude,
+        'lng': pos?.longitude,
+        'accuracy': pos?.accuracy,
+        'biometric': requireBiometric == true,
+        'auth_method': authMethod,
+        'face_photo_url': facePhotoUrl,
       });
-    } else {
-      await dailyRef.update({
-        'currentSessionStart': Timestamp.fromDate(now),
-        'isCheckedIn': true,
-        'sessions': FieldValue.increment(1),
-        'status': 'حاضر',
-      });
+
+      final now = DateTime.now();
+      return {
+        'success': true,
+        'time': '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}',
+        'lat': pos?.latitude,
+        'lng': pos?.longitude,
+        ...result,
+      };
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
-
-    return {
-      'success': true,
-      'time': '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}',
-      'lat': pos?.latitude,
-      'lng': pos?.longitude,
-    };
   }
 
-  // ─── Check out (خروج) ───
+  // ─── Check out ───
   Future<Map<String, dynamic>> checkOut(String uid, String empId, String name, {String? facePhotoUrl, String authMethod = 'fingerprint'}) async {
     final settings = await _loadAuthSettings();
     final empOverrides = await _loadEmpAuthOverrides(uid);
-    
+
     final requireBiometric = empOverrides?['authBiometric'] ?? (settings['authFinger'] ?? true);
     final requireLocation = empOverrides?['authLoc'] ?? (settings['authLoc'] ?? true);
 
-    if (requireBiometric) {
+    if (requireBiometric == true) {
       final bioOk = await authenticateBiometric();
       if (!bioOk) return {'success': false, 'error': 'فشل التحقق من البصمة'};
     }
 
     Position? pos;
-    if (requireLocation) {
+    if (requireLocation == true) {
       pos = await getCurrentLocation();
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
     }
 
-    final now = DateTime.now();
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    try {
+      final result = await ApiService.post('attendance.php?action=checkOut', body: {
+        'lat': pos?.latitude,
+        'lng': pos?.longitude,
+        'accuracy': pos?.accuracy,
+        'biometric': requireBiometric == true,
+        'auth_method': authMethod,
+        'face_photo_url': facePhotoUrl,
+      });
 
-    final record = {
-      'uid': uid,
-      'empId': empId,
-      'name': name,
-      'type': 'checkOut',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(now),
-      'dateKey': dateKey,
-      'lat': pos?.latitude,
-      'lng': pos?.longitude,
-      'accuracy': pos?.accuracy,
-      'biometric': requireBiometric,
-      'authMethod': authMethod,
-      'facePhotoUrl': facePhotoUrl,
-    };
-
-    await _db.collection('attendance').add(record);
-
-    // Calculate this session's minutes
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    int sessionMinutes = 0;
-    if (dailyDoc.exists) {
-      final data = dailyDoc.data()!;
-      final sessionStart = data['currentSessionStart'] as Timestamp?;
-      if (sessionStart != null) {
-        sessionMinutes = now.difference(sessionStart.toDate()).inMinutes;
-        if (sessionMinutes < 0) sessionMinutes = 0;
-      }
+      final now = DateTime.now();
+      return {
+        'success': true,
+        'time': '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}',
+        'lat': pos?.latitude,
+        'lng': pos?.longitude,
+        ...result,
+      };
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
-
-    // Always update lastCheckOut + accumulate worked minutes
-    await dailyRef.set({
-      'lastCheckOut': Timestamp.fromDate(now),
-      'lastCheckOutLat': pos?.latitude,
-      'lastCheckOutLng': pos?.longitude,
-      'totalWorkedMinutes': FieldValue.increment(sessionMinutes),
-      'isCheckedIn': false,
-      'status': 'مكتمل',
-      'checkOut': Timestamp.fromDate(now),
-      'checkOutLat': pos?.latitude,
-      'checkOutLng': pos?.longitude,
-    }, SetOptions(merge: true));
-
-    return {
-      'success': true,
-      'time': '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}',
-      'lat': pos?.latitude,
-      'lng': pos?.longitude,
-    };
   }
 
   // ─── Get today's record for user ───
   Future<Map<String, dynamic>?> getTodayRecord(String uid) async {
-    final now = DateTime.now();
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final doc = await _db.collection('attendance_daily').doc('${uid}_$dateKey').get();
-    return doc.exists ? doc.data() : null;
+    try {
+      final result = await ApiService.get('attendance.php?action=today');
+      if (result['record'] != null) return Map<String, dynamic>.from(result['record']);
+      return result.containsKey('uid') ? result : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ─── Get detailed punches for a specific day ───
   Future<List<Map<String, dynamic>>> getDayPunches(String uid, String dateKey) async {
-    final snap = await _db.collection('attendance')
-        .where('uid', isEqualTo: uid)
-        .where('dateKey', isEqualTo: dateKey)
-        .get();
-
-    final punches = snap.docs.map((d) {
-      final data = d.data();
-      data['id'] = d.id;
-      return data;
-    }).toList();
-
-    // Sort by time
-    punches.sort((a, b) {
-      final aTime = a['localTime'] as Timestamp? ?? a['timestamp'] as Timestamp?;
-      final bTime = b['localTime'] as Timestamp? ?? b['timestamp'] as Timestamp?;
-      if (aTime == null || bTime == null) return 0;
-      return aTime.compareTo(bTime);
-    });
-
-    return punches;
+    try {
+      final result = await ApiService.get('attendance.php?action=punches&date_key=$dateKey');
+      final list = result['punches'] ?? result['data'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── Get attendance history for a month ───
-  Stream<QuerySnapshot> getMonthlyAttendance(String uid, int year, int month) {
-    return _db.collection('attendance_daily')
-        .where('uid', isEqualTo: uid)
-        .snapshots();
+  Future<List<Map<String, dynamic>>> getMonthlyAttendance(String uid, int year, int month) async {
+    try {
+      final result = await ApiService.get('attendance.php?action=monthly&year=$year&month=$month');
+      final list = result['records'] ?? result['data'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── Get all today's records (for admin) ───
-  Stream<QuerySnapshot> getAllTodayRecords() {
-    final now = DateTime.now();
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    return _db.collection('attendance_daily')
-        .where('dateKey', isEqualTo: dateKey)
-        .snapshots();
+  Future<List<Map<String, dynamic>>> getAllTodayRecords() async {
+    try {
+      final result = await ApiService.get('attendance.php?action=all_today');
+      final list = result['records'] ?? result['data'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── Get all records (for overtime/reports) ───
-  Stream<QuerySnapshot> getAllRecords() {
-    return _db.collection('attendance_daily').snapshots();
+  Future<List<Map<String, dynamic>>> getAllRecords({int limit = 500, int offset = 0}) async {
+    try {
+      final result = await ApiService.get('attendance.php?action=all_records&limit=$limit&offset=$offset');
+      final list = result['records'] ?? result['data'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── Load global auth settings ───
   Future<Map<String, dynamic>> _loadAuthSettings() async {
     try {
-      final doc = await _db.collection('settings').doc('general').get();
-      return doc.data() ?? {};
+      final result = await ApiService.get('admin.php?action=get_settings');
+      return result['settings'] != null ? Map<String, dynamic>.from(result['settings']) : result;
     } catch (_) {
       return {};
     }
@@ -261,11 +190,9 @@ class AttendanceService {
   // ─── Load per-employee auth overrides ───
   Future<Map<String, dynamic>?> _loadEmpAuthOverrides(String uid) async {
     try {
-      final doc = await _db.collection('users').doc(uid).get();
-      final data = doc.data();
-      if (data != null && data['authOverride'] == true) {
-        return data;
-      }
+      final result = await ApiService.get('users.php?action=get&uid=$uid');
+      final data = result['user'] != null ? Map<String, dynamic>.from(result['user']) : result;
+      if (data['authOverride'] == true) return data;
       return null;
     } catch (_) {
       return null;

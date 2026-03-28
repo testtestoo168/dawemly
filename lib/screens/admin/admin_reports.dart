@@ -3,12 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:csv/csv.dart';
 import 'package:http/http.dart' as http;
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
+import '../../services/attendance_service.dart';
 import '../../services/download_stub.dart'
     if (dart.library.html) '../../services/download_web.dart';
 
@@ -18,7 +19,6 @@ class AdminReports extends StatefulWidget {
 }
 
 class _AdminReportsState extends State<AdminReports> {
-  final _db = FirebaseFirestore.instance;
   final _mono = GoogleFonts.ibmPlexMono;
   final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _dayNames = const ['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'];
@@ -42,9 +42,9 @@ class _AdminReportsState extends State<AdminReports> {
 
   void _loadSettings() async {
     try {
-      final doc = await _db.collection('settings').doc('general').get();
-      if (doc.exists && mounted) {
-        final d = doc.data()!;
+      final result = await ApiService.get('admin.php?action=get_settings');
+      final d = result['settings'] != null ? Map<String, dynamic>.from(result['settings']) : result;
+      if (mounted) {
         setState(() {
           _standardHours = (d['generalH'] as num?)?.toDouble() ?? 8.0;
           // Parse start time like "08:00 ص"
@@ -60,56 +60,71 @@ class _AdminReportsState extends State<AdminReports> {
   }
 
   void _loadUsers() async {
-    final snap = await _db.collection('users').get();
-    if (mounted) setState(() {
-      _allUsers = snap.docs.map((d) { final m = d.data(); m['_id'] = d.id; return m; })
-        .where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
-      _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-    });
+    try {
+      final result = await ApiService.get('users.php?action=list');
+      final list = result['users'] ?? result['data'] ?? [];
+      if (mounted) setState(() {
+        _allUsers = (list as List).map((u) => Map<String, dynamic>.from(u))
+          .where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
+        _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+      });
+    } catch (_) {}
   }
 
   String _fmtTs(dynamic ts) {
     if (ts == null) return '—';
-    DateTime dt;
-    if (ts is Timestamp) dt = ts.toDate();
-    else if (ts is DateTime) dt = ts;
-    else return '—';
+    DateTime? dt;
+    if (ts is DateTime) {
+      dt = ts;
+    } else if (ts is String && ts.isNotEmpty && ts != '—') {
+      dt = DateTime.tryParse(ts);
+    }
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
 
+  DateTime? _parseDateTime(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val;
+    if (val is String && val.isNotEmpty) return DateTime.tryParse(val);
+    return null;
+  }
+
   Future<List<Map<String, dynamic>>> _buildReportData() async {
     final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
-    final attSnap = await _db.collection('attendance_daily').get();
-    final attRecords = attSnap.docs.map((d) => d.data()).where((r) {
-      final dk = (r['dateKey'] ?? '').toString();
+    final attRecords = await AttendanceService().getAllRecords();
+    final filtered = attRecords.where((r) {
+      final dk = (r['dateKey'] ?? r['date_key'] ?? '').toString();
       if (!dk.startsWith(monthPrefix)) return false;
       if (_selectedUid != 'الكل' && r['uid'] != _selectedUid) return false;
       return true;
     }).toList();
 
     final rows = <Map<String, dynamic>>[];
-    for (final att in attRecords) {
-      final user = _allUsers.firstWhere((u) => (u['uid'] ?? u['_id']) == att['uid'], orElse: () => {});
+    for (final att in filtered) {
+      final user = _allUsers.firstWhere((u) => (u['uid'] ?? u['_id'] ?? u['id']) == att['uid'], orElse: () => {});
       if (user.isEmpty) continue;
 
-      final dateKey = att['dateKey'] ?? '';
+      final dateKey = (att['dateKey'] ?? att['date_key'] ?? '').toString();
       final parts = dateKey.split('-');
       final dt = parts.length == 3 ? DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])) : DateTime.now();
       final dayName = _dayNames[(dt.weekday - 1) % 7];
 
-      final ci = att['firstCheckIn'] ?? att['checkIn'];
-      final co = att['lastCheckOut'] ?? att['checkOut'];
-      final totalMin = (att['totalWorkedMinutes'] as int?) ?? 0;
-      double workedHours = totalMin > 0 ? totalMin / 60.0 : 0;
+      final ci = att['firstCheckIn'] ?? att['checkIn'] ?? att['first_check_in'] ?? att['check_in'];
+      final co = att['lastCheckOut'] ?? att['checkOut'] ?? att['last_check_out'] ?? att['check_out'];
+      final totalMin = (att['totalWorkedMinutes'] ?? att['total_worked_minutes'] ?? 0);
+      final totalMinInt = totalMin is int ? totalMin : (int.tryParse(totalMin.toString()) ?? 0);
+      double workedHours = totalMinInt > 0 ? totalMinInt / 60.0 : 0;
       double overtime = 0;
       String lateTime = '—';
 
-      if (ci != null) {
-        final checkIn = (ci as Timestamp).toDate();
-        if (co != null) {
+      final checkIn = _parseDateTime(ci);
+      if (checkIn != null) {
+        final checkOut = _parseDateTime(co);
+        if (checkOut != null) {
           if (workedHours == 0) {
-            workedHours = (co as Timestamp).toDate().difference(checkIn).inMinutes / 60.0;
+            workedHours = checkOut.difference(checkIn).inMinutes / 60.0;
           }
           overtime = (workedHours - _standardHours).clamp(0, 24);
         }
@@ -122,7 +137,7 @@ class _AdminReportsState extends State<AdminReports> {
       }
 
       rows.add({
-        'empId': user['empId'] ?? '—',
+        'empId': user['empId'] ?? user['emp_id'] ?? '—',
         'name': user['name'] ?? '—',
         'date': dateKey,
         'day': dayName,
@@ -180,7 +195,7 @@ class _AdminReportsState extends State<AdminReports> {
       }
 
       final pdf = pw.Document();
-      
+
       // If no Arabic font available, export with LTR layout and English-safe Arabic
       final hasArabic = arabicFont != null;
       final baseStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 9) : const pw.TextStyle(fontSize: 9);
@@ -188,9 +203,9 @@ class _AdminReportsState extends State<AdminReports> {
       final titleStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 16, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold);
 
       final empName = _selectedUid == 'الكل' ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['_id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
-      
+
       final titleAr = hasArabic ? 'تقرير الحضور — ${_months[_selMonth - 1]} $_selYear${_selectedUid != 'الكل' ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
-      final headersAr = hasArabic 
+      final headersAr = hasArabic
         ? ['الأوفرتايم', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود']
         : ['Overtime', 'Late', 'Hours', 'Check Out', 'Check In', 'Day', 'Date', 'Name', 'EmpID'];
 
@@ -216,7 +231,7 @@ class _AdminReportsState extends State<AdminReports> {
       final bytes = await pdf.save();
       final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
       downloadFile(bytes, 'dawemli_${empLabel}_$_selYear-$_selMonth.pdf', 'application/pdf');
-      
+
       if (!hasArabic && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('⚠ لتصدير PDF بالعربي، ضع ملف Tajawal-Regular.ttf في assets/fonts/', style: GoogleFonts.tajawal()),

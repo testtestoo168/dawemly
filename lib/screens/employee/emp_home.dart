@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/api_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
@@ -36,14 +36,24 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
   final _months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  List<Map<String, dynamic>> _notifications = [];
 
   @override
   void initState() {
     super.initState();
     _loadToday();
     _loadLocations();
+    _loadNotifications();
     _startClock();
     _checkPendingVerification();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final result = await ApiService.get('admin.php?action=get_notifications');
+      final list = result['notifications'] ?? result['data'] ?? [];
+      if (mounted) setState(() => _notifications = List<Map<String, dynamic>>.from(list));
+    } catch (_) {}
   }
 
   // Auto-check for pending verification requests and show banner immediately
@@ -51,28 +61,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     if (uid.isEmpty) return;
     try {
-      // Check for unread verify notifications
-      final snap = await FirebaseFirestore.instance.collection('notifications')
-          .where('uid', isEqualTo: uid)
-          .where('type', isEqualTo: 'verify_request')
-          .where('read', isEqualTo: false)
-          .limit(1)
-          .get();
-      if (snap.docs.isNotEmpty && mounted) {
-        await FirebaseFirestore.instance.collection('notifications').doc(snap.docs.first.id).update({'read': true});
-        _respondToVerification(uid);
-      }
-    } catch (_) {}
-
-    // Also listen in real-time for new verify requests while app is open
-    FirebaseFirestore.instance.collection('notifications')
-        .where('uid', isEqualTo: uid)
-        .where('type', isEqualTo: 'verify_request')
-        .where('read', isEqualTo: false)
-        .snapshots()
-        .listen((snap) {
-      if (snap.docs.isNotEmpty && mounted) {
-        FirebaseFirestore.instance.collection('notifications').doc(snap.docs.first.id).update({'read': true});
+      final result = await ApiService.get('admin.php?action=get_notifications');
+      final notifs = List<Map<String, dynamic>>.from(result['notifications'] ?? result['data'] ?? []);
+      final verifyNotif = notifs.where((n) => n['uid'] == uid && n['type'] == 'verify_request' && n['read'] == false).toList();
+      if (verifyNotif.isNotEmpty && mounted) {
+        await ApiService.post('admin.php?action=mark_read', body: {'id': verifyNotif.first['id']});
         _respondToVerification(uid);
       }
     });
@@ -108,9 +101,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
     if (isCheckedIn) {
       // Currently in a session — add live elapsed from currentSessionStart
-      final sessionStart = _todayRecord!['currentSessionStart'] as Timestamp?;
+      final rawStart = _todayRecord!['currentSessionStart'];
+      final sessionStart = rawStart is DateTime ? rawStart : (rawStart is String ? DateTime.tryParse(rawStart) : null);
       if (sessionStart != null) {
-        final liveMinutes = DateTime.now().difference(sessionStart.toDate()).inSeconds;
+        final liveMinutes = DateTime.now().difference(sessionStart).inSeconds;
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveMinutes));
       } else {
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));
@@ -133,12 +127,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
   void _loadLocations() async {
     try {
       final uid = widget.user['uid'] ?? '';
-      final snap = await FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).get();
-      final locs = snap.docs.map((d) {
-        final data = d.data();
-        data['id'] = d.id;
-        return data;
-      }).where((loc) {
+      final locResult = await ApiService.get('admin.php?action=get_locations');
+      final allLocs = List<Map<String, dynamic>>.from(locResult['locations'] ?? locResult['data'] ?? []);
+      final locs = allLocs.where((loc) => loc['active'] == true || loc['active'] == 1).where((loc) {
         // If assignedEmployees is empty or null → all employees allowed
         final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
         return assigned.isEmpty || assigned.contains(uid);
@@ -208,11 +199,13 @@ class _EmpHomePageState extends State<EmpHomePage> {
     // ─── Step 2: Check location if required ───
     bool requireLocation = true;
     try {
-      final settingsDoc = await FirebaseFirestore.instance.collection('settings').doc('general').get();
-      final globalAuthLoc = settingsDoc.data()?['authLoc'] ?? true;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final hasOverride = userDoc.data()?['authOverride'] == true;
-      requireLocation = hasOverride ? (userDoc.data()?['authLoc'] ?? true) : globalAuthLoc;
+      final settingsResult = await ApiService.get('admin.php?action=get_settings');
+      final settings = settingsResult['settings'] ?? settingsResult;
+      final globalAuthLoc = settings['authLoc'] ?? true;
+      final userResult = await ApiService.get('users.php?action=get&uid=$uid');
+      final userData = userResult['user'] ?? userResult;
+      final hasOverride = userData['authOverride'] == true;
+      requireLocation = hasOverride ? (userData['authLoc'] ?? true) : globalAuthLoc;
     } catch (_) {}
 
     if (requireLocation) {
@@ -287,11 +280,13 @@ class _EmpHomePageState extends State<EmpHomePage> {
     // ─── Step 2: Location check ───
     bool requireLocation = true;
     try {
-      final settingsDoc = await FirebaseFirestore.instance.collection('settings').doc('general').get();
-      final globalAuthLoc = settingsDoc.data()?['authLoc'] ?? true;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final hasOverride = userDoc.data()?['authOverride'] == true;
-      requireLocation = hasOverride ? (userDoc.data()?['authLoc'] ?? true) : globalAuthLoc;
+      final settingsResult = await ApiService.get('admin.php?action=get_settings');
+      final settings = settingsResult['settings'] ?? settingsResult;
+      final globalAuthLoc = settings['authLoc'] ?? true;
+      final userResult = await ApiService.get('users.php?action=get&uid=$uid');
+      final userData = userResult['user'] ?? userResult;
+      final hasOverride = userData['authOverride'] == true;
+      requireLocation = hasOverride ? (userData['authLoc'] ?? true) : globalAuthLoc;
     } catch (_) {}
 
     if (requireLocation) {
@@ -446,7 +441,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
   String _formatTimestamp(dynamic ts) {
     if (ts == null) return '—';
-    final dt = ts is DateTime ? ts : (ts as Timestamp).toDate();
+    DateTime? dt;
+    if (ts is DateTime) { dt = ts; }
+    else if (ts is String) { dt = DateTime.tryParse(ts); }
+    if (dt == null) return '';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
@@ -487,10 +485,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             GestureDetector(
               onTap: () => _showNotifications(),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('notifications').where('uid', isEqualTo: widget.user['uid'] ?? '').snapshots(),
-                builder: (ctx, nSnap) {
-                  final count = (nSnap.data?.docs ?? []).where((d) => (d.data() as Map)['read'] != true).length;
+              child: Builder(
+                builder: (ctx) {
+                  final uid = widget.user['uid'] ?? '';
+                  final count = _notifications.where((n) => n['uid'] == uid && n['read'] != true).length;
                   return Stack(children: [
                     Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
                     if (count > 0) Positioned(top: 2, right: 2, child: Container(width: 18, height: 18, decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)), child: Center(child: Text('$count', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white))))),
@@ -713,21 +711,24 @@ class _EmpHomePageState extends State<EmpHomePage> {
               Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
               const SizedBox(width: 8), const Icon(Icons.notifications, size: 18, color: Colors.white),
             ])),
-          Flexible(child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('notifications').where('uid', isEqualTo: uid).limit(20).snapshots(),
-            builder: (ctx, snap) {
-              var docs = snap.data?.docs ?? [];
-              docs.sort((a, b) { final aT = (a.data() as Map)['timestamp'] as Timestamp?; final bT = (b.data() as Map)['timestamp'] as Timestamp?; if (aT == null || bT == null) return 0; return bT.compareTo(aT); });
-              if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [const Icon(Icons.notifications_off, size: 40, color: C.hint), const SizedBox(height: 8), Text('لا توجد إشعارات', style: GoogleFonts.tajawal(color: C.muted))])));
-              return ListView.builder(shrinkWrap: true, itemCount: docs.length, itemBuilder: (ctx, i) {
-                final n = docs[i].data() as Map<String, dynamic>;
-                final docId = docs[i].id;
+          Flexible(child: Builder(
+            builder: (ctx) {
+              var userNotifs = _notifications.where((n) => n['uid'] == uid).take(20).toList();
+              userNotifs.sort((a, b) {
+                final aT = DateTime.tryParse((a['timestamp'] ?? '').toString()) ?? DateTime(2000);
+                final bT = DateTime.tryParse((b['timestamp'] ?? '').toString()) ?? DateTime(2000);
+                return bT.compareTo(aT);
+              });
+              if (userNotifs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [const Icon(Icons.notifications_off, size: 40, color: C.hint), const SizedBox(height: 8), Text('لا توجد إشعارات', style: GoogleFonts.tajawal(color: C.muted))])));
+              return ListView.builder(shrinkWrap: true, itemCount: userNotifs.length, itemBuilder: (ctx, i) {
+                final n = userNotifs[i];
+                final docId = n['id']?.toString() ?? '';
                 final isRead = n['read'] == true;
                 final isVerifyRequest = n['type'] == 'verify_request';
                 final isUrgent = n['type'] == 'urgent' || isVerifyRequest;
                 return InkWell(
                   onTap: () {
-                    if (!isRead) FirebaseFirestore.instance.collection('notifications').doc(docId).update({'read': true});
+                    if (!isRead) ApiService.post('admin.php?action=mark_read', body: {'id': docId}).then((_) => _loadNotifications());
                     if (isVerifyRequest) { Navigator.pop(ctx); _respondToVerification(uid); }
                   },
                   child: Container(
@@ -795,9 +796,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
         radius = (loc['radius'] as num?)?.toDouble() ?? 300;
         locName = loc['name'] ?? 'الموقع المحدد';
       } else {
-        final locSnap = await FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).limit(1).get();
-        if (locSnap.docs.isNotEmpty) {
-          final l = locSnap.docs.first.data();
+        final locResult = await ApiService.get('admin.php?action=get_locations');
+        final activeLocs = List<Map<String, dynamic>>.from(locResult['locations'] ?? locResult['data'] ?? []).where((l) => l['active'] == true || l['active'] == 1).toList();
+        if (activeLocs.isNotEmpty) {
+          final l = activeLocs.first;
           adminLat = (l['lat'] as num?)?.toDouble() ?? 0;
           adminLng = (l['lng'] as num?)?.toDouble() ?? 0;
           radius = (l['radius'] as num?)?.toDouble() ?? 300;
@@ -808,13 +810,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
       final inRange = distance <= radius;
 
-      final vReqs = await FirebaseFirestore.instance.collection('verification_requests').where('uid', isEqualTo: uid).where('status', isEqualTo: 'pending').limit(1).get();
-      if (vReqs.docs.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('verification_requests').doc(vReqs.docs.first.id).update({
-          'status': 'responded', 'respondedAt': FieldValue.serverTimestamp(),
-          'empLat': pos.latitude, 'empLng': pos.longitude, 'inRange': inRange, 'distance': distance.round(),
+      try {
+        await ApiService.post('admin.php?action=respond_verification', body: {
+          'lat': pos.latitude, 'lng': pos.longitude, 'in_range': inRange, 'distance': distance.round(),
         });
-      }
+      } catch (_) {}
 
       if (mounted) Navigator.pop(context);
 

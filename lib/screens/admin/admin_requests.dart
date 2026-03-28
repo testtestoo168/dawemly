@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
+import '../../services/api_service.dart';
 
 class AdminRequests extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -15,14 +15,39 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   final _svc = RequestsService();
   late TabController _tabCtrl;
 
+  List<Map<String, dynamic>> _requests = [];
+  bool _loading = true;
+  String? _error;
+
   @override
-  void initState() { super.initState(); _tabCtrl = TabController(length: 3, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 3, vsync: this);
+    _loadRequests();
+  }
+
   @override
   void dispose() { _tabCtrl.dispose(); super.dispose(); }
 
-  String _fmtDate(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  Future<void> _loadRequests() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await _svc.getAllRequests();
+      if (mounted) setState(() { _requests = data; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  String _fmtDate(dynamic val) {
+    if (val == null) return '—';
+    DateTime? dt;
+    if (val is DateTime) {
+      dt = val;
+    } else if (val is String) {
+      dt = DateTime.tryParse(val);
+    }
+    if (dt == null) return '—';
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -61,16 +86,6 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
 
     if (confirmed == true) {
       await _svc.updateRequestStatus(docId, action, adminNote: noteCtrl.text.trim());
-      
-      // Write audit log
-      await FirebaseFirestore.instance.collection('audit_log').add({
-        'user': widget.user['name'] ?? 'مدير النظام',
-        'action': action == 'تم الموافقة' ? 'موافقة على طلب' : 'رفض طلب',
-        'target': 'طلب #${docId.substring(0, 6)}',
-        'details': 'تم ${action == 'تم الموافقة' ? 'الموافقة على' : 'رفض'} الطلب${noteCtrl.text.trim().isNotEmpty ? ' — ملاحظة: ${noteCtrl.text.trim()}' : ''}',
-        'timestamp': FieldValue.serverTimestamp(),
-        'type': action == 'تم الموافقة' ? 'approve' : 'reject',
-      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -79,6 +94,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
+        _loadRequests();
       }
     }
   }
@@ -119,42 +135,41 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   }
 
   Widget _buildList(String statusFilter, {bool showActions = false}) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('requests').where('status', isEqualTo: statusFilter).snapshots(),
-      builder: (context, snap) {
-        if (snap.hasError) {
-          return Center(child: Text('خطأ في تحميل البيانات', style: GoogleFonts.tajawal(fontSize: 13, color: C.red)));
-        }
-        final docs = snap.data?.docs ?? [];
-        if (snap.connectionState == ConnectionState.waiting && docs.isEmpty) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (docs.isEmpty) {
-          return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.description_outlined, size: 48, color: C.hint),
-            const SizedBox(height: 12),
-            Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
-          ]));
-        }
-        // Sort locally instead of orderBy (avoids needing composite index)
-        docs.sort((a, b) {
-          final aT = (a.data() as Map)['createdAt'] as Timestamp?;
-          final bT = (b.data() as Map)['createdAt'] as Timestamp?;
-          if (aT == null || bT == null) return 0;
-          return bT.compareTo(aT);
-        });
+    if (_error != null) {
+      return Center(child: Text('خطأ في تحميل البيانات', style: GoogleFonts.tajawal(fontSize: 13, color: C.red)));
+    }
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
 
-        final isWide = MediaQuery.of(context).size.width > 800;
+    final filtered = _requests.where((r) => r['status'] == statusFilter).toList();
 
-        return ListView.builder(
-          padding: EdgeInsets.all(isWide ? 28 : 14),
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final doc = docs[i];
-            final r = doc.data() as Map<String, dynamic>;
-            return _requestCard(r, doc.id, showActions);
-          },
-        );
+    if (filtered.isEmpty) {
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.description_outlined, size: 48, color: C.hint),
+        const SizedBox(height: 12),
+        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+      ]));
+    }
+
+    // Sort locally by createdAt descending
+    filtered.sort((a, b) {
+      final aVal = a['createdAt'];
+      final bVal = b['createdAt'];
+      if (aVal == null || bVal == null) return 0;
+      final aStr = aVal is DateTime ? aVal.toIso8601String() : aVal.toString();
+      final bStr = bVal is DateTime ? bVal.toIso8601String() : bVal.toString();
+      return bStr.compareTo(aStr);
+    });
+
+    final isWide = MediaQuery.of(context).size.width > 800;
+
+    return ListView.builder(
+      padding: EdgeInsets.all(isWide ? 28 : 14),
+      itemCount: filtered.length,
+      itemBuilder: (context, i) {
+        final r = filtered[i];
+        return _requestCard(r, r['id'] ?? '', showActions);
       },
     );
   }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../../services/face_recognition_service.dart';
 import 'admin_face_detail.dart';
 
@@ -15,13 +14,40 @@ class AdminUserMgmt extends StatefulWidget {
 }
 
 class _AdminUserMgmtState extends State<AdminUserMgmt> {
-  final _db = FirebaseFirestore.instance;
   final _auth = AuthService();
   String _search = '';
   String _fRole = 'الكل';
   String _fActive = 'الكل';
+  List<Map<String, dynamic>> _users = [];
+  bool _loading = true;
 
   final _depts = ['تكنولوجيا المعلومات', 'الموارد البشرية', 'المالية', 'التسويق', 'خدمة العملاء'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final res = await ApiService.get('users.php?action=list');
+      if (res['success'] == true && res['data'] is List) {
+        setState(() {
+          _users = List<Map<String, dynamic>>.from(res['data']);
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _refreshUsers() async {
+    await _loadUsers();
+  }
 
   void _showAddEditDialog({Map<String, dynamic>? existing, String? docId}) {
     final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
@@ -187,17 +213,10 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                                 'scheduleType': scheduleType,
                                 'scheduleUntil': scheduleUntil,
                               });
-                              await _db.collection('audit_log').add({
-                                'user': widget.user['name'] ?? 'مدير النظام',
-                                'action': 'إضافة مستخدم',
-                                'target': '${nameCtrl.text.trim()} (${emailCtrl.text.trim()})',
-                                'details': 'تم إضافة مستخدم جديد — القسم: $dept — الصلاحية: $userRole',
-                                'timestamp': FieldValue.serverTimestamp(),
-                                'type': 'create',
-                              });
                             } else {
                               // Update existing
-                              await _db.collection('users').doc(docId).update({
+                              await ApiService.post('users.php?action=update', body: {
+                                'uid': docId,
                                 'name': nameCtrl.text.trim(),
                                 'email': emailCtrl.text.trim(),
                                 'phone': phoneCtrl.text.trim(),
@@ -211,16 +230,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                                 'scheduleType': scheduleType,
                                 'scheduleUntil': scheduleUntil,
                               });
-                              await _db.collection('audit_log').add({
-                                'user': widget.user['name'] ?? 'مدير النظام',
-                                'action': 'تعديل مستخدم',
-                                'target': '${nameCtrl.text.trim()}',
-                                'details': 'تم تعديل بيانات المستخدم — القسم: $dept — الصلاحية: $userRole',
-                                'timestamp': FieldValue.serverTimestamp(),
-                                'type': 'edit',
-                              });
                             }
                             if (ctx.mounted) Navigator.pop(ctx);
+                            _refreshUsers();
                           } catch (e) {
                             setDState(() => loading = false);
                           }
@@ -274,233 +286,246 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // Header
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton.icon(
-            onPressed: () => _showAddEditDialog(),
-            icon: const Icon(Icons.person_add, size: 16),
-            label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: C.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-          ),
-          Text('إدارة المستخدمين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
-        ]),
-        const SizedBox(height: 20),
-
-        // Stats
-        StreamBuilder<QuerySnapshot>(
-          stream: _db.collection('users').snapshots(),
-          builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            final active = docs.where((d) => (d.data() as Map)['active'] == true).length;
-            final admins = docs.where((d) => (d.data() as Map)['role'] == 'admin' || (d.data() as Map)['role'] == 'moderator').length;
-            final isWide = MediaQuery.of(context).size.width > 700;
-            if (isWide) {
-              return Row(children: [
-                _stat(Icons.people, 'إجمالي', '${docs.length}', C.pri, C.priLight),
-                const SizedBox(width: 14),
-                _stat(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3)),
-                const SizedBox(width: 14),
-                _stat(Icons.block, 'معطّل', '${docs.length - active}', C.red, const Color(0xFFFEF3F2)),
-                const SizedBox(width: 14),
-                _stat(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
-              ]);
-            } else {
-              final halfW = (MediaQuery.of(context).size.width - 36) / 2;
-              return Wrap(spacing: 8, runSpacing: 8, children: [
-                SizedBox(width: halfW, child: _statBox(Icons.people, 'إجمالي', '${docs.length}', C.pri, C.priLight)),
-                SizedBox(width: halfW, child: _statBox(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3))),
-                SizedBox(width: halfW, child: _statBox(Icons.block, 'معطّل', '${docs.length - active}', C.red, const Color(0xFFFEF3F2))),
-                SizedBox(width: halfW, child: _statBox(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF))),
-              ]);
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-
-        // Filters
-        Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, children: [
-          DropdownButton<String>(
-            value: _fActive,
-            items: ['الكل', 'نشط', 'معطّل'].map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-            onChanged: (v) => setState(() => _fActive = v!),
-            underline: const SizedBox(),
-          ),
-          DropdownButton<String>(
-            value: _fRole,
-            items: ['الكل', 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? s : s == 'admin' ? 'مدير' : s == 'moderator' ? 'مشرف' : 'موظف', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-            onChanged: (v) => setState(() => _fRole = v!),
-            underline: const SizedBox(),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width > 700 ? 260 : double.infinity,
-            child: TextField(
-              onChanged: (v) => setState(() => _search = v),
-              textAlign: TextAlign.right,
-              style: GoogleFonts.tajawal(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'بحث بالاسم أو الإيميل...',
-                hintStyle: GoogleFonts.tajawal(color: C.hint),
-                prefixIcon: const Icon(Icons.search, size: 18, color: C.muted),
-                filled: true, fillColor: C.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              ),
+    return RefreshIndicator(
+      onRefresh: _refreshUsers,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          // Header
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            ElevatedButton.icon(
+              onPressed: () => _showAddEditDialog(),
+              icon: const Icon(Icons.person_add, size: 16),
+              label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(backgroundColor: C.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             ),
-          ),
-        ]),
-        const SizedBox(height: 14),
+            Text('إدارة المستخدمين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
+          ]),
+          const SizedBox(height: 20),
 
-        // Table / Cards
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _db.collection('users').snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
-              var docs = snap.data?.docs ?? [];
-              // Filter
-              docs = docs.where((d) {
-                final r = d.data() as Map<String, dynamic>;
-                if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['email'] ?? '').toString().contains(_search)) return false;
-                if (_fRole != 'الكل' && r['role'] != _fRole) return false;
-                if (_fActive == 'نشط' && r['active'] != true) return false;
-                if (_fActive == 'معطّل' && r['active'] != false) return false;
-                return true;
-              }).toList();
-
+          // Stats
+          Builder(
+            builder: (context) {
+              final docs = _users;
+              final active = docs.where((r) => r['active'] == true).length;
+              final admins = docs.where((r) => r['role'] == 'admin' || r['role'] == 'moderator').length;
               final isWide = MediaQuery.of(context).size.width > 700;
-
               if (isWide) {
-                // ─── Desktop: DataTable ───
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(C.bg),
-                    columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
-                    rows: docs.map((doc) {
-                      final r = doc.data() as Map<String, dynamic>;
-                      final active = r['active'] ?? true;
-                      final role = r['role'] ?? 'employee';
-                      final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
-                      final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
-
-                      return DataRow(cells: [
-                        DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: doc.id)),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
-                            final emp = Map<String, dynamic>.from(r);
-                            emp['_id'] = doc.id;
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
-                          }),
-                          const SizedBox(width: 4),
-                          _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () => _db.collection('users').doc(doc.id).update({'active': !active})),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
-                            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                              title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                              content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
-                              ],
-                            ));
-                            if (ok == true) await _db.collection('users').doc(doc.id).delete();
-                          }),
-                        ])),
-                        DataCell(_badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2))),
-                        DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight)),
-                        DataCell(_badge('فترة ${r['shift'] ?? 1}', r['shift'] == 2 ? const Color(0xFF7F56D9) : r['shift'] == 3 ? const Color(0xFF0BA5EC) : C.pri, r['shift'] == 2 ? const Color(0xFFF4F3FF) : r['shift'] == 3 ? const Color(0xFFE8F8FD) : C.priLight)),
-                        DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
-                        DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.sub))),
-                        DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
-                        DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
-                            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
-                          ]),
-                          const SizedBox(width: 8),
-                          CircleAvatar(radius: 17, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
-                            backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                            child: (r['facePhotoUrl'] as String?) == null ? Text((r['name'] ?? 'م').toString().substring(0, 2), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
-                        ])),
-                      ]);
-                    }).toList(),
-                  ),
-                );
+                return Row(children: [
+                  _stat(Icons.people, 'إجمالي', '${docs.length}', C.pri, C.priLight),
+                  const SizedBox(width: 14),
+                  _stat(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3)),
+                  const SizedBox(width: 14),
+                  _stat(Icons.block, 'معطّل', '${docs.length - active}', C.red, const Color(0xFFFEF3F2)),
+                  const SizedBox(width: 14),
+                  _stat(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
+                ]);
               } else {
-                // ─── Mobile: Card list ───
-                if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))));
-                return Column(children: docs.map((doc) {
-                  final r = doc.data() as Map<String, dynamic>;
-                  final active = r['active'] ?? true;
-                  final role = r['role'] ?? 'employee';
-                  final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
-                  final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
-                  final name = r['name'] ?? '—';
-                  final av = name.length >= 2 ? name.substring(0, 2) : 'م';
-
-                  return InkWell(
-                    onTap: () => _showUserDetailSheet(context, r, doc.id),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.border.withOpacity(0.5)))),
-                      child: Row(children: [
-                        // Actions
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: doc.id)),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
-                            final emp = Map<String, dynamic>.from(r);
-                            emp['_id'] = doc.id;
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
-                          }),
-                          const SizedBox(width: 4),
-                          _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () => _db.collection('users').doc(doc.id).update({'active': !active})),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
-                            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                              title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                              content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
-                              ],
-                            ));
-                            if (ok == true) await _db.collection('users').doc(doc.id).delete();
-                          }),
-                        ]),
-                        const Spacer(),
-                        // Name + badges
-                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
-                          const SizedBox(height: 3),
-                          Row(mainAxisSize: MainAxisSize.min, children: [
-                            _badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2)),
-                            const SizedBox(width: 4),
-                            _badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight),
-                            const SizedBox(width: 4),
-                            _badge('فترة ${r['shift'] ?? 1}', C.pri, C.priLight),
-                          ]),
-                        ]),
-                        const SizedBox(width: 10),
-                        CircleAvatar(radius: 20, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
-                          backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                          child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
-                      ]),
-                    ),
-                  );
-                }).toList());
+                final halfW = (MediaQuery.of(context).size.width - 36) / 2;
+                return Wrap(spacing: 8, runSpacing: 8, children: [
+                  SizedBox(width: halfW, child: _statBox(Icons.people, 'إجمالي', '${docs.length}', C.pri, C.priLight)),
+                  SizedBox(width: halfW, child: _statBox(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3))),
+                  SizedBox(width: halfW, child: _statBox(Icons.block, 'معطّل', '${docs.length - active}', C.red, const Color(0xFFFEF3F2))),
+                  SizedBox(width: halfW, child: _statBox(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF))),
+                ]);
               }
             },
           ),
-        ),
-      ]),
+          const SizedBox(height: 20),
+
+          // Filters
+          Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, children: [
+            DropdownButton<String>(
+              value: _fActive,
+              items: ['الكل', 'نشط', 'معطّل'].map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+              onChanged: (v) => setState(() => _fActive = v!),
+              underline: const SizedBox(),
+            ),
+            DropdownButton<String>(
+              value: _fRole,
+              items: ['الكل', 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? s : s == 'admin' ? 'مدير' : s == 'moderator' ? 'مشرف' : 'موظف', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+              onChanged: (v) => setState(() => _fRole = v!),
+              underline: const SizedBox(),
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width > 700 ? 260 : double.infinity,
+              child: TextField(
+                onChanged: (v) => setState(() => _search = v),
+                textAlign: TextAlign.right,
+                style: GoogleFonts.tajawal(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'بحث بالاسم أو الإيميل...',
+                  hintStyle: GoogleFonts.tajawal(color: C.hint),
+                  prefixIcon: const Icon(Icons.search, size: 18, color: C.muted),
+                  filled: true, fillColor: C.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 14),
+
+          // Table / Cards
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+            child: Builder(
+              builder: (context) {
+                if (_loading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+                var docs = List<Map<String, dynamic>>.from(_users);
+                // Filter
+                docs = docs.where((r) {
+                  if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['email'] ?? '').toString().contains(_search)) return false;
+                  if (_fRole != 'الكل' && r['role'] != _fRole) return false;
+                  if (_fActive == 'نشط' && r['active'] != true) return false;
+                  if (_fActive == 'معطّل' && r['active'] != false) return false;
+                  return true;
+                }).toList();
+
+                final isWide = MediaQuery.of(context).size.width > 700;
+
+                if (isWide) {
+                  // ─── Desktop: DataTable ───
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      headingRowColor: WidgetStateProperty.all(C.bg),
+                      columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
+                      rows: docs.map((r) {
+                        final userId = r['uid'] ?? '';
+                        final active = r['active'] ?? true;
+                        final role = r['role'] ?? 'employee';
+                        final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
+                        final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
+
+                        return DataRow(cells: [
+                          DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                            _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: userId)),
+                            const SizedBox(width: 4),
+                            _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                              final emp = Map<String, dynamic>.from(r);
+                              emp['_id'] = userId;
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
+                            }),
+                            const SizedBox(width: 4),
+                            _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () async {
+                              await ApiService.post('users.php?action=toggle_active', body: {'uid': userId});
+                              _refreshUsers();
+                            }),
+                            const SizedBox(width: 4),
+                            _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
+                              final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                                title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                                content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
+                                ],
+                              ));
+                              if (ok == true) {
+                                await ApiService.post('users.php?action=update', body: {'uid': userId, 'active': false});
+                                _refreshUsers();
+                              }
+                            }),
+                          ])),
+                          DataCell(_badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2))),
+                          DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight)),
+                          DataCell(_badge('فترة ${r['shift'] ?? 1}', r['shift'] == 2 ? const Color(0xFF7F56D9) : r['shift'] == 3 ? const Color(0xFF0BA5EC) : C.pri, r['shift'] == 2 ? const Color(0xFFF4F3FF) : r['shift'] == 3 ? const Color(0xFFE8F8FD) : C.priLight)),
+                          DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
+                          DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.sub))),
+                          DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
+                          DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                              Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
+                              Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+                            ]),
+                            const SizedBox(width: 8),
+                            CircleAvatar(radius: 17, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
+                              backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
+                              child: (r['facePhotoUrl'] as String?) == null ? Text((r['name'] ?? 'م').toString().substring(0, 2), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
+                          ])),
+                        ]);
+                      }).toList(),
+                    ),
+                  );
+                } else {
+                  // ─── Mobile: Card list ───
+                  if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))));
+                  return Column(children: docs.map((r) {
+                    final userId = r['uid'] ?? '';
+                    final active = r['active'] ?? true;
+                    final role = r['role'] ?? 'employee';
+                    final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
+                    final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
+                    final name = r['name'] ?? '—';
+                    final av = name.length >= 2 ? name.substring(0, 2) : 'م';
+
+                    return InkWell(
+                      onTap: () => _showUserDetailSheet(context, r, userId),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.border.withOpacity(0.5)))),
+                        child: Row(children: [
+                          // Actions
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: userId)),
+                            const SizedBox(width: 4),
+                            _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                              final emp = Map<String, dynamic>.from(r);
+                              emp['_id'] = userId;
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
+                            }),
+                            const SizedBox(width: 4),
+                            _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () async {
+                              await ApiService.post('users.php?action=toggle_active', body: {'uid': userId});
+                              _refreshUsers();
+                            }),
+                            const SizedBox(width: 4),
+                            _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
+                              final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                                title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                                content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
+                                ],
+                              ));
+                              if (ok == true) {
+                                await ApiService.post('users.php?action=update', body: {'uid': userId, 'active': false});
+                                _refreshUsers();
+                              }
+                            }),
+                          ]),
+                          const Spacer(),
+                          // Name + badges
+                          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+                            const SizedBox(height: 3),
+                            Row(mainAxisSize: MainAxisSize.min, children: [
+                              _badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2)),
+                              const SizedBox(width: 4),
+                              _badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight),
+                              const SizedBox(width: 4),
+                              _badge('فترة ${r['shift'] ?? 1}', C.pri, C.priLight),
+                            ]),
+                          ]),
+                          const SizedBox(width: 10),
+                          CircleAvatar(radius: 20, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
+                            backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
+                            child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
+                        ]),
+                      ),
+                    );
+                  }).toList());
+                }
+              },
+            ),
+          ),
+        ]),
+      ),
     );
   }
 

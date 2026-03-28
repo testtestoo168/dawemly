@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
 
@@ -33,14 +32,15 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
 
   String _fmtTime(dynamic ts) {
     if (ts == null) return '—';
-    DateTime dt;
-    if (ts is Timestamp) {
-      dt = ts.toDate();
-    } else if (ts is DateTime) {
+    DateTime? dt;
+    if (ts is DateTime) {
       dt = ts;
+    } else if (ts is String) {
+      dt = DateTime.tryParse(ts);
     } else {
       return '—';
     }
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
@@ -144,14 +144,10 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
         ),
 
         // ─── Records ───
-        Expanded(child: StreamBuilder<QuerySnapshot>(
-          stream: svc.getMonthlyAttendance(widget.user['uid'] ?? '', _selYear, _selMonth),
+        Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: svc.getMonthlyAttendance(widget.user['uid'] ?? '', _selYear, _selMonth),
           builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
-            final records = docs.map((d) => d.data() as Map<String, dynamic>)
-                .where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix))
-                .toList();
+            final records = List<Map<String, dynamic>>.from(snap.data ?? []);
             records.sort((a, b) => (b['dateKey'] ?? '').compareTo(a['dateKey'] ?? ''));
             final present = records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).length;
             final complete = records.where((r) => (r['lastCheckOut'] ?? r['checkOut']) != null).length;
@@ -315,7 +311,13 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
           final color = isCheckIn ? C.pri : C.red;
           final icon = isCheckIn ? Icons.login_rounded : Icons.logout_rounded;
           final label = isCheckIn ? 'تسجيل دخول' : 'تسجيل خروج';
-          final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
+          final rawTime = punch['localTime'] ?? punch['timestamp'];
+          DateTime? time;
+          if (rawTime is DateTime) {
+            time = rawTime;
+          } else if (rawTime is String) {
+            time = DateTime.tryParse(rawTime);
+          }
           final isLast = i == punches.length - 1;
 
           return IntrinsicHeight(

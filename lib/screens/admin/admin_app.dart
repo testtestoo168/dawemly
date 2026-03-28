@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 import 'admin_dashboard.dart';
 import 'admin_employees.dart';
 import 'admin_user_mgmt.dart';
@@ -39,7 +39,11 @@ class _AdminAppState extends State<AdminApp> {
   static const _sidebarHover = Color(0xFF1A4A7A);
   static const _sidebarActive = Color(0xFF1E5A8E);
 
-  final _db = FirebaseFirestore.instance;
+  // Data loaded via API
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _todayAttendance = [];
+  List<Map<String, dynamic>> _pendingRequests = [];
+  bool _dataLoaded = false;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
@@ -74,7 +78,25 @@ class _AdminAppState extends State<AdminApp> {
   List<_NI> get _allItems => _navSections.expand((s) => s.items).toList();
 
   @override
-  void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) => _tick()); }
+  void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) => _tick()); _loadData(); }
+
+  Future<void> _loadData() async {
+    try {
+      final usersResult = await ApiService.get('users.php?action=list');
+      final usersList = usersResult['users'] ?? usersResult['data'] ?? [];
+      _users = (usersList as List).map((e) => Map<String, dynamic>.from(e)).toList();
+
+      _todayAttendance = await AttendanceService().getAllTodayRecords();
+
+      final reqResult = await ApiService.get('requests.php?action=pending');
+      final reqList = reqResult['requests'] ?? reqResult['data'] ?? [];
+      _pendingRequests = (reqList as List).map((e) => Map<String, dynamic>.from(e)).toList();
+
+      if (mounted) setState(() => _dataLoaded = true);
+    } catch (_) {
+      if (mounted) setState(() => _dataLoaded = true);
+    }
+  }
   @override void dispose() { _timer?.cancel(); super.dispose(); }
   void _tick() { final n = DateTime.now(); final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
 
@@ -405,13 +427,13 @@ class _AdminAppState extends State<AdminApp> {
   Widget _mobileHome() {
     return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       // ═══ HEADER — Gradient with stats ═══
-      StreamBuilder<QuerySnapshot>(stream: _db.collection('users').snapshots(), builder: (ctx, uSnap) {
-        final allUsers = (uSnap.data?.docs ?? []).where((d) { final m = d.data() as Map; return (m['name'] ?? '').toString().isNotEmpty && m['role'] != 'admin'; }).length;
-        return StreamBuilder<QuerySnapshot>(stream: AttendanceService().getAllTodayRecords(), builder: (ctx, aSnap) {
-          final att = aSnap.data?.docs ?? [];
-          final complete = att.where((d) => (d.data() as Map)['checkOut'] != null).length;
-          final presentOnly = att.where((d) { final m = d.data() as Map; return m['checkIn'] != null && m['checkOut'] == null; }).length;
-          final totalAttended = att.where((d) => (d.data() as Map)['checkIn'] != null).length;
+      Builder(builder: (ctx) {
+        final allUsers = _users.where((m) => (m['name'] ?? '').toString().isNotEmpty && m['role'] != 'admin').length;
+        return Builder(builder: (ctx) {
+          final att = _todayAttendance;
+          final complete = att.where((m) => m['checkOut'] != null || m['lastCheckOut'] != null).length;
+          final presentOnly = att.where((m) => (m['checkIn'] != null || m['firstCheckIn'] != null) && m['checkOut'] == null && m['lastCheckOut'] == null).length;
+          final totalAttended = att.where((m) => m['checkIn'] != null || m['firstCheckIn'] != null).length;
           final absent = allUsers > totalAttended ? allUsers - totalAttended : 0;
           return Container(
             width: double.infinity,
@@ -458,18 +480,16 @@ class _AdminAppState extends State<AdminApp> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
           decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _db.collection('requests').where('status', isEqualTo: 'تحت الإجراء').snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
+          child: Builder(
+            builder: (ctx) {
+              final docs = _pendingRequests;
               if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
                 Icon(Icons.check_circle_outline_rounded, size: 40, color: C.green.withOpacity(0.5)),
                 const SizedBox(height: 8),
                 Text('لا توجد طلبات معلقة', style: _tj(13, color: C.muted)),
               ])));
-              return Column(children: docs.take(5).map((doc) {
-                final r = doc.data() as Map<String, dynamic>;
-                final isFirst = doc == docs.first;
+              return Column(children: docs.take(5).map((r) {
+                final isFirst = r == docs.first;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -499,19 +519,17 @@ class _AdminAppState extends State<AdminApp> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
           decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: AttendanceService().getAllTodayRecords(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
+          child: Builder(
+            builder: (ctx) {
+              final docs = _todayAttendance;
               if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
                 Icon(Icons.hourglass_empty_rounded, size: 40, color: C.muted.withOpacity(0.5)),
                 const SizedBox(height: 8),
                 Text('لا يوجد حضور اليوم', style: _tj(13, color: C.muted)),
               ])));
-              return Column(children: docs.take(6).map((doc) {
-                final r = doc.data() as Map<String, dynamic>;
-                final hasOut = r['checkOut'] != null;
-                final isFirst = doc == docs.first;
+              return Column(children: docs.take(6).map((r) {
+                final hasOut = r['checkOut'] != null || r['lastCheckOut'] != null;
+                final isFirst = r == docs.first;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),

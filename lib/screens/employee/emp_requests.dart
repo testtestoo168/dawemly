@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
 
@@ -15,14 +14,34 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
   late TabController _tabCtrl;
   final _svc = RequestsService();
 
+  List<Map<String, dynamic>> _requests = [];
+  bool _loading = true;
+
   @override
-  void initState() { super.initState(); _tabCtrl = TabController(length: 2, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+    _loadRequests();
+  }
+
+  Future<void> _loadRequests() async {
+    try {
+      final data = await _svc.getMyRequests(widget.user['uid'] ?? '');
+      if (mounted) setState(() { _requests = data; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
   @override
   void dispose() { _tabCtrl.dispose(); super.dispose(); }
 
-  String _fmtDate(Timestamp? ts) {
+  String _fmtDate(dynamic ts) {
     if (ts == null) return '—';
-    final dt = ts.toDate();
+    DateTime? dt;
+    if (ts is DateTime) dt = ts;
+    else if (ts is String) dt = DateTime.tryParse(ts);
+    if (dt == null) return '—';
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -61,33 +80,25 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
       body: TabBarView(
         controller: _tabCtrl,
         children: [
-          // ─── طلباتي من Firestore ───
-          StreamBuilder<QuerySnapshot>(
-            stream: _svc.getMyRequests(widget.user['uid'] ?? ''),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          // ─── طلباتي ───
+          _loading
+            ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+            : _requests.isEmpty
+              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.description_outlined, size: 48, color: C.hint),
                   const SizedBox(height: 12),
                   Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
                   const SizedBox(height: 4),
                   Text('أنشئ طلب جديد من زر "طلب جديد"', style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
-                ]));
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.all(14),
-                itemCount: docs.length,
-                itemBuilder: (context, i) {
-                  final r = docs[i].data() as Map<String, dynamic>;
-                  return _requestCard(r);
-                },
-              );
-            },
-          ),
+                ]))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(14),
+                  itemCount: _requests.length,
+                  itemBuilder: (context, i) {
+                    final r = _requests[i];
+                    return _requestCard(r);
+                  },
+                ),
 
           // ─── الطلبات الواردة ───
           Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

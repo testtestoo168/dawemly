@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -13,7 +11,8 @@ import 'theme/app_colors.dart';
 import 'screens/login_page.dart';
 import 'screens/employee/employee_app.dart';
 import 'screens/admin/admin_app.dart';
-import 'services/device_info_service.dart';
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
 
 // Global navigator key for notification tap
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -27,8 +26,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await ApiService.init();
   await initializeDateFormatting('ar', null);
-  
+
   // Setup push notifications
   if (!kIsWeb) {
     try {
@@ -53,9 +53,7 @@ void main() async {
           android: AndroidInitializationSettings('@drawable/ic_notification'),
           iOS: DarwinInitializationSettings(),
         ),
-        onDidReceiveNotificationResponse: (NotificationResponse response) {
-          // When user taps notification — handled by AuthGate
-        },
+        onDidReceiveNotificationResponse: (NotificationResponse response) {},
       );
 
       // Foreground messages
@@ -81,13 +79,10 @@ void main() async {
         }
       });
 
-      // When user taps notification while app is in background
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        // App will open and AuthGate will handle showing the right screen
-      });
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {});
     } catch (_) {}
   }
-  
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -109,19 +104,14 @@ class _RasdAppState extends State<RasdApp> {
   void initState() {
     super.initState();
     _loadDisplaySettings();
-    FirebaseFirestore.instance.collection('settings').doc('general').snapshots().listen((snap) {
-      if (snap.exists && mounted) {
-        final newSize = snap.data()?['fontSize'] ?? 'medium';
-        if (newSize != _fontSize) setState(() => _fontSize = newSize);
-      }
-    });
   }
 
   void _loadDisplaySettings() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('settings').doc('general').get();
-      if (doc.exists && mounted) {
-        setState(() => _fontSize = doc.data()?['fontSize'] ?? 'medium');
+      final result = await ApiService.get('admin.php?action=get_settings');
+      final settings = result['settings'] ?? result;
+      if (mounted) {
+        setState(() => _fontSize = settings['fontSize'] ?? 'medium');
       }
     } catch (_) {}
   }
@@ -168,6 +158,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   Map<String, dynamic>? _user;
   bool _loading = true;
+  final _authService = AuthService();
 
   @override
   void initState() {
@@ -176,16 +167,12 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _checkExistingSession() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser != null) {
+    if (ApiService.isLoggedIn) {
       try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).get();
-        if (doc.exists && mounted) {
-          final userData = doc.data()!;
+        final userData = await _authService.getMe();
+        if (userData != null && mounted) {
           setState(() { _user = userData; _loading = false; });
-          _saveFcmToken(userData['uid'] ?? '');
-          // Register device session in background (non-blocking)
-          _registerDeviceSession(firebaseUser.uid, userData['name'] ?? '');
+          _saveFcmToken();
           return;
         }
       } catch (_) {}
@@ -193,53 +180,22 @@ class _AuthGateState extends State<AuthGate> {
     if (mounted) setState(() => _loading = false);
   }
 
-  void _registerDeviceSession(String uid, String userName) async {
-    try {
-      final deviceDetails = await DeviceInfoService.getDeviceDetails();
-      await FirebaseFirestore.instance.collection('active_sessions').doc(uid).set({
-        'uid': uid,
-        'userName': userName,
-        'platform': deviceDetails['platform'] ?? 'unknown',
-        'deviceModel': deviceDetails['deviceModel'] ?? 'غير معروف',
-        'osVersion': deviceDetails['osVersion'] ?? '',
-        'deviceBrand': deviceDetails['deviceBrand'] ?? '',
-        'deviceId': '${DateTime.now().millisecondsSinceEpoch}_$uid',
-        'loginAt': FieldValue.serverTimestamp(),
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'lastPlatform': deviceDetails['platform'] ?? 'unknown',
-        'lastDeviceModel': deviceDetails['deviceModel'] ?? 'غير معروف',
-        'lastOsVersion': deviceDetails['osVersion'] ?? '',
-        'lastDeviceBrand': deviceDetails['deviceBrand'] ?? '',
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      }).catchError((_) {});
-    } catch (_) {}
-  }
-
   void _onLogin(Map<String, dynamic> user) {
     setState(() => _user = user);
-    _saveFcmToken(user['uid'] ?? '');
+    _saveFcmToken();
   }
 
-  void _saveFcmToken(String uid) async {
-    if (uid.isEmpty) return;
+  void _saveFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({'fcmToken': token});
+        await _authService.updateFcmToken(token);
       }
     } catch (_) {}
   }
 
   void _onLogout() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      try {
-        await FirebaseFirestore.instance.collection('active_sessions').doc(uid).delete();
-      } catch (_) {}
-    }
-    await FirebaseAuth.instance.signOut();
+    await _authService.logout();
     if (mounted) setState(() => _user = null);
   }
 

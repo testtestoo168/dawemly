@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 
 class AdminEmployees extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -11,31 +11,59 @@ class AdminEmployees extends StatefulWidget {
 }
 
 class _AdminEmployeesState extends State<AdminEmployees> {
-  final _db = FirebaseFirestore.instance;
   final _svc = AttendanceService();
   String _search = '', _fDept = 'الكل', _fSt = 'الكل';
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _todayAtt = [];
+  List<Map<String, dynamic>> _locations = [];
+  bool _dataLoaded = false;
   final _mono = GoogleFonts.ibmPlexMono;
   final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _dayNames = const ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
   String _todayKey() { final n = DateTime.now(); return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}'; }
 
+  @override
+  void initState() { super.initState(); _loadData(); }
+
+  Future<void> _loadData() async {
+    try {
+      final usersResult = await ApiService.get('users.php?action=list');
+      final usersList = usersResult['users'] ?? usersResult['data'] ?? [];
+      _users = (usersList as List).map((e) => Map<String, dynamic>.from(e)).toList();
+      for (var u in _users) { u['_id'] = u['uid'] ?? u['id'] ?? ''; }
+
+      _todayAtt = await _svc.getAllTodayRecords();
+
+      final locsResult = await ApiService.get('admin.php?action=get_locations');
+      final locsList = locsResult['locations'] ?? locsResult['data'] ?? [];
+      _locations = (locsList as List).map((e) => Map<String, dynamic>.from(e)).toList();
+
+      if (mounted) setState(() => _dataLoaded = true);
+    } catch (_) {
+      if (mounted) setState(() => _dataLoaded = true);
+    }
+  }
+
   Future<void> _audit(String action, String target, String details) async {
-    await _db.collection('audit_log').add({
-      'user': widget.user['name'] ?? 'مدير النظام',
-      'action': action, 'target': target, 'details': details,
-      'timestamp': FieldValue.serverTimestamp(), 'type': 'edit',
-    });
+    // Server handles audit logging automatically
   }
 
   String _fmtTs(dynamic ts) {
     if (ts == null) return '—';
     DateTime dt;
-    if (ts is Timestamp) { dt = ts.toDate(); }
-    else if (ts is DateTime) { dt = ts; }
+    if (ts is DateTime) { dt = ts; }
+    else if (ts is String) { final p = DateTime.tryParse(ts); if (p == null) return '—'; dt = p; }
     else { return '—'; }
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+  }
+
+  DateTime? _parsePunchTime(dynamic ts) {
+    if (ts == null) return null;
+    if (ts is DateTime) return ts;
+    if (ts is String) return DateTime.tryParse(ts);
+    return null;
   }
 
   String _fmtWorkedTime(int totalMinutes) {
@@ -49,23 +77,18 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('users').snapshots(),
-      builder: (context, usersSnap) {
-        if (usersSnap.hasError) return Center(child: Text('خطأ', style: GoogleFonts.tajawal(color: C.red)));
-        if (usersSnap.connectionState == ConnectionState.waiting && (usersSnap.data?.docs ?? []).isEmpty) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-
-        final allUsers = (usersSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; })
+    if (!_dataLoaded) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    return Builder(
+      builder: (context) {
+        final allUsers = _users
           .where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin')
           .toList();
         allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: _svc.getAllTodayRecords(),
-          builder: (context, attSnap) {
+        return Builder(
+          builder: (context) {
             final attMap = <String, Map<String, dynamic>>{};
-            for (final doc in (attSnap.data?.docs ?? [])) {
-              final m = doc.data() as Map<String, dynamic>;
+            for (final m in _todayAtt) {
               attMap[m['uid'] ?? ''] = m;
             }
 
@@ -250,89 +273,39 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   }
 
   Future<void> _adminCheckIn(String uid, String empId, String empName, TimeOfDay time) async {
-    final now = DateTime.now();
-    final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final adminName = widget.user['name'] ?? 'مدير النظام';
-
-    // Save to attendance log
-    await _db.collection('attendance').add({
-      'uid': uid, 'empId': empId, 'name': empName,
-      'type': 'checkIn',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(punchTime),
-      'dateKey': dateKey,
-      'punchedByAdmin': true,
-      'adminName': adminName,
-      'biometric': false,
-    });
-
-    // Update daily summary
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    if (!dailyDoc.exists) {
-      await dailyRef.set({
-        'uid': uid, 'empId': empId, 'name': empName, 'dateKey': dateKey,
-        'firstCheckIn': Timestamp.fromDate(punchTime),
-        'lastCheckOut': null, 'totalWorkedMinutes': 0,
-        'sessions': 1, 'currentSessionStart': Timestamp.fromDate(punchTime),
-        'isCheckedIn': true, 'status': 'حاضر',
-        'punchedByAdmin': true, 'adminName': adminName,
-        'checkIn': Timestamp.fromDate(punchTime),
+    try {
+      final now = DateTime.now();
+      final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+      await ApiService.post('attendance.php?action=checkIn', body: {
+        'uid': uid,
+        'lat': null, 'lng': null, 'accuracy': null,
+        'biometric': false, 'auth_method': 'admin',
+        'local_time': punchTime.toIso8601String(),
+        'punched_by_admin': true,
       });
-    } else {
-      await dailyRef.update({
-        'currentSessionStart': Timestamp.fromDate(punchTime),
-        'isCheckedIn': true, 'sessions': FieldValue.increment(1),
-        'status': 'حاضر', 'punchedByAdmin': true, 'adminName': adminName,
-      });
+      await _loadData();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating));
     }
-
-    await _audit('بصمة دخول إدارية', empName, 'تسجيل دخول بواسطة $adminName');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
   }
 
   Future<void> _adminCheckOut(String uid, String empId, String empName, TimeOfDay time) async {
-    final now = DateTime.now();
-    final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final adminName = widget.user['name'] ?? 'مدير النظام';
-
-    await _db.collection('attendance').add({
-      'uid': uid, 'empId': empId, 'name': empName,
-      'type': 'checkOut',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(punchTime),
-      'dateKey': dateKey,
-      'punchedByAdmin': true,
-      'adminName': adminName,
-      'biometric': false,
-    });
-
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    int sessionMinutes = 0;
-    if (dailyDoc.exists) {
-      final data = dailyDoc.data()!;
-      final sessionStart = data['currentSessionStart'] as Timestamp?;
-      if (sessionStart != null) {
-        sessionMinutes = now.difference(sessionStart.toDate()).inMinutes;
-        if (sessionMinutes < 0) sessionMinutes = 0;
-      }
+    try {
+      final now = DateTime.now();
+      final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+      await ApiService.post('attendance.php?action=checkOut', body: {
+        'uid': uid,
+        'lat': null, 'lng': null, 'accuracy': null,
+        'biometric': false, 'auth_method': 'admin',
+        'local_time': punchTime.toIso8601String(),
+        'punched_by_admin': true,
+      });
+      await _loadData();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating));
     }
-
-    await dailyRef.set({
-      'lastCheckOut': Timestamp.fromDate(punchTime),
-      'totalWorkedMinutes': FieldValue.increment(sessionMinutes),
-      'isCheckedIn': false, 'status': 'مكتمل',
-      'punchedByAdmin': true, 'adminName': adminName,
-      'checkOut': Timestamp.fromDate(punchTime),
-    }, SetOptions(merge: true));
-
-    await _audit('بصمة خروج إدارية', empName, 'تسجيل خروج بواسطة $adminName');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
   }
 
   // ═══════════════════════════════════════════════
@@ -389,15 +362,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             ),
 
             // Records
-            Expanded(child: StreamBuilder<QuerySnapshot>(
-              stream: _svc.getMonthlyAttendance(uid, selYear, selMonth),
+            Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _svc.getMonthlyAttendance(uid, selYear, selMonth),
               builder: (context, snap) {
-                final docs = snap.data?.docs ?? [];
-                final monthPrefix = '$selYear-${selMonth.toString().padLeft(2, '0')}';
-                final records = docs.map((d) => d.data() as Map<String, dynamic>)
-                    .where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix))
-                    .toList();
-                records.sort((a, b) => (b['dateKey'] ?? '').compareTo(a['dateKey'] ?? ''));
+                final records = List<Map<String, dynamic>>.from(snap.data ?? []);
+                records.sort((a, b) => (b['dateKey'] ?? b['date_key'] ?? '').toString().compareTo((a['dateKey'] ?? a['date_key'] ?? '').toString()));
 
                 int totalMonthMin = 0;
                 for (final r in records) totalMonthMin += (r['totalWorkedMinutes'] as int?) ?? 0;
@@ -508,14 +477,9 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Widget _buildPunchTimeline(List<Map<String, dynamic>> punches, String uid, String empName) {
     if (punches.isEmpty) return Padding(padding: const EdgeInsets.all(14), child: Center(child: Text('لا توجد تفاصيل', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted))));
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('locations').snapshots(),
-      builder: (ctx, locSnap) {
-        final allLocs = (locSnap.data?.docs ?? []).map((d) {
-          final m = d.data() as Map<String, dynamic>;
-          m['_id'] = d.id;
-          return m;
-        }).toList();
+    return Builder(
+      builder: (ctx) {
+        final allLocs = _locations;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -524,7 +488,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             final isCheckIn = punch['type'] == 'checkIn';
             final color = isCheckIn ? C.pri : C.red;
             final label = isCheckIn ? 'دخول' : 'خروج';
-            final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
+            final time = _parsePunchTime(punch['localTime'] ?? punch['timestamp']);
             final byAdmin = punch['punchedByAdmin'] == true;
             final adminName = punch['adminName'] ?? '';
             final lat = punch['lat'] as num?;
@@ -620,7 +584,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final isCheckIn = punch['type'] == 'checkIn';
     final label = isCheckIn ? 'دخول' : 'خروج';
     final color = isCheckIn ? C.pri : C.red;
-    final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
+    final time = _parsePunchTime(punch['localTime'] ?? punch['timestamp']);
     final currentTime = time?.toDate() ?? DateTime.now();
     
     TimeOfDay selectedTime = TimeOfDay(hour: currentTime.hour, minute: currentTime.minute);
@@ -671,11 +635,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 
                 // Update the specific punch document
                 if (punchId.isNotEmpty) {
-                  await _db.collection('attendance').doc(punchId).update({
-                    'localTime': Timestamp.fromDate(newTime),
-                    'manualEdit': true,
-                    'editedBy': widget.user['name'] ?? 'مدير النظام',
-                    'editedAt': FieldValue.serverTimestamp(),
+                  await ApiService.post('attendance.php?action=edit_punch', body: {
+                    'punch_id': punchId,
+                    'local_time': newTime.toIso8601String(),
+                    'manual_edit': true,
+                    'edited_by': widget.user['name'] ?? 'مدير النظام',
                   });
                 }
                 
@@ -772,17 +736,17 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         SizedBox(width: double.infinity, child: ElevatedButton.icon(
           onPressed: () async {
             final updates = <String, dynamic>{
-              'manualEdit': true,
-              'editedBy': widget.user['name'] ?? 'مدير النظام',
-              'editedAt': FieldValue.serverTimestamp(),
+              'uid': uid,
+              'date_key': dateKey,
+              'manual_edit': true,
+              'edited_by': widget.user['name'] ?? 'مدير النظام',
             };
-            if (ciCtrl.text.trim().isNotEmpty) updates['checkInManual'] = ciCtrl.text.trim();
-            if (coCtrl.text.trim().isNotEmpty) updates['checkOutManual'] = coCtrl.text.trim();
+            if (ciCtrl.text.trim().isNotEmpty) updates['check_in_manual'] = ciCtrl.text.trim();
+            if (coCtrl.text.trim().isNotEmpty) updates['check_out_manual'] = coCtrl.text.trim();
             final mins = int.tryParse(minCtrl.text.trim());
-            if (mins != null) updates['totalWorkedMinutes'] = mins;
+            if (mins != null) updates['total_worked_minutes'] = mins;
 
-            await _db.collection('attendance_daily').doc('${uid}_$dateKey').set(updates, SetOptions(merge: true));
-            await _audit('تعديل بصمة يدوي', empName, 'تعديل يوم $dateKey — حضور: ${ciCtrl.text} خروج: ${coCtrl.text} دقائق: ${minCtrl.text}');
+            await ApiService.post('attendance.php?action=edit_daily', body: updates);
 
             if (ctx.mounted) Navigator.pop(ctx);
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل بيانات $empName', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 
 class AdminDevices extends StatefulWidget {
@@ -10,7 +10,6 @@ class AdminDevices extends StatefulWidget {
 }
 
 class _AdminDevicesState extends State<AdminDevices> {
-  final _db = FirebaseFirestore.instance;
   final _mono = GoogleFonts.ibmPlexMono;
   String _filter = 'all';
 
@@ -31,27 +30,31 @@ class _AdminDevicesState extends State<AdminDevices> {
       final now = DateTime.now();
       final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-      final usersSnap = await _db.collection('users').get();
-      final attSnap = await _db.collection('attendance_daily').where('dateKey', isEqualTo: dateKey).get();
-      final sessSnap = await _db.collection('active_sessions').get();
+      final results = await Future.wait([
+        ApiService.get('users.php?action=list'),
+        ApiService.get('admin.php?action=get_attendance', params: {'dateKey': dateKey}),
+        ApiService.get('admin.php?action=get_sessions'),
+      ]);
 
-      final users = usersSnap.docs.map((d) {
-        final m = d.data();
-        m['_id'] = d.id;
-        return m;
-      }).where((e) => (e['name'] ?? '').toString().isNotEmpty).toList();
+      final usersRes = results[0];
+      final attRes = results[1];
+      final sessRes = results[2];
+
+      final usersList = (usersRes['data'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+      final users = usersList
+          .where((e) => (e['name'] ?? '').toString().isNotEmpty)
+          .toList();
       users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
+      final attList = (attRes['data'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
       final attMap = <String, Map<String, dynamic>>{};
-      for (final doc in attSnap.docs) {
-        final m = doc.data();
+      for (final m in attList) {
         attMap[m['uid'] ?? ''] = m;
       }
 
+      final sessList = (sessRes['data'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
       final sessionMap = <String, Map<String, dynamic>>{};
-      for (final doc in sessSnap.docs) {
-        final s = doc.data();
-        s['_docId'] = doc.id;
+      for (final s in sessList) {
         sessionMap[s['uid'] ?? ''] = s;
       }
 
@@ -288,7 +291,7 @@ class _AdminDevicesState extends State<AdminDevices> {
           child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             InkWell(
               onTap: () async {
-                await _db.collection('users').doc(uid).update({'multiDeviceAllowed': !multiDeviceAllowed});
+                await ApiService.post('users.php?action=update_multi_device', body: {'uid': uid, 'multiDeviceAllowed': !multiDeviceAllowed});
                 _loadAll();
               },
               child: Container(
@@ -305,7 +308,7 @@ class _AdminDevicesState extends State<AdminDevices> {
               const SizedBox(width: 8),
               InkWell(
                 onTap: () async {
-                  await _db.collection('active_sessions').doc(session['_docId']).delete();
+                  await ApiService.post('users.php?action=clear_session', body: {'uid': uid});
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إنهاء جلسة ${emp['name']}', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
                   _loadAll();
                 },

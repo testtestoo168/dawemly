@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
   final Function(String) onNav;
   const AdminDashboard({super.key, required this.user, required this.onNav});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  // Data state
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _attRecords = [];
+  List<Map<String, dynamic>> _pendingRequests = [];
+  List<int> _last7Days = List.filled(7, 0);
+  bool _loading = true;
+
+  Function(String) get onNav => widget.onNav;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
@@ -21,48 +35,126 @@ class AdminDashboard extends StatelessWidget {
   static const _primary = Color(0xFF0F3460);
 
   @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final results = await Future.wait([
+        _fetchUsers(),
+        _fetchAttendance(),
+        _fetchPendingRequests(),
+        _getLast7Days(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _users = results[0] as List<Map<String, dynamic>>;
+          _attRecords = results[1] as List<Map<String, dynamic>>;
+          _pendingRequests = results[2] as List<Map<String, dynamic>>;
+          _last7Days = results[3] as List<int>;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchUsers() async {
+    try {
+      final result = await ApiService.get('users.php?action=list');
+      final list = result['users'] ?? result['data'] ?? [];
+      return List<Map<String, dynamic>>.from(list);
+    } catch (_) { return []; }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAttendance() async {
+    try {
+      return await AttendanceService().getAllTodayRecords();
+    } catch (_) { return []; }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPendingRequests() async {
+    try {
+      final result = await ApiService.get('requests.php?action=pending');
+      final list = result['requests'] ?? result['data'] ?? [];
+      return List<Map<String, dynamic>>.from(list);
+    } catch (_) { return []; }
+  }
+
+  Future<List<int>> _getLast7Days() async {
+    final now = DateTime.now();
+    try {
+      final result = await ApiService.get('attendance.php?action=monthly&year=${now.year}&month=${now.month}');
+      final records = List<Map<String, dynamic>>.from(result['records'] ?? result['data'] ?? []);
+
+      // Build a map of date -> count
+      final Map<String, int> dateCounts = {};
+      for (final r in records) {
+        final date = (r['date'] ?? '').toString();
+        if (date.isNotEmpty) {
+          dateCounts[date] = (dateCounts[date] ?? 0) + 1;
+        }
+      }
+
+      List<int> counts = [];
+      for (int i = 6; i >= 0; i--) {
+        final d = now.subtract(Duration(days: i));
+        final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        counts.add(dateCounts[dateStr] ?? 0);
+      }
+      return counts;
+    } catch (_) {
+      return List.filled(7, 0);
+    }
+  }
+
+  String _fmtTs(dynamic ts) {
+    if (ts == null) return '';
+    DateTime? dt;
+    if (ts is DateTime) {
+      dt = ts;
+    } else if (ts is String) {
+      dt = DateTime.tryParse(ts);
+    }
+    if (dt == null) return '';
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 800;
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Compute stats from loaded data
+    final totalEmps = _users.where((m) => (m['name'] ?? '').toString().isNotEmpty && m['role'] != 'admin').length;
+    final present = _attRecords.where((m) => m['checkIn'] != null).length;
+    final complete = _attRecords.where((m) => m['checkOut'] != null).length;
+    final absent = totalEmps > present ? totalEmps - present : 0;
+    final pendingReqs = _pendingRequests.length;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isWide ? 28 : 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
 
         // ═══ STATS GRID — URS exact style ═══
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').snapshots(),
-          builder: (context, usersSnap) {
-            final totalEmps = (usersSnap.data?.docs ?? []).where((d) { final m = d.data() as Map; return (m['name'] ?? '').toString().isNotEmpty && m['role'] != 'admin'; }).length;
-            return StreamBuilder<QuerySnapshot>(
-              stream: AttendanceService().getAllTodayRecords(),
-              builder: (context, attSnap) {
-                final attDocs = attSnap.data?.docs ?? [];
-                final present = attDocs.where((d) { final m = d.data() as Map; return m['checkIn'] != null; }).length;
-                final complete = attDocs.where((d) { final m = d.data() as Map; return m['checkOut'] != null; }).length;
-                final absent = totalEmps > present ? totalEmps - present : 0;
-
-                return StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('requests').where('status', isEqualTo: 'تحت الإجراء').snapshots(),
-                  builder: (context, reqSnap) {
-                    final pendingReqs = reqSnap.data?.docs.length ?? 0;
-
-                    return GridView.count(
-                      crossAxisCount: isWide ? 4 : 2,
-                      mainAxisSpacing: 20, crossAxisSpacing: 20,
-                      childAspectRatio: isWide ? 2.6 : 1.8,
-                      shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف'),
-                        _statCard(Icons.check_circle_rounded, 'الحاضرون', '$present', '$complete مكتمل'),
-                        _statCard(Icons.cancel_rounded, 'الغائبون', '$absent', 'غائب'),
-                        _statCard(Icons.pending_actions_rounded, 'طلبات معلقة', '$pendingReqs', 'طلب'),
-                      ],
-                    );
-                  },
-                );
-              },
-            );
-          },
+        GridView.count(
+          crossAxisCount: isWide ? 4 : 2,
+          mainAxisSpacing: 20, crossAxisSpacing: 20,
+          childAspectRatio: isWide ? 2.6 : 1.8,
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف'),
+            _statCard(Icons.check_circle_rounded, 'الحاضرون', '$present', '$complete مكتمل'),
+            _statCard(Icons.cancel_rounded, 'الغائبون', '$absent', 'غائب'),
+            _statCard(Icons.pending_actions_rounded, 'طلبات معلقة', '$pendingReqs', 'طلب'),
+          ],
         ),
         const SizedBox(height: 24),
 
@@ -155,6 +247,12 @@ class AdminDashboard extends StatelessWidget {
 
   // ─── Chart Card — URS "مبيعات آخر 7 أيام" style ───
   Widget _chartCard() {
+    final counts = _last7Days;
+    final maxVal = counts.isEmpty ? 1 : (counts.reduce((a, b) => a > b ? a : b));
+    final maxH = maxVal == 0 ? 1 : maxVal;
+    final now = DateTime.now();
+    final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
@@ -171,60 +269,36 @@ class AdminDashboard extends StatelessWidget {
         // Chart body — simple bar chart
         SizedBox(
           height: 250,
-          child: FutureBuilder<List<int>>(
-            future: _getLast7Days(),
-            builder: (context, snap) {
-              final counts = snap.data ?? List.filled(7, 0);
-              final maxVal = counts.isEmpty ? 1 : (counts.reduce((a, b) => a > b ? a : b));
-              final maxH = maxVal == 0 ? 1 : maxVal;
-              final now = DateTime.now();
-              final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
-
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  textDirection: TextDirection.rtl,
-                  children: List.generate(7, (i) {
-                    final d = now.subtract(Duration(days: 6 - i));
-                    final h = maxH > 0 ? (counts[i] / maxH) * 160 : 0.0;
-                    return Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      Text('${counts[i]}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: _fg)),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: h < 4 ? 4 : h,
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(color: const Color(0xFF1D4ED8), borderRadius: BorderRadius.circular(4)),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(dayNames[d.weekday % 7], style: _tj(11, color: _muted)),
-                    ]));
-                  }),
-                ),
-              );
-            },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              textDirection: TextDirection.rtl,
+              children: List.generate(7, (i) {
+                final d = now.subtract(Duration(days: 6 - i));
+                final h = maxH > 0 ? (counts[i] / maxH) * 160 : 0.0;
+                return Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  Text('${counts[i]}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: _fg)),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: h < 4 ? 4 : h,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(color: const Color(0xFF1D4ED8), borderRadius: BorderRadius.circular(4)),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(dayNames[d.weekday % 7], style: _tj(11, color: _muted)),
+                ]));
+              }),
+            ),
           ),
         ),
       ]),
     );
   }
 
-  Future<List<int>> _getLast7Days() async {
-    final now = DateTime.now();
-    List<int> counts = [];
-    for (int i = 6; i >= 0; i--) {
-      final d = now.subtract(Duration(days: i));
-      final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      try {
-        final snap = await FirebaseFirestore.instance.collection('attendance').where('date', isEqualTo: dateStr).get();
-        counts.add(snap.docs.length);
-      } catch (_) { counts.add(0); }
-    }
-    return counts;
-  }
-
   // ─── Top Attendance — URS "الأكثر مبيعاً" style ───
   Widget _topAttendanceCard() {
+    final docs = _attRecords;
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
@@ -237,170 +311,147 @@ class AdminDashboard extends StatelessWidget {
             Text('آخر الحضور', style: _tj(15, weight: FontWeight.w600, color: _fg)),
           ]),
         ),
-        StreamBuilder<QuerySnapshot>(
-          stream: AttendanceService().getAllTodayRecords(),
-          builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted))));
-            return Column(children: docs.take(5).map((doc) {
-              final r = doc.data() as Map<String, dynamic>;
-              final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
-              final isCheckedIn = r['isCheckedIn'] == true;
-              final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : 'م';
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-                child: Row(textDirection: TextDirection.rtl, children: [
-                  // Avatar with green/grey dot
-                  Stack(children: [
-                    Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEEF2FF), shape: BoxShape.circle),
-                      child: Center(child: Text(av, style: _tj(11, weight: FontWeight.w700, color: const Color(0xFF175CD3))))),
-                    Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: isCheckedIn ? const Color(0xFF17B26A) : const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
-                  ]),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: hasOut && !isCheckedIn ? const Color(0xFFDCFCE7) : const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(6)),
-                    child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: hasOut && !isCheckedIn ? const Color(0xFF166534) : const Color(0xFF1E40AF))),
-                  ),
+        if (docs.isEmpty)
+          Padding(padding: const EdgeInsets.all(40), child: Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted))))
+        else
+          Column(children: docs.take(5).map((r) {
+            final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
+            final isCheckedIn = r['isCheckedIn'] == true;
+            final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : 'م';
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              child: Row(textDirection: TextDirection.rtl, children: [
+                // Avatar with green/grey dot
+                Stack(children: [
+                  Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEEF2FF), shape: BoxShape.circle),
+                    child: Center(child: Text(av, style: _tj(11, weight: FontWeight.w700, color: const Color(0xFF175CD3))))),
+                  Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: isCheckedIn ? const Color(0xFF17B26A) : const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
                 ]),
-              );
-            }).toList());
-          },
-        ),
+                const SizedBox(width: 10),
+                Expanded(child: Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: hasOut && !isCheckedIn ? const Color(0xFFDCFCE7) : const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(6)),
+                  child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: hasOut && !isCheckedIn ? const Color(0xFF166534) : const Color(0xFF1E40AF))),
+                ),
+              ]),
+            );
+          }).toList()),
       ]),
     );
   }
 
   // ─── Who's In/Out — Jibble style ───
   Widget _whosInOut() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
-      builder: (context, usersSnap) {
-        final allUsers = (usersSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; })
-          .where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
-        allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    final allUsers = _users
+      .where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin')
+      .toList();
+    allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: AttendanceService().getAllTodayRecords(),
-          builder: (context, attSnap) {
-            final attMap = <String, Map<String, dynamic>>{};
-            for (final doc in (attSnap.data?.docs ?? [])) {
-              final m = doc.data() as Map<String, dynamic>;
-              attMap[m['uid'] ?? ''] = m;
-            }
+    final attMap = <String, Map<String, dynamic>>{};
+    for (final m in _attRecords) {
+      attMap[m['uid'] ?? ''] = m;
+    }
 
-            final inList = <Map<String, dynamic>>[];
-            final outList = <Map<String, dynamic>>[];
+    final inList = <Map<String, dynamic>>[];
+    final outList = <Map<String, dynamic>>[];
 
-            for (final u in allUsers) {
-              final uid = u['uid'] ?? u['_id'] ?? '';
-              final att = attMap[uid];
-              final isIn = att != null && (att['isCheckedIn'] == true);
-              final hasCheckIn = att != null && (att['firstCheckIn'] ?? att['checkIn']) != null;
-              if (isIn) {
-                inList.add({...u, '_att': att});
-              } else if (hasCheckIn) {
-                outList.add({...u, '_att': att, '_status': 'مكتمل'});
-              } else {
-                outList.add({...u, '_att': null, '_status': 'غائب'});
-              }
-            }
+    for (final u in allUsers) {
+      final uid = u['uid'] ?? u['_id'] ?? '';
+      final att = attMap[uid];
+      final isIn = att != null && (att['isCheckedIn'] == true);
+      final hasCheckIn = att != null && (att['firstCheckIn'] ?? att['checkIn']) != null;
+      if (isIn) {
+        inList.add({...u, '_att': att});
+      } else if (hasCheckIn) {
+        outList.add({...u, '_att': att, '_status': 'مكتمل'});
+      } else {
+        outList.add({...u, '_att': null, '_status': 'غائب'});
+      }
+    }
 
+    return Container(
+      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      child: Column(children: [
+        // Header with tabs
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          child: Row(textDirection: TextDirection.rtl, children: [
+            Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
+            const SizedBox(width: 8),
+            Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
+            const Spacer(),
+            // Counters
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
+              child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
+            const SizedBox(width: 8),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+              child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
+          ]),
+        ),
+
+        // IN list
+        if (inList.isNotEmpty) ...[
+          Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFF0FDF4),
+            child: Text('حاضرون الآن', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
+          ...inList.map((u) {
+            final att = u['_att'] as Map<String, dynamic>?;
+            final checkInTime = att?['firstCheckIn'] ?? att?['checkIn'];
+            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
             return Container(
-              decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
-              child: Column(children: [
-                // Header with tabs
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
-                  child: Row(textDirection: TextDirection.rtl, children: [
-                    Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
-                    const SizedBox(width: 8),
-                    Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
-                    const Spacer(),
-                    // Counters
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
-                      child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
-                    const SizedBox(width: 8),
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
-                      child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
-                  ]),
-                ),
-
-                // IN list
-                if (inList.isNotEmpty) ...[
-                  Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFF0FDF4),
-                    child: Text('حاضرون الآن', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
-                  ...inList.map((u) {
-                    final att = u['_att'] as Map<String, dynamic>?;
-                    final checkInTime = att?['firstCheckIn'] ?? att?['checkIn'];
-                    final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-                      child: Row(textDirection: TextDirection.rtl, children: [
-                        Stack(children: [
-                          Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
-                            child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: const Color(0xFF175CD3))))),
-                          Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF17B26A), border: Border.all(color: Colors.white, width: 1.5)))),
-                        ]),
-                        const SizedBox(width: 10),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg)),
-                          if (checkInTime != null) Text(_fmtTs(checkInTime), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: _muted)),
-                        ])),
-                      ]),
-                    );
-                  }),
-                ],
-
-                // OUT list
-                if (outList.isNotEmpty) ...[
-                  Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFFEF3F2),
-                    child: Text('غير متواجدين', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: TextDirection.rtl)),
-                  ...outList.take(10).map((u) {
-                    final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
-                    final st = u['_status'] ?? 'غائب';
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-                      child: Row(textDirection: TextDirection.rtl, children: [
-                        Stack(children: [
-                          Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
-                            child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: _muted)))),
-                          Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
-                        ]),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _muted))),
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == 'مكتمل' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                          child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == 'مكتمل' ? const Color(0xFF166534) : _muted))),
-                      ]),
-                    );
-                  }),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              child: Row(textDirection: TextDirection.rtl, children: [
+                Stack(children: [
+                  Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                    child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: const Color(0xFF175CD3))))),
+                  Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF17B26A), border: Border.all(color: Colors.white, width: 1.5)))),
+                ]),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg)),
+                  if (checkInTime != null) Text(_fmtTs(checkInTime), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: _muted)),
+                ])),
               ]),
             );
-          },
-        );
-      },
-    );
-  }
+          }),
+        ],
 
-  String _fmtTs(dynamic ts) {
-    if (ts == null) return '';
-    DateTime dt;
-    if (ts is Timestamp) { dt = ts.toDate(); }
-    else { return ''; }
-    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+        // OUT list
+        if (outList.isNotEmpty) ...[
+          Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFFEF3F2),
+            child: Text('غير متواجدين', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: TextDirection.rtl)),
+          ...outList.take(10).map((u) {
+            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
+            final st = u['_status'] ?? 'غائب';
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              child: Row(textDirection: TextDirection.rtl, children: [
+                Stack(children: [
+                  Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
+                    child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: _muted)))),
+                  Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
+                ]),
+                const SizedBox(width: 10),
+                Expanded(child: Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _muted))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == 'مكتمل' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                  child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == 'مكتمل' ? const Color(0xFF166534) : _muted))),
+              ]),
+            );
+          }),
+        ],
+      ]),
+    );
   }
 
   // ─── Recent Requests Table — URS "آخر فواتير المبيعات" style ───
   Widget _recentRequestsTable() {
+    final docs = _pendingRequests.take(8).toList();
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
@@ -431,29 +482,24 @@ class AdminDashboard extends StatelessWidget {
             Expanded(child: Text('الحالة', style: _tj(12, weight: FontWeight.w500, color: _muted))),
           ]),
         ),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('requests').where('status', isEqualTo: 'تحت الإجراء').limit(8).snapshots(),
-          builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(32), child: Center(child: Text('لا توجد طلبات معلقة', style: _tj(13, color: _muted))));
-            return Column(children: docs.map((doc) {
-              final r = doc.data() as Map<String, dynamic>;
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
-                child: Row(textDirection: TextDirection.rtl, children: [
-                  Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
-                  Expanded(flex: 2, child: Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
-                  Expanded(child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),
-                    child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
-                  )),
-                ]),
-              );
-            }).toList());
-          },
-        ),
+        if (docs.isEmpty)
+          Padding(padding: const EdgeInsets.all(32), child: Center(child: Text('لا توجد طلبات معلقة', style: _tj(13, color: _muted))))
+        else
+          Column(children: docs.map((r) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
+              child: Row(textDirection: TextDirection.rtl, children: [
+                Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
+                Expanded(flex: 2, child: Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
+                Expanded(child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),
+                  child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
+                )),
+              ]),
+            );
+          }).toList()),
       ]),
     );
   }
