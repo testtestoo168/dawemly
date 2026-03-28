@@ -85,7 +85,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     );
 
     if (confirmed == true) {
+      // Find the request to get employee info
+      final request = _requests.firstWhere((r) => (r['id']?.toString() ?? '') == docId, orElse: () => {});
       await _svc.updateRequestStatus(docId, action, adminNote: noteCtrl.text.trim());
+
+      // Send notification to employee
+      final empUid = request['uid']?.toString() ?? '';
+      final reqType = request['requestType'] ?? request['request_type'] ?? 'إجازة';
+      if (empUid.isNotEmpty) {
+        await _svc.notifyEmployeeRequestUpdate(empUid, action, reqType);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

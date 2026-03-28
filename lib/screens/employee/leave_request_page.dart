@@ -73,6 +73,8 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       );
 
       if (result['success'] == true && mounted) {
+        // Notify admins about new request
+        await _svc.notifyAdminsNewRequest('إجازة', widget.user['name'] ?? '');
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('تم إرسال طلب الإجازة بنجاح (${result['days']} يوم)', style: GoogleFonts.tajawal()),

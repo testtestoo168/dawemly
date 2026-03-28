@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geolocator/geolocator.dart';
 import 'package:local_auth/local_auth.dart';
 import 'api_service.dart';
@@ -20,7 +22,23 @@ class AttendanceService {
     );
   }
 
-  // ─── Get current location ───
+  // ─── Fake GPS Detection ───
+  Future<bool> isMockLocation(Position position) async {
+    if (kIsWeb) return false;
+    try {
+      // Android: check isMocked flag
+      if (Platform.isAndroid) {
+        return position.isMocked;
+      }
+      // iOS: check accuracy - fake GPS usually has perfect accuracy (0.0)
+      if (Platform.isIOS) {
+        return position.accuracy == 0.0;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // ─── Get current location (with fake GPS check) ───
   Future<Position?> getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return null;
@@ -32,9 +50,39 @@ class AttendanceService {
     }
     if (perm == LocationPermission.deniedForever) return null;
 
-    return await Geolocator.getCurrentPosition(
+    final position = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
+
+    // Check for fake/mock GPS
+    if (await isMockLocation(position)) {
+      return null; // Will trigger "لا يمكن تحديد الموقع" error
+    }
+
+    return position;
+  }
+
+  // ─── Get location with detailed fake GPS error ───
+  Future<Map<String, dynamic>> getVerifiedLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return {'success': false, 'error': 'يرجى تفعيل GPS'};
+
+    LocationPermission perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.denied) return {'success': false, 'error': 'يرجى السماح بصلاحية الموقع'};
+    }
+    if (perm == LocationPermission.deniedForever) return {'success': false, 'error': 'صلاحية الموقع مرفوضة — فعّلها من الإعدادات'};
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+
+    if (await isMockLocation(position)) {
+      return {'success': false, 'error': 'تم اكتشاف موقع وهمي (Fake GPS) — لا يمكن تسجيل الحضور', 'isFake': true};
+    }
+
+    return {'success': true, 'position': position};
   }
 
   // ─── Check in ───
@@ -53,8 +101,9 @@ class AttendanceService {
 
     Position? pos;
     if (requireLocation == true) {
-      pos = await getCurrentLocation();
-      if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
+      final locResult = await getVerifiedLocation();
+      if (locResult['success'] != true) return {'success': false, 'error': locResult['error']};
+      pos = locResult['position'] as Position;
     }
 
     try {
@@ -95,8 +144,9 @@ class AttendanceService {
 
     Position? pos;
     if (requireLocation == true) {
-      pos = await getCurrentLocation();
-      if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
+      final locResult = await getVerifiedLocation();
+      if (locResult['success'] != true) return {'success': false, 'error': locResult['error']};
+      pos = locResult['position'] as Position;
     }
 
     try {

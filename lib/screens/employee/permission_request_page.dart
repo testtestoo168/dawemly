@@ -83,6 +83,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
       );
 
       if (result['success'] == true && mounted) {
+        await _svc.notifyAdminsNewRequest('إذن', widget.user['name'] ?? '');
         final hours = (result['hours'] as num?)?.toStringAsFixed(1) ?? '0';
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

@@ -86,12 +86,40 @@ class RequestsService {
     }
   }
 
-  // ─── Update request status ───
+  // ─── Update request status (admin) + send notification to employee ───
   Future<void> updateRequestStatus(String requestId, String newStatus, {String? adminNote}) async {
     await ApiService.post('requests.php?action=update_status', body: {
       'request_id': requestId,
       'status': newStatus,
       'admin_note': adminNote ?? '',
     });
+  }
+
+  // ─── Send notification to admins when employee submits request ───
+  Future<void> notifyAdminsNewRequest(String requestType, String employeeName) async {
+    try {
+      await ApiService.post('admin.php?action=send_notification', body: {
+        'uid': 'all_admins',
+        'title': 'طلب جديد',
+        'body': '$employeeName قدم طلب $requestType جديد',
+        'type': 'info',
+      });
+    } catch (_) {}
+  }
+
+  // ─── Send notification to employee when admin responds ───
+  Future<void> notifyEmployeeRequestUpdate(String employeeUid, String status, String requestType) async {
+    try {
+      final title = status == 'تم الموافقة' ? 'تمت الموافقة ✅' : 'تم الرفض ❌';
+      final body = status == 'تم الموافقة'
+          ? 'تمت الموافقة على طلب $requestType الخاص بك'
+          : 'تم رفض طلب $requestType الخاص بك';
+      await ApiService.post('admin.php?action=send_notification', body: {
+        'uid': employeeUid,
+        'title': title,
+        'body': body,
+        'type': status == 'تم الموافقة' ? 'info' : 'alert',
+      });
+    } catch (_) {}
   }
 }
