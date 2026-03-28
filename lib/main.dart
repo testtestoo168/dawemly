@@ -219,7 +219,7 @@ class _AuthGateState extends State<AuthGate> {
     final role = _user!['role'] ?? 'employee';
 
     final isWeb = MediaQuery.of(context).size.width > 800;
-    if (isWeb && role != 'admin') {
+    if (isWeb && role != 'admin' && role != 'superadmin') {
       return Scaffold(
         body: Center(child: Container(
           constraints: const BoxConstraints(maxWidth: 420),
