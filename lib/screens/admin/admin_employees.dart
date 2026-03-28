@@ -585,7 +585,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final label = isCheckIn ? 'دخول' : 'خروج';
     final color = isCheckIn ? C.pri : C.red;
     final time = _parsePunchTime(punch['localTime'] ?? punch['timestamp']);
-    final currentTime = time?.toDate() ?? DateTime.now();
+    final currentTime = time ?? DateTime.now();
     
     TimeOfDay selectedTime = TimeOfDay(hour: currentTime.hour, minute: currentTime.minute);
 

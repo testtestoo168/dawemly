@@ -474,7 +474,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             'assignedEmployees': _locSelectedEmps.toList(),
           };
           if (_editingLocId != null) {
-            data['id'] = _editingLocId;
+            data['id'] = _editingLocId!;
           }
           await ApiService.post('admin.php?action=save_location', body: data);
           await _loadApiData();

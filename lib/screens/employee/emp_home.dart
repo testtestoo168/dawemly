@@ -68,7 +68,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
         await ApiService.post('admin.php?action=mark_read', body: {'id': verifyNotif.first['id']});
         _respondToVerification(uid);
       }
-    });
+    } catch (_) {}
   }
 
   @override
