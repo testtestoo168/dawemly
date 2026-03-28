@@ -11,6 +11,7 @@ import 'theme/app_colors.dart';
 import 'screens/login_page.dart';
 import 'screens/employee/employee_app.dart';
 import 'screens/admin/admin_app.dart';
+import 'screens/superadmin/superadmin_app.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 
@@ -244,6 +245,7 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
+    if (role == 'superadmin') return SuperAdminApp(user: _user!, onLogout: _onLogout);
     if (role == 'admin') return AdminApp(user: _user!, onLogout: _onLogout);
     return EmployeeApp(user: _user!, onLogout: _onLogout);
   }
