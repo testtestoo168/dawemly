@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
 class AdminSettings extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -15,8 +15,10 @@ class AdminSettings extends StatefulWidget {
 }
 
 class _AdminSettingsState extends State<AdminSettings> {
-  final _db = FirebaseFirestore.instance;
   String _tab = 'shifts';
+  List<Map<String, dynamic>> _settingsUsers = [];
+  List<Map<String, dynamic>> _settingsLocations = [];
+  List<Map<String, dynamic>> _settingsSessions = [];
   bool _saved = false;
 
   // ═══ فترات العمل ═══
@@ -144,59 +146,31 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   void _save() async {
     try {
-      await _db.collection('settings').doc('general').set({
-        'generalH': _generalH,
-        'overtimeRate': _overtimeRate,
-        'overtimeActive': _overtimeActive,
-        'lateGraceMinutes': _lateGraceMinutes,
-        'shift1Start': _shifts[0]['start'],
-        'shift1End': _shifts[0]['end'],
+      await ApiService.post('admin.php?action=save_settings', {
+        'generalH': _generalH, 'overtimeRate': _overtimeRate,
+        'overtimeActive': _overtimeActive, 'lateGraceMinutes': _lateGraceMinutes,
+        'shift1Start': _shifts[0]['start'], 'shift1End': _shifts[0]['end'],
         'shift2Start': _shifts.length > 1 ? _shifts[1]['start'] : '',
         'shift2End': _shifts.length > 1 ? _shifts[1]['end'] : '',
         'shift3Start': _shifts.length > 2 ? _shifts[2]['start'] : '',
         'shift3End': _shifts.length > 2 ? _shifts[2]['end'] : '',
-        'authFace': _authFace,
-        'authFinger': _authFinger,
-        'authLoc': _authLoc,
-        'twoFA': _twoFA,
-        'loginNotify': _loginNotify,
-        'failedNotify': _failedNotify,
-        'ipWhitelist': _ipWhitelist,
-        'sessionTimeout': _sessionTimeout,
-        'maxAttempts': _maxAttempts,
-        'forcePassChange': _forcePassChange,
-        'primaryColor': _primaryColor,
-        'orgName': _orgName,
-        'logo': _logo,
-        'fontSize': _fontSize,
-        'darkMode': _darkMode,
-        'compactMode': _compactMode,
+        'authFace': _authFace, 'authFinger': _authFinger, 'authLoc': _authLoc,
+        'twoFA': _twoFA, 'loginNotify': _loginNotify, 'failedNotify': _failedNotify,
+        'ipWhitelist': _ipWhitelist, 'sessionTimeout': _sessionTimeout,
+        'maxAttempts': _maxAttempts, 'forcePassChange': _forcePassChange,
+        'primaryColor': _primaryColor, 'orgName': _orgName, 'logo': _logo,
+        'fontSize': _fontSize, 'darkMode': _darkMode, 'compactMode': _compactMode,
         'singleDeviceMode': _singleDeviceMode,
-        'updatedAt': FieldValue.serverTimestamp(),
         'updatedBy': widget.user['name'] ?? 'مدير النظام',
-      }, SetOptions(merge: true));
-
-      // Write audit log
-      await _db.collection('audit_log').add({
-        'user': widget.user['name'] ?? 'مدير النظام',
-        'action': 'تحديث الإعدادات',
-        'target': 'إعدادات النظام — $_tab',
-        'details': 'تم حفظ إعدادات $_tab',
-        'timestamp': FieldValue.serverTimestamp(),
-        'type': 'settings',
       });
-
+      await ApiService.post('admin.php?action=audit_log', {
+        'user': widget.user['name'] ?? 'مدير النظام', 'action': 'تحديث الإعدادات',
+        'target': 'إعدادات النظام — $_tab', 'details': 'تم حفظ إعدادات $_tab', 'type': 'settings',
+      });
       setState(() => _saved = true);
       Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() => _saved = false); });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('خطأ في حفظ الإعدادات: $e', style: GoogleFonts.tajawal()),
-          backgroundColor: C.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الإعدادات: $e', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
     }
   }
 
@@ -208,33 +182,38 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   void _loadSettings() async {
     try {
-      final doc = await _db.collection('settings').doc('general').get();
-      if (doc.exists && mounted) {
-        final d = doc.data()!;
-        setState(() {
-          _generalH = (d['generalH'] as num?)?.toDouble() ?? _generalH;
-          _overtimeRate = (d['overtimeRate'] as num?)?.toDouble() ?? _overtimeRate;
-          _overtimeActive = d['overtimeActive'] ?? _overtimeActive;
-          _authFace = d['authFace'] ?? _authFace;
-          _authFinger = d['authFinger'] ?? _authFinger;
-          _authLoc = d['authLoc'] ?? _authLoc;
-          _twoFA = d['twoFA'] ?? _twoFA;
-          _loginNotify = d['loginNotify'] ?? _loginNotify;
-          _failedNotify = d['failedNotify'] ?? _failedNotify;
-          _ipWhitelist = d['ipWhitelist'] ?? _ipWhitelist;
-          _sessionTimeout = (d['sessionTimeout'] as num?)?.toDouble() ?? _sessionTimeout;
-          _maxAttempts = (d['maxAttempts'] as num?)?.toDouble() ?? _maxAttempts;
-          _forcePassChange = (d['forcePassChange'] as num?)?.toDouble() ?? _forcePassChange;
-          _primaryColor = d['primaryColor'] ?? _primaryColor;
-          _orgName = d['orgName'] ?? _orgName;
-          _logo = d['logo'] ?? _logo;
-          _fontSize = d['fontSize'] ?? _fontSize;
-          _darkMode = d['darkMode'] ?? _darkMode;
-          _compactMode = d['compactMode'] ?? _compactMode;
-          _singleDeviceMode = d['singleDeviceMode'] ?? _singleDeviceMode;
-          _lateGraceMinutes = (d['lateGraceMinutes'] as int?) ?? _lateGraceMinutes;
-        });
-      }
+      final res = await ApiService.get('admin.php?action=get_settings');
+      final d = res['settings'] as Map<String, dynamic>? ?? {};
+      final usersRes = await ApiService.get('users.php?action=list');
+      final locsRes = await ApiService.get('admin.php?action=get_locations');
+      final sessRes = await ApiService.get('admin.php?action=get_sessions');
+      if (mounted) setState(() {
+        _generalH = (d['generalH'] as num?)?.toDouble() ?? _generalH;
+        _overtimeRate = (d['overtimeRate'] as num?)?.toDouble() ?? _overtimeRate;
+        _overtimeActive = d['overtimeActive'] ?? _overtimeActive;
+        _authFace = d['authFace'] ?? _authFace;
+        _authFinger = d['authFinger'] ?? _authFinger;
+        _authLoc = d['authLoc'] ?? _authLoc;
+        _twoFA = d['twoFA'] ?? _twoFA;
+        _loginNotify = d['loginNotify'] ?? _loginNotify;
+        _failedNotify = d['failedNotify'] ?? _failedNotify;
+        _ipWhitelist = d['ipWhitelist'] ?? _ipWhitelist;
+        _sessionTimeout = (d['sessionTimeout'] as num?)?.toDouble() ?? _sessionTimeout;
+        _maxAttempts = (d['maxAttempts'] as num?)?.toDouble() ?? _maxAttempts;
+        _forcePassChange = (d['forcePassChange'] as num?)?.toDouble() ?? _forcePassChange;
+        _primaryColor = d['primaryColor'] ?? _primaryColor;
+        _orgName = d['orgName'] ?? _orgName;
+        _logo = d['logo'] ?? _logo;
+        _fontSize = d['fontSize'] ?? _fontSize;
+        _darkMode = d['darkMode'] ?? _darkMode;
+        _compactMode = d['compactMode'] ?? _compactMode;
+        _singleDeviceMode = d['singleDeviceMode'] ?? _singleDeviceMode;
+        _lateGraceMinutes = (d['lateGraceMinutes'] as int?) ?? _lateGraceMinutes;
+        _settingsUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>().where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
+        _settingsUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+        _settingsLocations = (locsRes['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+        _settingsSessions = (sessRes['sessions'] as List? ?? []).cast<Map<String, dynamic>>();
+      });
     } catch (_) {}
   }
 
@@ -465,13 +444,12 @@ class _AdminSettingsState extends State<AdminSettings> {
             'assignedEmployees': _locSelectedEmps.toList(),
           };
           if (_editingLocId != null) {
-            data['updatedAt'] = FieldValue.serverTimestamp();
-            await _db.collection('locations').doc(_editingLocId).update(data);
+            await ApiService.post('admin.php?action=save_location', {...data, 'id': _editingLocId});
           } else {
-            data['createdAt'] = FieldValue.serverTimestamp();
-            await _db.collection('locations').add(data);
+            await ApiService.post('admin.php?action=save_location', data);
           }
           _resetLocForm();
+          _loadSettings();
         }),
         const SizedBox(width: 8),
         _cancelBtn(() => _resetLocForm()),
@@ -493,50 +471,46 @@ class _AdminSettingsState extends State<AdminSettings> {
           const SizedBox(height: 4),
           Text('اختر الموظفين المسموح لهم بالبصمة في هذا الموقع (اتركها فارغة للسماح للجميع)', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
           const SizedBox(height: 10),
-          StreamBuilder<QuerySnapshot>(
-            stream: _db.collection('users').snapshots(),
-            builder: (ctx, uSnap) {
-              final users = (uSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; }).where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
-              users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-              return Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: users.map((emp) {
-                final uid = emp['uid'] ?? emp['_id'];
-                final sel = _locSelectedEmps.contains(uid);
-                return InkWell(
-                  onTap: () => setState(() { sel ? _locSelectedEmps.remove(uid) : _locSelectedEmps.add(uid); }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(color: sel ? C.priLight : C.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: sel ? C.pri : C.border)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? C.pri : C.muted),
-                      const SizedBox(width: 6),
-                      Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? C.pri : C.text)),
-                    ]),
-                  ),
-                );
-              }).toList());
-            },
-          ),
+          Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: _settingsUsers.map((emp) {
+            final uid = emp['uid'] ?? emp['_id'];
+            final sel = _locSelectedEmps.contains(uid);
+            return InkWell(
+              onTap: () => setState(() { sel ? _locSelectedEmps.remove(uid) : _locSelectedEmps.add(uid); }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: sel ? C.priLight : C.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: sel ? C.pri : C.border)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? C.pri : C.muted),
+                  const SizedBox(width: 6),
+                  Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? C.pri : C.text)),
+                ]),
+              ),
+            );
+          }).toList()),
         ]),
       ),
     ])),
-    StreamBuilder<QuerySnapshot>(stream: _db.collection('locations').snapshots(), builder: (ctx, snap) {
-      final docs = snap.data?.docs ?? [];
-      return Column(children: docs.map((doc) { final loc = doc.data() as Map<String, dynamic>; final active = loc['active'] ?? true; final radius = loc['radius'] ?? 200; final assignedEmps = (loc['assignedEmployees'] as List?)?.cast<String>() ?? []; return Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: active ? const Color(0xFFABEFC6) : C.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    Column(children: _settingsLocations.map((loc) {
+      final locId = loc['id'] ?? loc['_id'] ?? '';
+      final active = loc['active'] ?? true;
+      final radius = loc['radius'] ?? 200;
+      final assignedEmps = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
+      return Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: active ? const Color(0xFFABEFC6) : C.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(children: [
-          InkWell(onTap: () => _db.collection('locations').doc(doc.id).delete(), child: Container(width: 30, height: 30, decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.delete_outline, size: 16, color: C.red))),
+          InkWell(onTap: () async { await ApiService.post('admin.php?action=delete_location', {'id': locId}); _loadSettings(); }, child: Container(width: 30, height: 30, decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.delete_outline, size: 16, color: C.red))),
           const SizedBox(width: 6),
-          InkWell(onTap: () => _editLocation(doc.id, loc), child: Container(width: 30, height: 30, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.edit, size: 16, color: C.pri))),
+          InkWell(onTap: () => _editLocation(locId, loc), child: Container(width: 30, height: 30, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.edit, size: 16, color: C.pri))),
           const SizedBox(width: 6),
-          Switch(value: active, activeColor: C.green, onChanged: (v) => _db.collection('locations').doc(doc.id).update({'active': v})),
+          Switch(value: active, activeColor: C.green, onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'active': v}); _loadSettings(); }),
         ]), Row(children: [Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.text)), Text('${(loc['lat'] ?? 0).toStringAsFixed(4)}, ${(loc['lng'] ?? 0).toStringAsFixed(4)}', style: GoogleFonts.ibmPlexMono(fontSize: 11, color: C.muted))]), const SizedBox(width: 10), Container(width: 36, height: 36, decoration: BoxDecoration(color: active ? const Color(0xFFECFDF3) : C.bg, borderRadius: BorderRadius.circular(10)), child: Icon(Icons.location_on, size: 16, color: active ? C.green : C.muted))])]),
         const SizedBox(height: 8),
         Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(8)),
           child: Text(assignedEmps.isEmpty ? 'جميع الموظفين' : '${assignedEmps.length} موظف مخصص', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.pri))),
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${radius}م', style: GoogleFonts.ibmPlexMono(fontSize: 14, fontWeight: FontWeight.w700, color: C.pri)), Text('نطاق البصمة', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))]),
-        Directionality(textDirection: TextDirection.ltr, child: Slider(value: (radius as num).toDouble(), min: 50, max: 1000, divisions: 19, activeColor: C.pri, label: '${radius}م', onChanged: (v) => _db.collection('locations').doc(doc.id).update({'radius': v.round()}))),
-      ])); }).toList());
-    }),
+        Directionality(textDirection: TextDirection.ltr, child: Slider(value: (radius as num).toDouble(), min: 50, max: 1000, divisions: 19, activeColor: C.pri, label: '${radius}م', onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'radius': v.round()}); _loadSettings(); })),
+      ]));
+    }).toList()),
   ]);
 
   // ─────────────────── أمان الأجهزة ───────────────────
@@ -571,29 +545,17 @@ class _AdminSettingsState extends State<AdminSettings> {
       _cardHeader('استثناء موظفين من التقييد', Icons.people_outline, const Color(0xFF7F56D9)),
       Text('السماح لموظفين معينين باستخدام أكثر من جهاز حتى مع تفعيل التقييد', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted), textAlign: TextAlign.right),
       const SizedBox(height: 12),
-      StreamBuilder<QuerySnapshot>(
-        stream: _db.collection('users').snapshots(),
-        builder: (ctx, snap) {
-          final users = (snap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; }).where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
-          users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-          if (users.isEmpty) return Padding(padding: const EdgeInsets.all(12), child: Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)));
-          return Column(mainAxisSize: MainAxisSize.min, children: users.map((emp) {
+      _settingsUsers.isEmpty
+        ? Padding(padding: const EdgeInsets.all(12), child: Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)))
+        : Column(mainAxisSize: MainAxisSize.min, children: _settingsUsers.map((emp) {
             final uid = emp['uid'] ?? emp['_id'];
             final allowed = emp['multiDeviceAllowed'] == true;
             return Container(
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: allowed ? const Color(0xFFFFFAEB) : C.bg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: allowed ? C.orangeBd : C.border),
-              ),
+              decoration: BoxDecoration(color: allowed ? const Color(0xFFFFFAEB) : C.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: allowed ? C.orangeBd : C.border)),
               child: Row(children: [
-                Switch(
-                  value: allowed,
-                  activeColor: C.orange,
-                  onChanged: (v) => _db.collection('users').doc(uid).update({'multiDeviceAllowed': v}),
-                ),
+                Switch(value: allowed, activeColor: C.orange, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'multiDeviceAllowed': v}); _loadSettings(); }),
                 const Spacer(),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
@@ -603,21 +565,16 @@ class _AdminSettingsState extends State<AdminSettings> {
                 Icon(allowed ? Icons.devices : Icons.phone_android, size: 18, color: allowed ? C.orange : C.muted),
               ]),
             );
-          }).toList());
-        },
-      ),
+          }).toList()),
     ])),
     if (_singleDeviceMode) const SizedBox(height: 14),
     // ─── Active sessions ───
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       _cardHeader('الأجهزة النشطة الآن', Icons.devices, const Color(0xFF0BA5EC)),
-      StreamBuilder<QuerySnapshot>(
-        stream: _db.collection('active_sessions').snapshots(),
-        builder: (ctx, snap) {
-          final sessions = snap.data?.docs ?? [];
-          if (sessions.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('لا توجد أجهزة نشطة حالياً', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))));
-          return Column(mainAxisSize: MainAxisSize.min, children: sessions.map((doc) {
-            final s = doc.data() as Map<String, dynamic>;
+      _settingsSessions.isEmpty
+        ? Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('لا توجد أجهزة نشطة حالياً', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))))
+        : Column(mainAxisSize: MainAxisSize.min, children: _settingsSessions.map((s) {
+            final sessionId = s['id'] ?? s['_id'] ?? '';
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -625,7 +582,8 @@ class _AdminSettingsState extends State<AdminSettings> {
               child: Row(children: [
                 InkWell(
                   onTap: () async {
-                    await _db.collection('active_sessions').doc(doc.id).delete();
+                    await ApiService.post('admin.php?action=delete_session', {'id': sessionId});
+                    _loadSettings();
                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إنهاء الجلسة', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
                   },
                   child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.redBd)),
@@ -642,9 +600,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                   child: Icon(_getDeviceIcon(s['platform'] ?? ''), size: 18, color: const Color(0xFF0BA5EC))),
               ]),
             );
-          }).toList());
-        },
-      ),
+          }).toList()),
     ])),
   ]);
 
@@ -719,10 +675,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       _cardHeader('تخصيص موظف معين', Icons.person_pin, const Color(0xFF7F56D9)),
       Text('السماح أو منع البصمة/الموقع لموظف محدد بشكل مختلف عن الإعداد العام', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted), textAlign: TextAlign.right),
       const SizedBox(height: 12),
-      StreamBuilder<QuerySnapshot>(
-        stream: _db.collection('users').snapshots(),
-        builder: (ctx, snap) {
-          final users = (snap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; }).where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
+      Builder(builder: (_) {
+          final users = _settingsUsers.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
           users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
           if (users.isEmpty) return Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted));
           return Column(children: users.map((emp) {
@@ -731,7 +685,6 @@ class _AdminSettingsState extends State<AdminSettings> {
             final empBio = emp['authBiometric'] ?? true;
             final empLoc = emp['authLoc'] ?? true;
             final empFace = emp['authFace'] ?? _authFace;
-            final hasFaceReg = emp['faceRegistered'] == true;
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -743,13 +696,15 @@ class _AdminSettingsState extends State<AdminSettings> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Row(children: [
                   InkWell(
-                    onTap: () {
-                      _db.collection('users').doc(uid).update({
+                    onTap: () async {
+                      await ApiService.post('users.php?action=update', {
+                        'uid': uid,
                         'authOverride': !hasOverride,
                         if (!hasOverride) 'authBiometric': _authFinger,
                         if (!hasOverride) 'authLoc': _authLoc,
                         if (!hasOverride) 'authFace': _authFace,
                       });
+                      _loadSettings();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -765,7 +720,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                 if (hasOverride) ...[
                   const SizedBox(height: 8),
                   Row(children: [
-                    Switch(value: empFace, activeColor: C.green, onChanged: (v) => _db.collection('users').doc(uid).update({'authFace': v})),
+                    Switch(value: empFace, activeColor: C.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authFace': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
                       Text('بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 12, color: C.text)),
@@ -774,7 +729,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     ]),
                   ]),
                   Row(children: [
-                    Switch(value: empBio, activeColor: C.green, onChanged: (v) => _db.collection('users').doc(uid).update({'authBiometric': v})),
+                    Switch(value: empBio, activeColor: C.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authBiometric': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
                       Text('البصمة', style: GoogleFonts.tajawal(fontSize: 12, color: C.text)),
@@ -783,7 +738,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     ]),
                   ]),
                   Row(children: [
-                    Switch(value: empLoc, activeColor: C.green, onChanged: (v) => _db.collection('users').doc(uid).update({'authLoc': v})),
+                    Switch(value: empLoc, activeColor: C.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authLoc': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
                       Text('الموقع', style: GoogleFonts.tajawal(fontSize: 12, color: C.text)),
@@ -795,7 +750,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                   const SizedBox(height: 6),
                   InkWell(
                     onTap: () async {
-                      await _db.collection('face_data').doc(uid).delete();
+                      await ApiService.post('face.php?action=reset', {'uid': uid});
                       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه لـ ${emp['name']}', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
                     },
                     child: Container(
@@ -812,8 +767,7 @@ class _AdminSettingsState extends State<AdminSettings> {
               ]),
             );
           }).toList());
-        },
-      ),
+        }),
     ])),
   ]);
 
