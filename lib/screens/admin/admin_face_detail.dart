@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
 
@@ -18,10 +17,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
   String get _uid => widget.employee['uid'] ?? widget.employee['_id'] ?? '';
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   void _load() async {
     final faceData = await FaceRecognitionService.getFaceRegistrationInfo(_uid);
@@ -52,13 +48,20 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     }
   }
 
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch (_) { return null; } }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = widget.employee['name'] ?? '—';
     final empId = widget.employee['empId'] ?? '';
     final registered = _faceData?['registered'] == true;
     final photoUrl = _faceData?['photoUrl'] as String?;
-    final registeredAt = _faceData?['registeredAt'] as Timestamp?;
+    final registeredAtStr = _faceData?['registeredAt'];
+    final registeredAt = _parseTs(registeredAtStr);
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -71,14 +74,12 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
       body: _loading
         ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
         : SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            // ─── Registration card ───
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: registered ? C.greenBd : C.border)),
               child: Column(children: [
                 Row(children: [
-                  // Reset button
                   if (registered) InkWell(
                     onTap: _resetFace,
                     child: Container(
@@ -97,13 +98,9 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                     Text(empId, style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.muted)),
                   ]),
                   const SizedBox(width: 12),
-                  // Face photo
                   Container(
                     width: 64, height: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: registered ? C.green : C.border, width: 3),
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: registered ? C.green : C.border, width: 3)),
                     child: ClipOval(
                       child: registered && photoUrl != null
                         ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _facePlaceholder())
@@ -140,7 +137,6 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
 
             const SizedBox(height: 20),
 
-            // ─── Verification history ───
             Row(children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -169,7 +165,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                 final matched = v['matched'] == true;
                 final similarity = (v['similarity'] as num?)?.toDouble() ?? 0;
                 final vPhotoUrl = v['photoUrl'] as String?;
-                final ts = v['timestamp'] as Timestamp?;
+                final ts = _parseTs(v['timestamp']);
                 final pct = (similarity * 100).toStringAsFixed(0);
 
                 return Container(
@@ -181,7 +177,6 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                     border: Border.all(color: matched ? C.greenBd : C.redBd),
                   ),
                   child: Row(children: [
-                    // Status + similarity
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -193,7 +188,6 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                       if (ts != null) Text(_formatDateTime(ts), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.muted)),
                     ]),
                     const Spacer(),
-                    // Verification photo
                     Container(
                       width: 56, height: 56,
                       decoration: BoxDecoration(
@@ -214,14 +208,12 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
 
   Widget _facePlaceholder() => Container(color: C.bg, child: const Icon(Icons.face_outlined, size: 24, color: C.hint));
 
-  String _formatDate(Timestamp ts) {
-    final d = ts.toDate();
+  String _formatDate(DateTime d) {
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 
-  String _formatDateTime(Timestamp ts) {
-    final d = ts.toDate();
+  String _formatDateTime(DateTime d) {
     final h = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
     return '${d.day}/${d.month} — ${h.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'م' : 'ص'}';
   }
