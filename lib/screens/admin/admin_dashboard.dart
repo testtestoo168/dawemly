@@ -37,7 +37,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _loadAll() async {
     setState(() => _loading = true);
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<Map<String, dynamic>>([
         ApiService.get('users.php?action=list'),
         ApiService.get('attendance.php?action=all_today'),
         ApiService.get('requests.php?action=pending'),

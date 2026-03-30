@@ -45,7 +45,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
   Future<void> _loadAll() async {
     setState(() => _loading = true);
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<Map<String, dynamic>>([
         ApiService.get('admin.php?action=get_schedules'),
         ApiService.get('admin.php?action=get_holidays'),
         ApiService.get('users.php?action=list'),
