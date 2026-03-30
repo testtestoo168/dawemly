@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
-class EmpSchedulePage extends StatelessWidget {
+class EmpSchedulePage extends StatefulWidget {
   final Map<String, dynamic> user;
   const EmpSchedulePage({super.key, required this.user});
+  @override
+  State<EmpSchedulePage> createState() => _EmpSchedulePageState();
+}
 
+class _EmpSchedulePageState extends State<EmpSchedulePage> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
@@ -18,6 +22,14 @@ class EmpSchedulePage extends StatelessWidget {
     {'id': 2, 'name': 'الفترة الثانية', 'start': '13:00', 'end': '21:00', 'hours': '08:00', 'type': 'افتراضي ثابت'},
     {'id': 3, 'name': 'الفترة الثالثة', 'start': '16:00', 'end': '00:00', 'hours': '08:00', 'type': 'افتراضي ثابت'},
   ];
+
+  Future<List<Map<String, dynamic>>> _loadSchedules() async {
+    final result = await ApiService.get('admin.php?action=get_schedules');
+    if (result['success'] == true) {
+      return (result['schedules'] as List? ?? []).cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,22 +47,22 @@ class EmpSchedulePage extends StatelessWidget {
         ),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('schedules').snapshots(),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _loadSchedules(),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: C.pri));
           }
 
-          final allSchedules = snap.data?.docs ?? [];
+          final allSchedules = snap.data ?? [];
           // Find schedules assigned to this employee
           Map<String, dynamic>? assignedSchedule;
           String scheduleName = 'الجدول الافتراضي';
 
-          for (final doc in allSchedules) {
-            final data = doc.data() as Map<String, dynamic>;
-            final empIds = (data['empIds'] as List?)?.cast<String>() ?? [];
-            if (empIds.contains(user['uid']) || empIds.contains(user['empId'])) {
+          for (final data in allSchedules) {
+            final empIds = (data['empIds'] as List?)?.cast<String>() ??
+                (data['emp_ids'] as List?)?.cast<String>() ?? [];
+            if (empIds.contains(widget.user['uid']) || empIds.contains(widget.user['empId'])) {
               assignedSchedule = data;
               scheduleName = data['name'] ?? 'الجدول الافتراضي';
               break;
@@ -59,11 +71,11 @@ class EmpSchedulePage extends StatelessWidget {
 
           // If no specific assignment, use the first schedule (default)
           if (assignedSchedule == null && allSchedules.isNotEmpty) {
-            assignedSchedule = allSchedules.first.data() as Map<String, dynamic>;
+            assignedSchedule = allSchedules.first;
             scheduleName = assignedSchedule['name'] ?? 'الجدول الافتراضي';
           }
 
-          final shiftId = assignedSchedule?['shiftId'] ?? 1;
+          final shiftId = assignedSchedule?['shiftId'] ?? assignedSchedule?['shift_id'] ?? 1;
           final workDays = (assignedSchedule?['days'] as List?)?.cast<String>() ?? ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس'];
           final shift = _shifts.firstWhere((s) => s['id'] == shiftId, orElse: () => _shifts[0]);
 
@@ -88,7 +100,7 @@ class EmpSchedulePage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ─── Days Schedule — like image 3 ───
+              // ─── Days Schedule ───
               ..._daysFull.map((dayFull) {
                 final dayShort = _daysShort[_daysFull.indexOf(dayFull)];
                 final isWorkDay = workDays.contains(dayShort);

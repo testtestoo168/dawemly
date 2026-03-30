@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
 
@@ -30,8 +29,9 @@ class EmpMyFacePage extends StatelessWidget {
           }
           final data = snap.data;
           final registered = data?['registered'] == true;
-          final photoUrl = data?['photoUrl'] as String?;
-          final registeredAt = data?['registeredAt'] as Timestamp?;
+          final photoUrl = data?['photoUrl'] as String? ?? data?['photo_url'] as String?;
+          final registeredAtRaw = data?['registeredAt'] ?? data?['registered_at'];
+          final registeredAt = _parseTs(registeredAtRaw);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -128,8 +128,13 @@ class EmpMyFacePage extends StatelessWidget {
     Icon(icon, size: 16, color: C.muted),
   ]);
 
-  String _formatDate(Timestamp ts) {
-    final d = ts.toDate();
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
+    return null;
+  }
+
+  String _formatDate(DateTime d) {
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }

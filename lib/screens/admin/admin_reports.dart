@@ -3,12 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:csv/csv.dart';
 import 'package:http/http.dart' as http;
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 import '../../services/download_stub.dart'
     if (dart.library.html) '../../services/download_web.dart';
 
@@ -18,7 +18,6 @@ class AdminReports extends StatefulWidget {
 }
 
 class _AdminReportsState extends State<AdminReports> {
-  final _db = FirebaseFirestore.instance;
   final _mono = GoogleFonts.ibmPlexMono;
   final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _dayNames = const ['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'];
@@ -27,8 +26,10 @@ class _AdminReportsState extends State<AdminReports> {
   double _standardHours = 8.0;
   int _startHour = 8, _startMinute = 0;
   bool _exporting = false;
-  String _selectedUid = 'الكل'; // 'الكل' or specific uid
+  String _selectedUid = 'الكل';
   List<Map<String, dynamic>> _allUsers = [];
+  List<Map<String, dynamic>> _allRecords = [];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -36,52 +37,54 @@ class _AdminReportsState extends State<AdminReports> {
     final now = DateTime.now();
     _selMonth = now.month;
     _selYear = now.year;
-    _loadSettings();
-    _loadUsers();
+    _loadAll();
   }
 
-  void _loadSettings() async {
+  Future<void> _loadAll() async {
+    setState(() => _loading = true);
     try {
-      final doc = await _db.collection('settings').doc('general').get();
-      if (doc.exists && mounted) {
-        final d = doc.data()!;
-        setState(() {
-          _standardHours = (d['generalH'] as num?)?.toDouble() ?? 8.0;
-          // Parse start time like "08:00 ص"
-          final st = (d['shift1Start'] ?? d['workStart'] ?? '08:00') as String;
-          final timeParts = st.replaceAll(RegExp(r'[^\d:]'), '').split(':');
-          if (timeParts.length >= 2) {
-            _startHour = int.tryParse(timeParts[0]) ?? 8;
-            _startMinute = int.tryParse(timeParts[1]) ?? 0;
-          }
-        });
+      final settingsRes = await ApiService.get('admin.php?action=get_settings');
+      if (settingsRes['success'] == true) {
+        final s = settingsRes['settings'] as Map<String, dynamic>? ?? {};
+        _standardHours = double.tryParse('${s['generalH'] ?? ''}') ?? 8.0;
+        final st = (s['shift1Start'] ?? s['workStart'] ?? '08:00') as String;
+        final timeParts = st.replaceAll(RegExp(r'[^\d:]'), '').split(':');
+        if (timeParts.length >= 2) {
+          _startHour = int.tryParse(timeParts[0]) ?? 8;
+          _startMinute = int.tryParse(timeParts[1]) ?? 0;
+        }
+      }
+      final usersRes = await ApiService.get('users.php?action=list');
+      if (usersRes['success'] == true) {
+        final list = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
+        _allUsers = list.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
+        _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+      }
+      final recRes = await ApiService.get('attendance.php?action=all_records');
+      if (recRes['success'] == true) {
+        _allRecords = (recRes['records'] as List? ?? []).cast<Map<String, dynamic>>();
       }
     } catch (_) {}
+    if (mounted) setState(() => _loading = false);
   }
 
-  void _loadUsers() async {
-    final snap = await _db.collection('users').get();
-    if (mounted) setState(() {
-      _allUsers = snap.docs.map((d) { final m = d.data(); m['_id'] = d.id; return m; })
-        .where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
-      _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-    });
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
+    return null;
   }
 
   String _fmtTs(dynamic ts) {
     if (ts == null) return '—';
-    DateTime dt;
-    if (ts is Timestamp) dt = ts.toDate();
-    else if (ts is DateTime) dt = ts;
-    else return '—';
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
 
   Future<List<Map<String, dynamic>>> _buildReportData() async {
     final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
-    final attSnap = await _db.collection('attendance_daily').get();
-    final attRecords = attSnap.docs.map((d) => d.data()).where((r) {
+    final attRecords = _allRecords.where((r) {
       final dk = (r['dateKey'] ?? '').toString();
       if (!dk.startsWith(monthPrefix)) return false;
       if (_selectedUid != 'الكل' && r['uid'] != _selectedUid) return false;
@@ -90,7 +93,7 @@ class _AdminReportsState extends State<AdminReports> {
 
     final rows = <Map<String, dynamic>>[];
     for (final att in attRecords) {
-      final user = _allUsers.firstWhere((u) => (u['uid'] ?? u['_id']) == att['uid'], orElse: () => {});
+      final user = _allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == att['uid'], orElse: () => {});
       if (user.isEmpty) continue;
 
       final dateKey = att['dateKey'] ?? '';
@@ -100,24 +103,25 @@ class _AdminReportsState extends State<AdminReports> {
 
       final ci = att['firstCheckIn'] ?? att['checkIn'];
       final co = att['lastCheckOut'] ?? att['checkOut'];
-      final totalMin = (att['totalWorkedMinutes'] as int?) ?? 0;
+      final totalMinRaw = att['totalWorkedMinutes'];
+      final totalMin = totalMinRaw != null ? (totalMinRaw is int ? totalMinRaw : int.tryParse('$totalMinRaw') ?? 0) : 0;
       double workedHours = totalMin > 0 ? totalMin / 60.0 : 0;
       double overtime = 0;
       String lateTime = '—';
 
       if (ci != null) {
-        final checkIn = (ci as Timestamp).toDate();
-        if (co != null) {
-          if (workedHours == 0) {
-            workedHours = (co as Timestamp).toDate().difference(checkIn).inMinutes / 60.0;
+        final checkIn = _parseTs(ci);
+        if (checkIn != null) {
+          if (co != null && workedHours == 0) {
+            final checkOut = _parseTs(co);
+            if (checkOut != null) workedHours = checkOut.difference(checkIn).inMinutes / 60.0;
           }
-          overtime = (workedHours - _standardHours).clamp(0, 24);
-        }
-        // Late calculation
-        final expectedStart = DateTime(checkIn.year, checkIn.month, checkIn.day, _startHour, _startMinute);
-        if (checkIn.isAfter(expectedStart)) {
-          final lateMins = checkIn.difference(expectedStart).inMinutes;
-          lateTime = '$lateMins د';
+          if (co != null) overtime = (workedHours - _standardHours).clamp(0, 24);
+          final expectedStart = DateTime(checkIn.year, checkIn.month, checkIn.day, _startHour, _startMinute);
+          if (checkIn.isAfter(expectedStart)) {
+            final lateMins = checkIn.difference(expectedStart).inMinutes;
+            lateTime = '$lateMins د';
+          }
         }
       }
 
@@ -158,7 +162,6 @@ class _AdminReportsState extends State<AdminReports> {
     try {
       final data = await _buildReportData();
 
-      // Load Arabic font from asset or download from Google Fonts
       pw.Font? arabicFont;
       try {
         final fontData = await rootBundle.load('assets/fonts/Tajawal-Regular.ttf');
@@ -168,7 +171,6 @@ class _AdminReportsState extends State<AdminReports> {
           final fontData = await rootBundle.load('assets/fonts/NotoSansArabic-Regular.ttf');
           arabicFont = pw.Font.ttf(fontData);
         } catch (_) {
-          // Try downloading from Google Fonts API at runtime
           try {
             final response = await http.get(Uri.parse('https://fonts.gstatic.com/s/tajawal/v9/Iura6YBj_oCad4k1nzGBCw.ttf'));
             if (response.statusCode == 200 && response.bodyBytes.length > 1000) {
@@ -180,17 +182,16 @@ class _AdminReportsState extends State<AdminReports> {
       }
 
       final pdf = pw.Document();
-      
-      // If no Arabic font available, export with LTR layout and English-safe Arabic
+
       final hasArabic = arabicFont != null;
       final baseStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 9) : const pw.TextStyle(fontSize: 9);
       final headerStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 9, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
       final titleStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 16, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold);
 
-      final empName = _selectedUid == 'الكل' ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['_id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
-      
+      final empName = _selectedUid == 'الكل' ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
+
       final titleAr = hasArabic ? 'تقرير الحضور — ${_months[_selMonth - 1]} $_selYear${_selectedUid != 'الكل' ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
-      final headersAr = hasArabic 
+      final headersAr = hasArabic
         ? ['الأوفرتايم', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود']
         : ['Overtime', 'Late', 'Hours', 'Check Out', 'Check In', 'Day', 'Date', 'Name', 'EmpID'];
 
@@ -216,7 +217,7 @@ class _AdminReportsState extends State<AdminReports> {
       final bytes = await pdf.save();
       final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
       downloadFile(bytes, 'dawemli_${empLabel}_$_selYear-$_selMonth.pdf', 'application/pdf');
-      
+
       if (!hasArabic && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('⚠ لتصدير PDF بالعربي، ضع ملف Tajawal-Regular.ttf في assets/fonts/', style: GoogleFonts.tajawal()),
@@ -235,7 +236,7 @@ class _AdminReportsState extends State<AdminReports> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _buildReportData(),
+      future: _loading ? null : _buildReportData(),
       builder: (context, snap) {
         final data = snap.data ?? [];
 
@@ -281,7 +282,7 @@ class _AdminReportsState extends State<AdminReports> {
                   ),
                   items: [
                     DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
-                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['_id'] ?? '', child: Text('${u['name']} (${u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
+                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
                   onChanged: (v) => setState(() => _selectedUid = v ?? 'الكل'),
                 )),
@@ -304,7 +305,7 @@ class _AdminReportsState extends State<AdminReports> {
           const SizedBox(height: 20),
 
           // Table
-          if (snap.connectionState == ConnectionState.waiting)
+          if (_loading || snap.connectionState == ConnectionState.waiting)
             const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(strokeWidth: 2)))
           else if (data.isEmpty)
             Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),

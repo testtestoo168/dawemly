@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
 class AdminSchedules extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -10,12 +10,16 @@ class AdminSchedules extends StatefulWidget {
 }
 
 class _AdminSchedulesState extends State<AdminSchedules> {
-  final _db = FirebaseFirestore.instance;
   String _tab = 'schedules';
   bool _saved = false;
+  bool _loading = true;
   final _mono = GoogleFonts.ibmPlexMono;
   final _allDays = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
   String? _selSchId;
+
+  List<Map<String, dynamic>> _schedules = [];
+  List<Map<String, dynamic>> _holidays = [];
+  List<Map<String, dynamic>> _emps = [];
 
   // Add schedule form
   bool _showAddSch = false;
@@ -35,128 +39,142 @@ class _AdminSchedulesState extends State<AdminSchedules> {
     {'id': 3, 'name': 'الفترة الثالثة', 'start': '04:00 م', 'end': '12:00 ص', 'color': C.teal},
   ];
 
-  // Init default schedules if collection is empty
-  Future<void> _initDefaults() async {
-    final snap = await _db.collection('schedules').limit(1).get();
-    if (snap.docs.isEmpty) {
-      for (var s in [
-        {'name': 'الجدول الأساسي', 'shiftId': 1, 'days': ['أحد','إثنين','ثلاثاء','أربعاء','خميس'], 'empIds': []},
-        {'name': 'الجدول المسائي', 'shiftId': 2, 'days': ['أحد','إثنين','ثلاثاء','أربعاء','خميس'], 'empIds': []},
-        {'name': 'جدول الفترة الثالثة', 'shiftId': 3, 'days': ['أحد','إثنين','ثلاثاء','أربعاء'], 'empIds': []},
-      ]) { await _db.collection('schedules').add(s); }
-    }
-    final hSnap = await _db.collection('holidays').limit(1).get();
-    if (hSnap.docs.isEmpty) {
-      for (var h in [
-        {'name': 'اليوم الوطني السعودي', 'date': '23 سبتمبر 2026', 'days': 1, 'type': 'عامة', 'empIds': []},
-        {'name': 'عيد الفطر', 'date': '20 مارس — 24 مارس 2026', 'days': 5, 'type': 'عامة', 'empIds': []},
-        {'name': 'عيد الأضحى', 'date': '6 يونيو — 11 يونيو 2026', 'days': 6, 'type': 'عامة', 'empIds': []},
-      ]) { await _db.collection('holidays').add(h); }
+  @override
+  void initState() { super.initState(); _loadAll(); }
+
+  Future<void> _loadAll() async {
+    setState(() => _loading = true);
+    try {
+      final results = await Future.wait([
+        ApiService.get('admin.php?action=get_schedules'),
+        ApiService.get('admin.php?action=get_holidays'),
+        ApiService.get('users.php?action=list'),
+      ]);
+      if (mounted) {
+        final schRes = results[0];
+        final holRes = results[1];
+        final usrRes = results[2];
+        setState(() {
+          if (schRes['success'] == true) {
+            _schedules = (schRes['schedules'] as List? ?? []).cast<Map<String, dynamic>>();
+            if (_schedules.isNotEmpty && _selSchId == null) {
+              _selSchId = _schedules.first['id']?.toString();
+            }
+          }
+          if (holRes['success'] == true) {
+            _holidays = (holRes['holidays'] as List? ?? []).cast<Map<String, dynamic>>();
+          }
+          if (usrRes['success'] == true) {
+            _emps = (usrRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
+            _emps.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+          }
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
     }
   }
-
-  @override
-  void initState() { super.initState(); _initDefaults(); }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('users').snapshots(),
-      builder: (context, empSnap) {
-        if (empSnap.hasError) return Center(child: Text('خطأ', style: GoogleFonts.tajawal(color: C.red)));
-        if (empSnap.connectionState == ConnectionState.waiting && (empSnap.data?.docs ?? []).isEmpty) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        final emps = (empSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; }).toList();
-        emps.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    if (_loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
 
-        return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Row(children: [_saveBtn(), const Spacer(), Text('الجداول والإجازات', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text))]),
-          const SizedBox(height: 24),
-          Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [_tabBtn('الجداول', 'schedules'), _tabBtn('الإجازات', 'holidays')])),
-          const SizedBox(height: 24),
-          if (_tab == 'schedules') _schedulesTab(emps),
-          if (_tab == 'holidays') _holidaysTab(emps),
-        ]));
-      },
-    );
+    return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Row(children: [_saveBtn(), const Spacer(), Text('الجداول والإجازات', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text))]),
+      const SizedBox(height: 24),
+      Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [_tabBtn('الجداول', 'schedules'), _tabBtn('الإجازات', 'holidays')])),
+      const SizedBox(height: 24),
+      if (_tab == 'schedules') _schedulesTab(_emps),
+      if (_tab == 'holidays') _holidaysTab(_emps),
+    ]));
   }
 
-  // ═══ SCHEDULES TAB — reads from Firestore ═══
+  // ═══ SCHEDULES TAB ═══
   Widget _schedulesTab(List<Map<String, dynamic>> emps) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('schedules').snapshots(),
-      builder: (ctx, schSnap) {
-        if (schSnap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        final schedules = (schSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_docId'] = d.id; return m; }).toList();
-        if (schedules.isNotEmpty && _selSchId == null) _selSchId = schedules.first['_docId'];
-        final activeSch = schedules.firstWhere((s) => s['_docId'] == _selSchId, orElse: () => schedules.isNotEmpty ? schedules.first : {});
-        if (activeSch.isEmpty) return const SizedBox();
-        final activeShId = (activeSch['shiftId'] is int) ? activeSch['shiftId'] : int.tryParse('${activeSch['shiftId']}') ?? 1;
-        final shift = _shifts.firstWhere((s) => s['id'] == activeShId, orElse: () => _shifts.first);
-        final schColor = shift['color'] as Color;
-        final schEmpIds = List<String>.from(activeSch['empIds'] ?? []);
-        final schEmps = emps.where((e) => schEmpIds.contains(e['_id'])).toList();
-        final availEmps = emps.where((e) => !schEmpIds.contains(e['_id'])).toList();
+    if (_schedules.isNotEmpty && _selSchId == null) _selSchId = _schedules.first['id']?.toString();
+    final activeSch = _schedules.firstWhere((s) => s['id']?.toString() == _selSchId, orElse: () => _schedules.isNotEmpty ? _schedules.first : {});
+    if (activeSch.isEmpty) return const SizedBox();
+    final activeShId = (activeSch['shiftId'] is int) ? activeSch['shiftId'] : int.tryParse('${activeSch['shiftId']}') ?? 1;
+    final shift = _shifts.firstWhere((s) => s['id'] == activeShId, orElse: () => _shifts.first);
+    final schColor = shift['color'] as Color;
+    final schEmpIds = List<String>.from(activeSch['empIds'] ?? []);
+    final schEmps = emps.where((e) => schEmpIds.contains((e['uid'] ?? e['id'])?.toString())).toList();
+    final availEmps = emps.where((e) => !schEmpIds.contains((e['uid'] ?? e['id'])?.toString())).toList();
 
-        return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Row(children: [_addBtnDash(Icons.add, 'جدول جديد', C.pri, C.priLight, () => setState(() => _showAddSch = true)), const Spacer(), Text('كل جدول مربوط بفترة عمل — حدد الأيام والموظفين', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub))]),
-          const SizedBox(height: 16),
-          if (_showAddSch) _addSchForm(),
-          SizedBox(height: 150, child: ListView.builder(
-            scrollDirection: Axis.horizontal, reverse: true,
-            itemCount: schedules.length,
-            itemBuilder: (ctx, i) {
-              final sch = schedules[i];
-              final shId = (sch['shiftId'] is int) ? sch['shiftId'] : int.tryParse('${sch['shiftId']}') ?? 1;
-              final sh = _shifts.firstWhere((s) => s['id'] == shId, orElse: () => _shifts.first);
-              final isSel = _selSchId == sch['_docId'];
-              final c = sh['color'] as Color;
-              final days = List<String>.from(sch['days'] ?? []);
-              return Padding(padding: const EdgeInsets.only(left: 14), child: InkWell(onTap: () => setState(() => _selSchId = sch['_docId']),
-                child: Container(width: 260, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: isSel ? c.withOpacity(0.04) : C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: isSel ? c : C.border, width: isSel ? 2 : 1)),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Row(children: [
-                      InkWell(onTap: () => _db.collection('schedules').doc(sch['_docId']).delete(), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.redBd)), child: const Icon(Icons.delete, size: 11, color: C.red))),
-                      const SizedBox(width: 4),
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(6)), child: Text('${(sch['empIds'] as List?)?.length ?? 0} موظف', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted))),
-                      const Spacer(),
-                      Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.text), overflow: TextOverflow.ellipsis),
-                        Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: c)),
-                      ])),
-                    ]),
-                    const SizedBox(height: 4),
-                    Text('(${sh['start']} — ${sh['end']})', style: _mono(fontSize: 10, color: C.muted)),
-                    const Spacer(),
-                    Row(children: _allDays.map((d) => Expanded(child: Container(height: 24, margin: const EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: days.contains(d) ? c.withOpacity(0.12) : C.div, borderRadius: BorderRadius.circular(5)), child: Center(child: Text(d.substring(0,2), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: days.contains(d) ? c : C.hint)))))).toList()),
-                  ]))));
-            },
-          )),
-          const SizedBox(height: 24),
-          // Employee assignment
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: Container(decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: schColor)),
-              child: Column(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.div))),
-                  child: Row(children: [Text('${availEmps.length} متاح', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)), const Spacer(), Text('إضافة موظفين ←', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text))])),
-                ConstrainedBox(constraints: const BoxConstraints(maxHeight: 350), child: ListView(shrinkWrap: true, children: availEmps.map((emp) => _empRow(emp, true, schColor, () {
-                  _db.collection('schedules').doc(_selSchId).update({'empIds': FieldValue.arrayUnion([emp['_id']])});
-                })).toList())),
-              ]))),
-            const SizedBox(width: 20),
-            Expanded(child: Container(decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: schColor.withOpacity(0.4))),
-              child: Column(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14), decoration: BoxDecoration(color: schColor.withOpacity(0.03), border: const Border(bottom: BorderSide(color: C.div))),
-                  child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)), const Spacer(), Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text))])),
-                if (schEmps.isEmpty) Padding(padding: const EdgeInsets.all(30), child: Text('لا يوجد موظفين — أضف من القائمة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
-                ...schEmps.map((emp) => _empRow(emp, false, schColor, () {
-                  _db.collection('schedules').doc(_selSchId).update({'empIds': FieldValue.arrayRemove([emp['_id']])});
-                })),
-              ]))),
-          ]),
-        ]);
-      },
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Row(children: [_addBtnDash(Icons.add, 'جدول جديد', C.pri, C.priLight, () => setState(() => _showAddSch = true)), const Spacer(), Text('كل جدول مربوط بفترة عمل — حدد الأيام والموظفين', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub))]),
+      const SizedBox(height: 16),
+      if (_showAddSch) _addSchForm(),
+      SizedBox(height: 150, child: ListView.builder(
+        scrollDirection: Axis.horizontal, reverse: true,
+        itemCount: _schedules.length,
+        itemBuilder: (ctx, i) {
+          final sch = _schedules[i];
+          final shId = (sch['shiftId'] is int) ? sch['shiftId'] : int.tryParse('${sch['shiftId']}') ?? 1;
+          final sh = _shifts.firstWhere((s) => s['id'] == shId, orElse: () => _shifts.first);
+          final isSel = _selSchId == sch['id']?.toString();
+          final c = sh['color'] as Color;
+          final days = List<String>.from(sch['days'] ?? []);
+          return Padding(padding: const EdgeInsets.only(left: 14), child: InkWell(onTap: () => setState(() => _selSchId = sch['id']?.toString()),
+            child: Container(width: 260, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: isSel ? c.withOpacity(0.04) : C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: isSel ? c : C.border, width: isSel ? 2 : 1)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Row(children: [
+                  InkWell(onTap: () async {
+                    await ApiService.post('admin.php?action=delete_schedule', {'id': sch['id']});
+                    _loadAll();
+                  }, child: Container(width: 26, height: 26, decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.redBd)), child: const Icon(Icons.delete, size: 11, color: C.red))),
+                  const SizedBox(width: 4),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(6)), child: Text('${(sch['empIds'] as List?)?.length ?? 0} موظف', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted))),
+                  const Spacer(),
+                  Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.text), overflow: TextOverflow.ellipsis),
+                    Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: c)),
+                  ])),
+                ]),
+                const SizedBox(height: 4),
+                Text('(${sh['start']} — ${sh['end']})', style: _mono(fontSize: 10, color: C.muted)),
+                const Spacer(),
+                Row(children: _allDays.map((d) => Expanded(child: Container(height: 24, margin: const EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: days.contains(d) ? c.withOpacity(0.12) : C.div, borderRadius: BorderRadius.circular(5)), child: Center(child: Text(d.substring(0,2), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: days.contains(d) ? c : C.hint)))))).toList()),
+              ]))));
+        },
+      )),
+      const SizedBox(height: 24),
+      // Employee assignment
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: Container(decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: schColor)),
+          child: Column(children: [
+            Container(padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.div))),
+              child: Row(children: [Text('${availEmps.length} متاح', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)), const Spacer(), Text('إضافة موظفين ←', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text))])),
+            ConstrainedBox(constraints: const BoxConstraints(maxHeight: 350), child: ListView(shrinkWrap: true, children: availEmps.map((emp) => _empRow(emp, true, schColor, () async {
+              final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
+              final newIds = [...schEmpIds, uid];
+              await ApiService.post('admin.php?action=save_schedule', {
+                ...activeSch,
+                'empIds': newIds,
+              });
+              _loadAll();
+            })).toList())),
+          ]))),
+        const SizedBox(width: 20),
+        Expanded(child: Container(decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: schColor.withOpacity(0.4))),
+          child: Column(children: [
+            Container(padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14), decoration: BoxDecoration(color: schColor.withOpacity(0.03), border: const Border(bottom: BorderSide(color: C.div))),
+              child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)), const Spacer(), Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text))])),
+            if (schEmps.isEmpty) Padding(padding: const EdgeInsets.all(30), child: Text('لا يوجد موظفين — أضف من القائمة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
+            ...schEmps.map((emp) => _empRow(emp, false, schColor, () async {
+              final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
+              final newIds = schEmpIds.where((id) => id != uid).toList();
+              await ApiService.post('admin.php?action=save_schedule', {
+                ...activeSch,
+                'empIds': newIds,
+              });
+              _loadAll();
+            })),
+          ]))),
+      ]),
+    ]);
   }
 
   Widget _addSchForm() => Container(width: double.infinity, margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(22),
@@ -181,41 +199,40 @@ class _AdminSchedulesState extends State<AdminSchedules> {
           child: Center(child: Text(d, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: _newSchDays.contains(d) ? C.pri : C.muted)))))))).toList()),
       const SizedBox(height: 14),
       Row(children: [
-        _actBtn('✓ إنشاء', C.green, Colors.white, () async { if (_newSchName.isNotEmpty) { await _db.collection('schedules').add({'name': _newSchName, 'shiftId': _newSchShift, 'days': _newSchDays, 'empIds': []}); setState(() => _showAddSch = false); } }),
+        _actBtn('✓ إنشاء', C.green, Colors.white, () async {
+          if (_newSchName.isNotEmpty) {
+            await ApiService.post('admin.php?action=save_schedule', {'name': _newSchName, 'shiftId': _newSchShift, 'days': _newSchDays, 'empIds': []});
+            setState(() => _showAddSch = false);
+            _loadAll();
+          }
+        }),
         const SizedBox(width: 8),
         _actBtn('إلغاء', C.white, C.sub, () => setState(() => _showAddSch = false), bd: C.border),
       ]),
     ]));
 
-  // ═══ HOLIDAYS TAB — reads from Firestore ═══
+  // ═══ HOLIDAYS TAB ═══
   Widget _holidaysTab(List<Map<String, dynamic>> emps) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('holidays').snapshots(),
-      builder: (ctx, hSnap) {
-        if (hSnap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        final holidays = (hSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_docId'] = d.id; return m; }).toList();
-        final gen = holidays.where((h) => h['type'] == 'عامة').toList();
-        final cust = holidays.where((h) => h['type'] == 'مخصصة').toList();
+    final gen = _holidays.where((h) => h['type'] == 'عامة').toList();
+    final cust = _holidays.where((h) => h['type'] == 'مخصصة').toList();
 
-        return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Row(children: [_addBtnDash(Icons.add, 'إضافة إجازة', C.green, C.greenL, () => setState(() => _showAddHol = true)), const Spacer(), Text('إجازات عامة (للكل) أو مخصصة (لموظفين محددين)', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub))]),
-          const SizedBox(height: 20),
-          Row(children: [
-            _stat(Icons.check, C.greenL, C.green, 'إجازات عامة', '${gen.length}', '${gen.fold<int>(0, (a,h) => a + ((h['days'] ?? 0) as int))} يوم'),
-            const SizedBox(width: 14),
-            _stat(Icons.people, C.purpleL, C.purple, 'إجازات مخصصة', '${cust.length}', '${cust.fold<int>(0, (a,h) => a + ((h['days'] ?? 0) as int))} يوم'),
-          ]),
-          const SizedBox(height: 20),
-          if (_showAddHol) _addHolForm(emps),
-          for (var type in ['عامة','مخصصة']) ...[
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: [Text('إجازات $type', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)), const SizedBox(width: 8), Container(width: 28, height: 28, decoration: BoxDecoration(color: type == 'عامة' ? C.greenL : C.purpleL, borderRadius: BorderRadius.circular(8)), child: Icon(type == 'عامة' ? Icons.check : Icons.people, size: 14, color: type == 'عامة' ? C.green : C.purple))]),
-            const SizedBox(height: 12),
-            Wrap(spacing: 12, runSpacing: 12, children: holidays.where((h) => h['type'] == type).map((hol) => _holCard(hol, emps)).toList()),
-            const SizedBox(height: 20),
-          ],
-        ]);
-      },
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Row(children: [_addBtnDash(Icons.add, 'إضافة إجازة', C.green, C.greenL, () => setState(() => _showAddHol = true)), const Spacer(), Text('إجازات عامة (للكل) أو مخصصة (لموظفين محددين)', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub))]),
+      const SizedBox(height: 20),
+      Row(children: [
+        _stat(Icons.check, C.greenL, C.green, 'إجازات عامة', '${gen.length}', '${gen.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم'),
+        const SizedBox(width: 14),
+        _stat(Icons.people, C.purpleL, C.purple, 'إجازات مخصصة', '${cust.length}', '${cust.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم'),
+      ]),
+      const SizedBox(height: 20),
+      if (_showAddHol) _addHolForm(emps),
+      for (var type in ['عامة','مخصصة']) ...[
+        Row(mainAxisAlignment: MainAxisAlignment.end, children: [Text('إجازات $type', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)), const SizedBox(width: 8), Container(width: 28, height: 28, decoration: BoxDecoration(color: type == 'عامة' ? C.greenL : C.purpleL, borderRadius: BorderRadius.circular(8)), child: Icon(type == 'عامة' ? Icons.check : Icons.people, size: 14, color: type == 'عامة' ? C.green : C.purple))]),
+        const SizedBox(height: 12),
+        Wrap(spacing: 12, runSpacing: 12, children: _holidays.where((h) => h['type'] == type).map((hol) => _holCard(hol, emps)).toList()),
+        const SizedBox(height: 20),
+      ],
+    ]);
   }
 
   Widget _addHolForm(List<Map<String, dynamic>> emps) => Container(width: double.infinity, margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(22),
@@ -237,15 +254,22 @@ class _AdminSchedulesState extends State<AdminSchedules> {
         Text('اختر الموظفين (${_holSelEmps.length} محدد)', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
         const SizedBox(height: 8),
         ConstrainedBox(constraints: const BoxConstraints(maxHeight: 180), child: SingleChildScrollView(child: Wrap(spacing: 6, runSpacing: 6, children: emps.map((emp) {
-          final sel = _holSelEmps.contains(emp['_id']);
-          return InkWell(onTap: () => setState(() => sel ? _holSelEmps.remove(emp['_id']) : _holSelEmps.add(emp['_id'])),
+          final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
+          final sel = _holSelEmps.contains(uid);
+          return InkWell(onTap: () => setState(() => sel ? _holSelEmps.remove(uid) : _holSelEmps.add(uid)),
             child: Container(width: 200, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: sel ? C.purpleL : C.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: sel ? C.purple : C.border)),
-              child: Row(children: [Checkbox(value: sel, activeColor: C.purple, onChanged: (_) => setState(() => sel ? _holSelEmps.remove(emp['_id']) : _holSelEmps.add(emp['_id'])), visualDensity: VisualDensity.compact), Expanded(child: Text(emp['name'] ?? '', textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text)))])));
+              child: Row(children: [Checkbox(value: sel, activeColor: C.purple, onChanged: (_) => setState(() => sel ? _holSelEmps.remove(uid) : _holSelEmps.add(uid)), visualDensity: VisualDensity.compact), Expanded(child: Text(emp['name'] ?? '', textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text)))])));
         }).toList()))),
       ],
       const SizedBox(height: 14),
       Row(children: [
-        _actBtn('✓ إضافة الإجازة', C.green, Colors.white, () async { if (_newHolName.isNotEmpty && _newHolDate.isNotEmpty) { await _db.collection('holidays').add({'name': _newHolName, 'date': _newHolDate, 'days': _newHolDays, 'type': _newHolType, 'empIds': _newHolType == 'مخصصة' ? _holSelEmps.toList() : [], 'timestamp': FieldValue.serverTimestamp()}); setState(() { _showAddHol = false; _holSelEmps.clear(); }); } }),
+        _actBtn('✓ إضافة الإجازة', C.green, Colors.white, () async {
+          if (_newHolName.isNotEmpty && _newHolDate.isNotEmpty) {
+            await ApiService.post('admin.php?action=save_holiday', {'name': _newHolName, 'date': _newHolDate, 'days': _newHolDays, 'type': _newHolType, 'empIds': _newHolType == 'مخصصة' ? _holSelEmps.toList() : []});
+            setState(() { _showAddHol = false; _holSelEmps.clear(); });
+            _loadAll();
+          }
+        }),
         const SizedBox(width: 8),
         _actBtn('إلغاء', C.white, C.sub, () => setState(() { _showAddHol = false; _holSelEmps.clear(); }), bd: C.border),
       ]),
@@ -255,7 +279,10 @@ class _AdminSchedulesState extends State<AdminSchedules> {
     decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Row(children: [
-        InkWell(onTap: () => _db.collection('holidays').doc(hol['_docId']).delete(), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.redBd)), child: const Icon(Icons.delete, size: 11, color: C.red))),
+        InkWell(onTap: () async {
+          await ApiService.post('admin.php?action=delete_holiday', {'id': hol['id']});
+          _loadAll();
+        }, child: Container(width: 26, height: 26, decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.redBd)), child: const Icon(Icons.delete, size: 11, color: C.red))),
         const SizedBox(width: 6),
         Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3), decoration: BoxDecoration(color: hol['type'] == 'عامة' ? C.greenL : C.purpleL, borderRadius: BorderRadius.circular(20)), child: Text('${hol['days']} يوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: hol['type'] == 'عامة' ? C.green : C.purple))),
         const Spacer(),
@@ -264,7 +291,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
       const SizedBox(height: 8),
       if (hol['type'] == 'عامة') Text('✓ تُطبق على جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.green)),
       if (hol['type'] == 'مخصصة') Wrap(spacing: 4, runSpacing: 4, alignment: WrapAlignment.end, children: ((hol['empIds'] as List?) ?? []).map((eid) {
-        final emp = emps.firstWhere((e) => e['_id'] == eid, orElse: () => {'name': '—'});
+        final emp = emps.firstWhere((e) => (e['uid'] ?? e['id'])?.toString() == eid?.toString(), orElse: () => {'name': '—'});
         return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: C.purpleL, borderRadius: BorderRadius.circular(6)),
           child: Text((emp['name'] ?? '—').toString().split(' ').take(2).join(' '), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.purple)));
       }).toList()),

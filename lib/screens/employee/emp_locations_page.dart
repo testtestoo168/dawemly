@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
-class EmpLocationsPage extends StatelessWidget {
+class EmpLocationsPage extends StatefulWidget {
   final Map<String, dynamic> user;
   const EmpLocationsPage({super.key, required this.user});
+  @override
+  State<EmpLocationsPage> createState() => _EmpLocationsPageState();
+}
 
+class _EmpLocationsPageState extends State<EmpLocationsPage> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
+
+  Future<List<Map<String, dynamic>>> _loadLocations() async {
+    final result = await ApiService.get('admin.php?action=get_locations');
+    if (result['success'] == true) {
+      final allLocs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+      // Filter: active locations assigned to this employee (or all if unassigned)
+      return allLocs.where((loc) {
+        final active = loc['active'];
+        if (active == false || active == 0) return false;
+        final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ??
+            (loc['assigned_employees'] as List?)?.cast<String>() ?? [];
+        return assigned.isEmpty || assigned.contains(widget.user['uid']);
+      }).toList();
+    }
+    return [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,19 +46,14 @@ class EmpLocationsPage extends StatelessWidget {
         ),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).snapshots(),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _loadLocations(),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: C.pri));
           }
 
-          final allLocs = snap.data?.docs ?? [];
-          final userLocs = allLocs.where((d) {
-            final data = d.data() as Map<String, dynamic>;
-            final assigned = (data['assignedEmployees'] as List?)?.cast<String>() ?? [];
-            return assigned.isEmpty || assigned.contains(user['uid']);
-          }).toList();
+          final userLocs = snap.data ?? [];
 
           if (userLocs.isEmpty) {
             return Center(
@@ -59,7 +74,7 @@ class EmpLocationsPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: userLocs.length,
             itemBuilder: (ctx, i) {
-              final loc = userLocs[i].data() as Map<String, dynamic>;
+              final loc = userLocs[i];
               final radius = (loc['radius'] ?? 300) as num;
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),

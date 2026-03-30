@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
-import '../../services/requests_service.dart';
+import '../../services/api_service.dart';
 
 class AdminRequests extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -12,17 +11,42 @@ class AdminRequests extends StatefulWidget {
 }
 
 class _AdminRequestsState extends State<AdminRequests> with SingleTickerProviderStateMixin {
-  final _svc = RequestsService();
   late TabController _tabCtrl;
+  List<Map<String, dynamic>> _requests = [];
+  bool _loading = true;
 
   @override
-  void initState() { super.initState(); _tabCtrl = TabController(length: 3, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 3, vsync: this);
+    _loadRequests();
+  }
+
   @override
   void dispose() { _tabCtrl.dispose(); super.dispose(); }
 
-  String _fmtDate(Timestamp? ts) {
+  Future<void> _loadRequests() async {
+    setState(() => _loading = true);
+    try {
+      final res = await ApiService.get('requests.php?action=all');
+      if (res['success'] == true && mounted) {
+        setState(() {
+          _requests = (res['requests'] as List? ?? []).cast<Map<String, dynamic>>();
+          _loading = false;
+        });
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _fmtDate(dynamic ts) {
     if (ts == null) return '—';
-    final dt = ts.toDate();
+    DateTime? dt;
+    if (ts is String) { try { dt = DateTime.parse(ts); } catch(_) {} }
+    if (dt == null) return '—';
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -60,16 +84,11 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     );
 
     if (confirmed == true) {
-      await _svc.updateRequestStatus(docId, action, adminNote: noteCtrl.text.trim());
-      
-      // Write audit log
-      await FirebaseFirestore.instance.collection('audit_log').add({
-        'user': widget.user['name'] ?? 'مدير النظام',
-        'action': action == 'تم الموافقة' ? 'موافقة على طلب' : 'رفض طلب',
-        'target': 'طلب #${docId.substring(0, 6)}',
-        'details': 'تم ${action == 'تم الموافقة' ? 'الموافقة على' : 'رفض'} الطلب${noteCtrl.text.trim().isNotEmpty ? ' — ملاحظة: ${noteCtrl.text.trim()}' : ''}',
-        'timestamp': FieldValue.serverTimestamp(),
-        'type': action == 'تم الموافقة' ? 'approve' : 'reject',
+      await ApiService.post('requests.php?action=update_status', {
+        'id': docId,
+        'status': action,
+        'adminNote': noteCtrl.text.trim(),
+        'adminName': widget.user['name'] ?? 'مدير النظام',
       });
 
       if (mounted) {
@@ -79,6 +98,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
+        _loadRequests();
       }
     }
   }
@@ -106,56 +126,45 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       ),
 
       Expanded(
-        child: TabBarView(
-          controller: _tabCtrl,
-          children: [
-            _buildList('تحت الإجراء', showActions: true),
-            _buildList('تم الموافقة'),
-            _buildList('مرفوض'),
-          ],
-        ),
+        child: _loading
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          : TabBarView(
+              controller: _tabCtrl,
+              children: [
+                _buildList('تحت الإجراء', showActions: true),
+                _buildList('تم الموافقة'),
+                _buildList('مرفوض'),
+              ],
+            ),
       ),
     ]);
   }
 
   Widget _buildList(String statusFilter, {bool showActions = false}) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('requests').where('status', isEqualTo: statusFilter).snapshots(),
-      builder: (context, snap) {
-        if (snap.hasError) {
-          return Center(child: Text('خطأ في تحميل البيانات', style: GoogleFonts.tajawal(fontSize: 13, color: C.red)));
-        }
-        final docs = snap.data?.docs ?? [];
-        if (snap.connectionState == ConnectionState.waiting && docs.isEmpty) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (docs.isEmpty) {
-          return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.description_outlined, size: 48, color: C.hint),
-            const SizedBox(height: 12),
-            Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
-          ]));
-        }
-        // Sort locally instead of orderBy (avoids needing composite index)
-        docs.sort((a, b) {
-          final aT = (a.data() as Map)['createdAt'] as Timestamp?;
-          final bT = (b.data() as Map)['createdAt'] as Timestamp?;
-          if (aT == null || bT == null) return 0;
-          return bT.compareTo(aT);
-        });
+    var docs = _requests.where((r) => r['status'] == statusFilter).toList();
+    docs.sort((a, b) {
+      final aT = a['createdAt'] as String?;
+      final bT = b['createdAt'] as String?;
+      if (aT == null || bT == null) return 0;
+      return bT.compareTo(aT);
+    });
 
-        final isWide = MediaQuery.of(context).size.width > 800;
+    if (docs.isEmpty) {
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.description_outlined, size: 48, color: C.hint),
+        const SizedBox(height: 12),
+        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+      ]));
+    }
 
-        return ListView.builder(
-          padding: EdgeInsets.all(isWide ? 28 : 14),
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final doc = docs[i];
-            final r = doc.data() as Map<String, dynamic>;
-            return _requestCard(r, doc.id, showActions);
-          },
-        );
-      },
+    final isWide = MediaQuery.of(context).size.width > 800;
+    return RefreshIndicator(
+      onRefresh: _loadRequests,
+      child: ListView.builder(
+        padding: EdgeInsets.all(isWide ? 28 : 14),
+        itemCount: docs.length,
+        itemBuilder: (context, i) => _requestCard(docs[i], docs[i]['id']?.toString() ?? '', showActions),
+      ),
     );
   }
 

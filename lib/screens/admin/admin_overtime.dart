@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
-import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 
 class AdminOvertime extends StatefulWidget {
   final Map<String, dynamic>? adminUser;
@@ -11,11 +10,12 @@ class AdminOvertime extends StatefulWidget {
 }
 
 class _AdminOvertimeState extends State<AdminOvertime> {
-  final _db = FirebaseFirestore.instance;
   final _mono = GoogleFonts.ibmPlexMono;
   final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   late int _selMonth, _selYear;
   double _standardHours = 8.0;
+  List<Map<String, dynamic>> _allRecords = [];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -23,14 +23,27 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     final now = DateTime.now();
     _selMonth = now.month;
     _selYear = now.year;
-    _loadSettings();
+    _loadAll();
   }
 
-  void _loadSettings() async {
+  Future<void> _loadAll() async {
+    setState(() => _loading = true);
     try {
-      final doc = await _db.collection('settings').doc('general').get();
-      if (doc.exists && mounted) setState(() => _standardHours = (doc.data()?['generalH'] as num?)?.toDouble() ?? 8.0);
-    } catch (_) {}
+      final settingsRes = await ApiService.get('admin.php?action=get_settings');
+      if (settingsRes['success'] == true && mounted) {
+        final s = settingsRes['settings'] as Map<String, dynamic>? ?? {};
+        _standardHours = double.tryParse('${s['generalH'] ?? ''}') ?? 8.0;
+      }
+      final recRes = await ApiService.get('attendance.php?action=all_records');
+      if (recRes['success'] == true && mounted) {
+        final list = (recRes['records'] as List? ?? []).cast<Map<String, dynamic>>();
+        setState(() { _allRecords = list; _loading = false; });
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -38,120 +51,141 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     final isWide = MediaQuery.of(context).size.width > 800;
     final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: AttendanceService().getAllRecords(),
-      builder: (context, snap) {
-        final docs = snap.data?.docs ?? [];
-        final records = docs.map((d) {
-          final m = d.data() as Map<String, dynamic>;
-          m['_docId'] = d.id;
-          return m;
-        }).where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix)).toList();
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
 
-        final withOT = <Map<String, dynamic>>[];
-        double totalOT = 0;
-        for (final r in records) {
-          final ci = r['firstCheckIn'] ?? r['checkIn'];
-          final co = r['lastCheckOut'] ?? r['checkOut'];
-          if (ci != null && co != null) {
-            final totalMin = (r['totalWorkedMinutes'] as int?) ?? (co as Timestamp).toDate().difference((ci as Timestamp).toDate()).inMinutes;
-            final hours = totalMin / 60.0;
-            final otManual = r['overtimeManualMinutes'] as int?;
-            final otCancelled = r['overtimeCancelled'] == true;
+    final records = _allRecords.where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix)).toList();
 
-            double ot;
-            if (otCancelled) {
-              ot = 0;
-            } else if (otManual != null) {
-              ot = otManual / 60.0;
-            } else {
-              ot = (hours - _standardHours).clamp(0.0, 24.0);
-            }
-
-            if (ot > 0 || otCancelled || otManual != null) {
-              withOT.add({...r, 'workH': hours, 'overtime': ot, 'otCancelled': otCancelled, 'otReason': r['overtimeReason'] ?? ''});
-              totalOT += ot;
-            }
-          }
+    final withOT = <Map<String, dynamic>>[];
+    double totalOT = 0;
+    for (final r in records) {
+      final ci = r['firstCheckIn'] ?? r['checkIn'];
+      final co = r['lastCheckOut'] ?? r['checkOut'];
+      if (ci != null && co != null) {
+        final totalMin = (r['totalWorkedMinutes'] is int)
+            ? r['totalWorkedMinutes'] as int
+            : int.tryParse('${r['totalWorkedMinutes'] ?? ''}') ?? 0;
+        double hours;
+        if (totalMin > 0) {
+          hours = totalMin / 60.0;
+        } else {
+          final ciDt = _parseTs(ci);
+          final coDt = _parseTs(co);
+          hours = (ciDt != null && coDt != null) ? coDt.difference(ciDt).inMinutes / 60.0 : 0;
         }
-        withOT.sort((a, b) => (b['overtime'] as double).compareTo(a['overtime'] as double));
+        final otManualRaw = r['overtimeManualMinutes'];
+        final otManual = otManualRaw != null ? (otManualRaw is int ? otManualRaw : int.tryParse('$otManualRaw')) : null;
+        final otCancelled = r['overtimeCancelled'] == true;
 
-        return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('سجل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: C.text)),
-          const SizedBox(height: 4),
-          Text('ساعات العمل الإضافية', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub)),
-          const SizedBox(height: 16),
+        double ot;
+        if (otCancelled) {
+          ot = 0;
+        } else if (otManual != null) {
+          ot = otManual / 60.0;
+        } else {
+          ot = (hours - _standardHours).clamp(0.0, 24.0);
+        }
 
-          // Month selector
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
-            child: Row(children: [
-              InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_right, size: 18, color: C.sub))),
-              const Spacer(),
-              Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
-              const Spacer(),
-              InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_left, size: 18, color: C.sub))),
-            ]),
-          ),
+        if (ot > 0 || otCancelled || otManual != null) {
+          withOT.add({...r, 'workH': hours, 'overtime': ot, 'otCancelled': otCancelled, 'otReason': r['overtimeReason'] ?? ''});
+          totalOT += ot;
+        }
+      }
+    }
+    withOT.sort((a, b) => (b['overtime'] as double).compareTo(a['overtime'] as double));
 
-          if (isWide)
-            Row(children: [
-              _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', C.orange, const Color(0xFFFFFAEB), 'ساعات إضافية'),
-              const SizedBox(width: 14),
-              _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', C.pri, C.priLight, 'من ${records.length} موظف'),
-              const SizedBox(width: 14),
-              _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', C.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—'),
-            ])
-          else
-            SizedBox(height: 130, child: ListView(scrollDirection: Axis.horizontal, children: [
-              SizedBox(width: 180, child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', C.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
-              const SizedBox(width: 10),
-              SizedBox(width: 160, child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', C.pri, C.priLight, 'من ${records.length} موظف')),
-              const SizedBox(width: 10),
-              SizedBox(width: 180, child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', C.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
-            ])),
-          const SizedBox(height: 20),
+    return RefreshIndicator(
+      onRefresh: _loadAll,
+      child: SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Text('سجل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: C.text)),
+        const SizedBox(height: 4),
+        Text('ساعات العمل الإضافية', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub)),
+        const SizedBox(height: 16),
 
-          if (withOT.isEmpty)
-            Container(width: double.infinity, padding: const EdgeInsets.all(40), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-              child: Center(child: Column(children: [const Icon(Icons.more_time, size: 36, color: C.hint), const SizedBox(height: 10), Text('لا يوجد أوفرتايم في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))])))
-          else
-            ...withOT.map((emp) => _overtimeCard(emp)),
+        // Month selector
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+          child: Row(children: [
+            InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_right, size: 18, color: C.sub))),
+            const Spacer(),
+            Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
+            const Spacer(),
+            InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_left, size: 18, color: C.sub))),
+          ]),
+        ),
 
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-            child: Column(children: [
-              Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.div))),
-                child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)))),
-              SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
-                headingRowColor: WidgetStateProperty.all(C.bg),
-                columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
-                rows: records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).map((r) {
-                  final ci = r['firstCheckIn'] ?? r['checkIn'];
-                  double workH = 0; double ot = 0;
-                  if (ci != null) {
-                    final co = r['lastCheckOut'] ?? r['checkOut'];
-                    final totalMin = (r['totalWorkedMinutes'] as int?) ?? ((co != null ? (co as Timestamp).toDate() : DateTime.now()).difference((ci as Timestamp).toDate()).inMinutes);
+        if (isWide)
+          Row(children: [
+            _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', C.orange, const Color(0xFFFFFAEB), 'ساعات إضافية'),
+            const SizedBox(width: 14),
+            _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', C.pri, C.priLight, 'من ${records.length} موظف'),
+            const SizedBox(width: 14),
+            _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', C.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—'),
+          ])
+        else
+          SizedBox(height: 130, child: ListView(scrollDirection: Axis.horizontal, children: [
+            SizedBox(width: 180, child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', C.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
+            const SizedBox(width: 10),
+            SizedBox(width: 160, child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', C.pri, C.priLight, 'من ${records.length} موظف')),
+            const SizedBox(width: 10),
+            SizedBox(width: 180, child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', C.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+          ])),
+        const SizedBox(height: 20),
+
+        if (withOT.isEmpty)
+          Container(width: double.infinity, padding: const EdgeInsets.all(40), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+            child: Center(child: Column(children: [const Icon(Icons.more_time, size: 36, color: C.hint), const SizedBox(height: 10), Text('لا يوجد أوفرتايم في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))])))
+        else
+          ...withOT.map((emp) => _overtimeCard(emp)),
+
+        const SizedBox(height: 20),
+        Container(
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+          child: Column(children: [
+            Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.div))),
+              child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)))),
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
+              headingRowColor: WidgetStateProperty.all(C.bg),
+              columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
+              rows: records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).map((r) {
+                final ci = r['firstCheckIn'] ?? r['checkIn'];
+                double workH = 0; double ot = 0;
+                if (ci != null) {
+                  final co = r['lastCheckOut'] ?? r['checkOut'];
+                  final totalMin = (r['totalWorkedMinutes'] is int)
+                      ? r['totalWorkedMinutes'] as int
+                      : int.tryParse('${r['totalWorkedMinutes'] ?? ''}') ?? 0;
+                  if (totalMin > 0) {
                     workH = totalMin / 60.0;
-                    ot = (workH - 8.0).clamp(0.0, 24.0);
+                  } else if (co != null) {
+                    final ciDt = _parseTs(ci);
+                    final coDt = _parseTs(co);
+                    if (ciDt != null && coDt != null) workH = coDt.difference(ciDt).inMinutes / 60.0;
                   }
-                  final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
-                  return DataRow(cells: [
-                    DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)) : Text('—', style: GoogleFonts.tajawal(color: C.muted))),
-                    DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
-                    DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? C.green : C.pri, hasOut ? const Color(0xFFECFDF3) : C.priLight)),
-                    DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text))),
-                  ]);
-                }).toList(),
-              )),
-            ]),
-          ),
-        ]));
-      },
+                  ot = (workH - 8.0).clamp(0.0, 24.0);
+                }
+                final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
+                return DataRow(cells: [
+                  DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)) : Text('—', style: GoogleFonts.tajawal(color: C.muted))),
+                  DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
+                  DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? C.green : C.pri, hasOut ? const Color(0xFFECFDF3) : C.priLight)),
+                  DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text))),
+                ]);
+              }).toList(),
+            )),
+          ]),
+        ),
+      ])),
     );
+  }
+
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
+    return null;
   }
 
   Widget _overtimeCard(Map<String, dynamic> emp) {
@@ -160,7 +194,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     final workH = emp['workH'] as double;
     final otCancelled = emp['otCancelled'] == true;
     final otReason = emp['otReason'] ?? '';
-    final docId = emp['_docId'] ?? '';
+    final docId = emp['id']?.toString() ?? emp['_docId']?.toString() ?? '';
     final dateKey = emp['dateKey'] ?? '';
 
     return Container(
@@ -247,10 +281,18 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           SizedBox(width: double.infinity, child: ElevatedButton.icon(
             onPressed: () async {
               final hours = double.tryParse(hoursCtrl.text.trim()) ?? 0;
-              await _db.collection('attendance_daily').doc(docId).set({'overtimeManualMinutes': (hours * 60).round(), 'overtimeCancelled': false, 'overtimeReason': reasonCtrl.text.trim(), 'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام', 'overtimeEditedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-              await _db.collection('audit_log').add({'user': widget.adminUser?['name'] ?? 'مدير النظام', 'action': 'تعديل أوفرتايم', 'target': empName, 'details': 'تعديل إلى ${hours}h — السبب: ${reasonCtrl.text.trim()}', 'timestamp': FieldValue.serverTimestamp(), 'type': 'edit'});
+              await ApiService.post('attendance.php?action=update_record', {
+                'id': docId,
+                'overtimeManualMinutes': (hours * 60).round(),
+                'overtimeCancelled': false,
+                'overtimeReason': reasonCtrl.text.trim(),
+                'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام',
+              });
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+                _loadAll();
+              }
             },
             icon: const Icon(Icons.save, size: 16), label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))))),
@@ -286,10 +328,18 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           const SizedBox(height: 16),
           SizedBox(width: double.infinity, child: ElevatedButton.icon(
             onPressed: () async {
-              await _db.collection('attendance_daily').doc(docId).set({'overtimeCancelled': true, 'overtimeManualMinutes': 0, 'overtimeReason': reasonCtrl.text.trim(), 'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام', 'overtimeEditedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-              await _db.collection('audit_log').add({'user': widget.adminUser?['name'] ?? 'مدير النظام', 'action': 'إلغاء أوفرتايم', 'target': empName, 'details': 'تم إلغاء — السبب: ${reasonCtrl.text.trim()}', 'timestamp': FieldValue.serverTimestamp(), 'type': 'edit'});
+              await ApiService.post('attendance.php?action=update_record', {
+                'id': docId,
+                'overtimeCancelled': true,
+                'overtimeManualMinutes': 0,
+                'overtimeReason': reasonCtrl.text.trim(),
+                'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام',
+              });
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+                _loadAll();
+              }
             },
             icon: const Icon(Icons.cancel, size: 16), label: Text('تأكيد الإلغاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))))),

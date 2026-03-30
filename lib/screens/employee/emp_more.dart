@@ -1,19 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 import 'emp_locations_page.dart';
 import 'emp_schedule_page.dart';
 import 'emp_profile_page.dart';
 import 'emp_my_face_page.dart';
 
-class EmpMorePage extends StatelessWidget {
+class EmpMorePage extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
   const EmpMorePage({super.key, required this.user, required this.onLogout});
+  @override
+  State<EmpMorePage> createState() => _EmpMorePageState();
+}
+
+class _EmpMorePageState extends State<EmpMorePage> {
+  String? _locationName;
+  bool _loadingLoc = true;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocation();
+  }
+
+  Future<void> _loadLocation() async {
+    try {
+      final result = await ApiService.get('admin.php?action=get_locations');
+      if (result['success'] == true) {
+        final allLocs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+        final uid = widget.user['uid'] ?? '';
+        final userLocs = allLocs.where((loc) {
+          final active = loc['active'];
+          if (active == false || active == 0) return false;
+          final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ??
+              (loc['assigned_employees'] as List?)?.cast<String>() ?? [];
+          return assigned.isEmpty || assigned.contains(uid);
+        }).toList();
+        if (mounted) {
+          setState(() {
+            _locationName = userLocs.isNotEmpty ? (userLocs.first['name'] ?? 'المنشأة') : null;
+            _loadingLoc = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingLoc = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingLoc = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +105,7 @@ class EmpMorePage extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        _getInitials(user['name'] ?? 'م'),
+                        _getInitials(widget.user['name'] ?? 'م'),
                         style: _tj(15, weight: FontWeight.w700, color: Colors.white),
                       ),
                     ),
@@ -86,39 +126,9 @@ class EmpMorePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: C.border),
               ),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).snapshots(),
-                builder: (ctx, snap) {
-                  final locs = snap.data?.docs ?? [];
-                  final userLocs = locs.where((d) {
-                    final data = d.data() as Map<String, dynamic>;
-                    final assigned = (data['assignedEmployees'] as List?)?.cast<String>() ?? [];
-                    return assigned.isEmpty || assigned.contains(user['uid']);
-                  }).toList();
-
-                  if (userLocs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text('لا توجد مواقع محددة', style: _tj(14, color: C.muted)),
-                          const Spacer(),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final firstLoc = userLocs.first.data() as Map<String, dynamic>;
-                  return Padding(
+              child: _loadingLoc
+                ? const Padding(padding: EdgeInsets.all(16), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
+                : Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
@@ -131,13 +141,11 @@ class EmpMorePage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(firstLoc['name'] ?? 'المنشأة', style: _tj(14, weight: FontWeight.w600, color: C.text)),
+                        Text(_locationName ?? 'لا توجد مواقع محددة', style: _tj(14, weight: _locationName != null ? FontWeight.w600 : FontWeight.w400, color: _locationName != null ? C.text : C.muted)),
                         const Spacer(),
                       ],
                     ),
-                  );
-                },
-              ),
+                  ),
             ),
 
             const SizedBox(height: 24),
@@ -157,25 +165,25 @@ class EmpMorePage extends StatelessWidget {
                   _menuItem(
                     icon: Icons.location_on_outlined,
                     label: 'المواقع والفرع',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpLocationsPage(user: user))),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpLocationsPage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.calendar_month_outlined,
                     label: 'جدول العمل',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpSchedulePage(user: user))),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpSchedulePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.person_outline_rounded,
                     label: 'الملف الشخصي',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpProfilePage(user: user))),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpProfilePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.face_outlined,
                     label: 'بصمتي',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpMyFacePage(user: user))),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpMyFacePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
@@ -244,7 +252,6 @@ class EmpMorePage extends StatelessWidget {
   }
 
   // ─── Menu item: Icon on RIGHT, chevron on LEFT (RTL layout) ───
-  // رصد style icon box: light gray bg + blue outline icon
   static const _iconBg = Color(0xFFEDF1F7);
   static const _iconColor = C.pri;
 
@@ -311,7 +318,7 @@ class EmpMorePage extends StatelessWidget {
             child: Text('إلغاء', style: _tj(14, color: C.sub)),
           ),
           TextButton(
-            onPressed: () { Navigator.pop(ctx); onLogout(); },
+            onPressed: () { Navigator.pop(ctx); widget.onLogout(); },
             child: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: C.red)),
           ),
         ],

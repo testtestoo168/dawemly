@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
 import '../../services/face_recognition_service.dart';
+import '../../services/api_service.dart';
 import 'face_registration_page.dart';
 import 'face_verify_dialog.dart';
 
@@ -47,35 +47,27 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   // Auto-check for pending verification requests and show banner immediately
+  // Uses polling since we no longer have Firestore streams
   void _checkPendingVerification() async {
     final uid = widget.user['uid'] ?? '';
     if (uid.isEmpty) return;
     try {
-      // Check for unread verify notifications
-      final snap = await FirebaseFirestore.instance.collection('notifications')
-          .where('uid', isEqualTo: uid)
-          .where('type', isEqualTo: 'verify_request')
-          .where('read', isEqualTo: false)
-          .limit(1)
-          .get();
-      if (snap.docs.isNotEmpty && mounted) {
-        await FirebaseFirestore.instance.collection('notifications').doc(snap.docs.first.id).update({'read': true});
-        _respondToVerification(uid);
+      final result = await ApiService.get('admin.php?action=get_verifications');
+      if (result['success'] == true) {
+        final verifications = (result['verifications'] as List? ?? []).cast<Map<String, dynamic>>();
+        final pending = verifications.where((v) =>
+          (v['uid'] == uid) &&
+          (v['status'] == 'pending') &&
+          (v['read'] != true)
+        ).toList();
+        if (pending.isNotEmpty && mounted) {
+          // Mark as read via API
+          final id = pending.first['id'];
+          ApiService.post('admin.php?action=mark_read', {'id': id}).catchError((_) => <String, dynamic>{});
+          _respondToVerification(uid);
+        }
       }
     } catch (_) {}
-
-    // Also listen in real-time for new verify requests while app is open
-    FirebaseFirestore.instance.collection('notifications')
-        .where('uid', isEqualTo: uid)
-        .where('type', isEqualTo: 'verify_request')
-        .where('read', isEqualTo: false)
-        .snapshots()
-        .listen((snap) {
-      if (snap.docs.isNotEmpty && mounted) {
-        FirebaseFirestore.instance.collection('notifications').doc(snap.docs.first.id).update({'read': true});
-        _respondToVerification(uid);
-      }
-    });
   }
 
   @override
@@ -103,14 +95,15 @@ class _EmpHomePageState extends State<EmpHomePage> {
     if (firstIn == null) return;
 
     // Base: accumulated minutes from completed sessions
-    final totalWorkedMinutes = (_todayRecord!['totalWorkedMinutes'] as int?) ?? 0;
-    final isCheckedIn = _todayRecord!['isCheckedIn'] == true;
+    final totalWorkedMinutes = (_todayRecord!['totalWorkedMinutes'] as int?) ?? (_todayRecord!['total_worked_minutes'] as int?) ?? 0;
+    final isCheckedIn = _todayRecord!['isCheckedIn'] == true || _todayRecord!['is_checked_in'] == true;
 
     if (isCheckedIn) {
       // Currently in a session — add live elapsed from currentSessionStart
-      final sessionStart = _todayRecord!['currentSessionStart'] as Timestamp?;
+      final sessionStartRaw = _todayRecord!['currentSessionStart'] ?? _todayRecord!['current_session_start'];
+      final sessionStart = _parseTs(sessionStartRaw);
       if (sessionStart != null) {
-        final liveMinutes = DateTime.now().difference(sessionStart.toDate()).inSeconds;
+        final liveMinutes = DateTime.now().difference(sessionStart).inSeconds;
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveMinutes));
       } else {
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));
@@ -133,22 +126,25 @@ class _EmpHomePageState extends State<EmpHomePage> {
   void _loadLocations() async {
     try {
       final uid = widget.user['uid'] ?? '';
-      final snap = await FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).get();
-      final locs = snap.docs.map((d) {
-        final data = d.data();
-        data['id'] = d.id;
-        return data;
-      }).where((loc) {
-        // If assignedEmployees is empty or null → all employees allowed
-        final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
-        return assigned.isEmpty || assigned.contains(uid);
-      }).toList();
-      if (mounted) {
-        setState(() {
-          _allLocations = locs;
-          _loadingLocations = false;
-          if (locs.length == 1) _selectedLocationId = locs.first['id'];
-        });
+      final result = await ApiService.get('admin.php?action=get_locations');
+      if (result['success'] == true) {
+        final allLocs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+        final locs = allLocs.where((loc) {
+          final active = loc['active'];
+          if (active == false || active == 0) return false;
+          final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ??
+              (loc['assigned_employees'] as List?)?.cast<String>() ?? [];
+          return assigned.isEmpty || assigned.contains(uid);
+        }).toList();
+        if (mounted) {
+          setState(() {
+            _allLocations = locs;
+            _loadingLocations = false;
+            if (locs.length == 1) _selectedLocationId = locs.first['id'];
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingLocations = false);
       }
     } catch (_) {
       if (mounted) setState(() => _loadingLocations = false);
@@ -205,37 +201,22 @@ class _EmpHomePageState extends State<EmpHomePage> {
       facePhotoUrl = faceResult['photoUrl'] as String?;
       usedFaceAuth = true; // Face flow was used regardless of photo upload result
     }
-    // ─── Step 2: Check location if required ───
-    bool requireLocation = true;
-    try {
-      final settingsDoc = await FirebaseFirestore.instance.collection('settings').doc('general').get();
-      final globalAuthLoc = settingsDoc.data()?['authLoc'] ?? true;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final hasOverride = userDoc.data()?['authOverride'] == true;
-      requireLocation = hasOverride ? (userDoc.data()?['authLoc'] ?? true) : globalAuthLoc;
-    } catch (_) {}
-
-    if (requireLocation) {
-      final loc = _selectedLocation;
-      if (loc == null || loc.isEmpty) {
-        _showResultDialog(false, 'لا توجد مواقع', 'لم يحدد الأدمن أي موقع للحضور بعد');
-        return;
-      }
-
+    // ─── Step 2: Check location if required (handled by AttendanceService via API) ───
+    // We still show UI feedback for out-of-range
+    final loc = _selectedLocation;
+    bool showLocCheck = loc != null && loc.isNotEmpty;
+    if (showLocCheck) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.green);
-
       final pos = await _attService.getCurrentLocation();
       if (pos == null) {
         if (mounted) Navigator.pop(context);
         _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
         return;
       }
-
       final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
       final adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-
       if (distance > radius) {
         if (mounted) Navigator.pop(context);
         _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? 'الموقع المحدد');
@@ -284,40 +265,24 @@ class _EmpHomePageState extends State<EmpHomePage> {
       usedFaceAuth = true; // Face flow was used
     }
 
-    // ─── Step 2: Location check ───
-    bool requireLocation = true;
-    try {
-      final settingsDoc = await FirebaseFirestore.instance.collection('settings').doc('general').get();
-      final globalAuthLoc = settingsDoc.data()?['authLoc'] ?? true;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final hasOverride = userDoc.data()?['authOverride'] == true;
-      requireLocation = hasOverride ? (userDoc.data()?['authLoc'] ?? true) : globalAuthLoc;
-    } catch (_) {}
-
-    if (requireLocation) {
-      final loc = _selectedLocation;
-      if (loc == null || loc.isEmpty) {
-        _showResultDialog(false, 'لا توجد مواقع', 'لم يحدد الأدمن أي موقع بعد');
-        return;
-      }
-
+    // ─── Step 2: Location check (UI feedback only, service handles validation) ───
+    final loc2 = _selectedLocation;
+    bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
+    if (showLocCheck2) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.red);
-
       final pos = await _attService.getCurrentLocation();
       if (pos == null) {
         if (mounted) Navigator.pop(context);
         _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
         return;
       }
-
-      final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
-      final adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
-      final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
+      final adminLat = (loc2['lat'] as num?)?.toDouble() ?? 0;
+      final adminLng = (loc2['lng'] as num?)?.toDouble() ?? 0;
+      final radius = (loc2['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-
       if (distance > radius) {
         if (mounted) Navigator.pop(context);
-        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? 'الموقع المحدد');
+        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? 'الموقع المحدد');
         return;
       }
       if (mounted) Navigator.pop(context);
@@ -444,9 +409,17 @@ class _EmpHomePageState extends State<EmpHomePage> {
     ))));
   }
 
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
+    if (v is DateTime) return v;
+    return null;
+  }
+
   String _formatTimestamp(dynamic ts) {
     if (ts == null) return '—';
-    final dt = ts is DateTime ? ts : (ts as Timestamp).toDate();
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
@@ -457,12 +430,12 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final dayName = _days[now.weekday % 7];
     final monthName = _months[now.month - 1];
     final greeting = now.hour < 12 ? 'صباح الخير' : 'مساء الخير';
-    final hasCheckIn = (_todayRecord?['firstCheckIn'] ?? _todayRecord?['checkIn']) != null;
-    final hasCheckOut = (_todayRecord?['lastCheckOut'] ?? _todayRecord?['checkOut']) != null;
+    final hasCheckIn = (_todayRecord?['firstCheckIn'] ?? _todayRecord?['first_check_in'] ?? _todayRecord?['checkIn'] ?? _todayRecord?['check_in']) != null;
+    final hasCheckOut = (_todayRecord?['lastCheckOut'] ?? _todayRecord?['last_check_out'] ?? _todayRecord?['checkOut'] ?? _todayRecord?['check_out']) != null;
     // isCheckedIn: use new field if available, otherwise fallback to old logic
     final bool isCurrentlyCheckedIn;
-    if (_todayRecord != null && _todayRecord!.containsKey('isCheckedIn')) {
-      isCurrentlyCheckedIn = _todayRecord!['isCheckedIn'] == true;
+    if (_todayRecord != null && (_todayRecord!.containsKey('isCheckedIn') || _todayRecord!.containsKey('is_checked_in'))) {
+      isCurrentlyCheckedIn = _todayRecord!['isCheckedIn'] == true || _todayRecord!['is_checked_in'] == true;
     } else {
       // Old data fallback: checked in if has checkIn but no checkOut
       isCurrentlyCheckedIn = hasCheckIn && !hasCheckOut;
@@ -487,16 +460,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             GestureDetector(
               onTap: () => _showNotifications(),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('notifications').where('uid', isEqualTo: widget.user['uid'] ?? '').snapshots(),
-                builder: (ctx, nSnap) {
-                  final count = (nSnap.data?.docs ?? []).where((d) => (d.data() as Map)['read'] != true).length;
-                  return Stack(children: [
-                    Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
-                    if (count > 0) Positioned(top: 2, right: 2, child: Container(width: 18, height: 18, decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)), child: Center(child: Text('$count', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white))))),
-                  ]);
-                },
-              ),
+              child: Stack(children: [
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
+              ]),
             ),
             Row(children: [
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -654,8 +620,8 @@ class _EmpHomePageState extends State<EmpHomePage> {
               Text('اضغط "إثبات الحضور" للبدء', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)),
             ]))
           else Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-            if (hasCheckIn) _entryRow('أول حضور', _formatTimestamp(_todayRecord!['firstCheckIn'] ?? _todayRecord!['checkIn']), C.pri, Icons.login_rounded),
-            if (hasCheckOut) _entryRow('آخر خروج', _formatTimestamp(_todayRecord!['lastCheckOut'] ?? _todayRecord!['checkOut']), C.red, Icons.logout_rounded),
+            if (hasCheckIn) _entryRow('أول حضور', _formatTimestamp(_todayRecord!['firstCheckIn'] ?? _todayRecord!['first_check_in'] ?? _todayRecord!['checkIn'] ?? _todayRecord!['check_in']), C.pri, Icons.login_rounded),
+            if (hasCheckOut) _entryRow('آخر خروج', _formatTimestamp(_todayRecord!['lastCheckOut'] ?? _todayRecord!['last_check_out'] ?? _todayRecord!['checkOut'] ?? _todayRecord!['check_out']), C.red, Icons.logout_rounded),
           ])),
         ]),
       )),
@@ -697,7 +663,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   // ═══════════════════════════════════════════════
-  //  NOTIFICATIONS — with external push support
+  //  NOTIFICATIONS — API-based
   // ═══════════════════════════════════════════════
   void _showNotifications() {
     final uid = widget.user['uid'] ?? '';
@@ -713,21 +679,28 @@ class _EmpHomePageState extends State<EmpHomePage> {
               Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
               const SizedBox(width: 8), const Icon(Icons.notifications, size: 18, color: Colors.white),
             ])),
-          Flexible(child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('notifications').where('uid', isEqualTo: uid).limit(20).snapshots(),
+          Flexible(child: FutureBuilder<Map<String, dynamic>>(
+            future: ApiService.get('admin.php?action=get_notifications'),
             builder: (ctx, snap) {
-              var docs = snap.data?.docs ?? [];
-              docs.sort((a, b) { final aT = (a.data() as Map)['timestamp'] as Timestamp?; final bT = (b.data() as Map)['timestamp'] as Timestamp?; if (aT == null || bT == null) return 0; return bT.compareTo(aT); });
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+              }
+              final allNotifs = (snap.data?['notifications'] as List? ?? []).cast<Map<String, dynamic>>();
+              final docs = allNotifs.where((n) => n['uid'] == uid).toList();
+              docs.sort((a, b) {
+                final aT = _parseTs(a['timestamp']); final bT = _parseTs(b['timestamp']);
+                if (aT == null || bT == null) return 0; return bT.compareTo(aT);
+              });
               if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [const Icon(Icons.notifications_off, size: 40, color: C.hint), const SizedBox(height: 8), Text('لا توجد إشعارات', style: GoogleFonts.tajawal(color: C.muted))])));
               return ListView.builder(shrinkWrap: true, itemCount: docs.length, itemBuilder: (ctx, i) {
-                final n = docs[i].data() as Map<String, dynamic>;
-                final docId = docs[i].id;
+                final n = docs[i];
+                final docId = n['id']?.toString() ?? '';
                 final isRead = n['read'] == true;
                 final isVerifyRequest = n['type'] == 'verify_request';
                 final isUrgent = n['type'] == 'urgent' || isVerifyRequest;
                 return InkWell(
                   onTap: () {
-                    if (!isRead) FirebaseFirestore.instance.collection('notifications').doc(docId).update({'read': true});
+                    if (!isRead && docId.isNotEmpty) ApiService.post('admin.php?action=mark_read', {'id': docId}).catchError((_) => <String, dynamic>{});
                     if (isVerifyRequest) { Navigator.pop(ctx); _respondToVerification(uid); }
                   },
                   child: Container(
@@ -789,32 +762,41 @@ class _EmpHomePageState extends State<EmpHomePage> {
       final loc = _selectedLocation;
       double adminLat = 0, adminLng = 0, radius = 300;
       String locName = 'الموقع المحدد';
-      if (loc != null) {
+      if (loc != null && loc.isNotEmpty) {
         adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
         adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
         radius = (loc['radius'] as num?)?.toDouble() ?? 300;
         locName = loc['name'] ?? 'الموقع المحدد';
       } else {
-        final locSnap = await FirebaseFirestore.instance.collection('locations').where('active', isEqualTo: true).limit(1).get();
-        if (locSnap.docs.isNotEmpty) {
-          final l = locSnap.docs.first.data();
-          adminLat = (l['lat'] as num?)?.toDouble() ?? 0;
-          adminLng = (l['lng'] as num?)?.toDouble() ?? 0;
-          radius = (l['radius'] as num?)?.toDouble() ?? 300;
-          locName = l['name'] ?? 'الموقع المحدد';
-        }
+        // Fallback: load locations from API
+        try {
+          final locResult = await ApiService.get('admin.php?action=get_locations');
+          if (locResult['success'] == true) {
+            final locs = (locResult['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+            final active = locs.where((l) => l['active'] != false && l['active'] != 0).toList();
+            if (active.isNotEmpty) {
+              final l = active.first;
+              adminLat = (l['lat'] as num?)?.toDouble() ?? 0;
+              adminLng = (l['lng'] as num?)?.toDouble() ?? 0;
+              radius = (l['radius'] as num?)?.toDouble() ?? 300;
+              locName = l['name'] ?? 'الموقع المحدد';
+            }
+          }
+        } catch (_) {}
       }
 
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
       final inRange = distance <= radius;
 
-      final vReqs = await FirebaseFirestore.instance.collection('verification_requests').where('uid', isEqualTo: uid).where('status', isEqualTo: 'pending').limit(1).get();
-      if (vReqs.docs.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('verification_requests').doc(vReqs.docs.first.id).update({
-          'status': 'responded', 'respondedAt': FieldValue.serverTimestamp(),
-          'empLat': pos.latitude, 'empLng': pos.longitude, 'inRange': inRange, 'distance': distance.round(),
+      // Respond to verification via API
+      try {
+        await ApiService.post('admin.php?action=respond_verification', {
+          'uid': uid,
+          'lat': pos.latitude,
+          'lng': pos.longitude,
+          'distance': distance.round(),
         });
-      }
+      } catch (_) {}
 
       if (mounted) Navigator.pop(context);
 

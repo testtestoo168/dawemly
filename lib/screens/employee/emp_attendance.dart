@@ -30,16 +30,21 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     _selYear = now.year;
   }
 
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
+    return null;
+  }
+
   String _fmtTime(dynamic ts) {
     if (ts == null) return '—';
-    DateTime dt;
-    if (ts is Timestamp) {
-      dt = ts.toDate();
-    } else if (ts is DateTime) {
+    DateTime? dt;
+    if (ts is DateTime) {
       dt = ts;
-    } else {
-      return '—';
+    } else if (ts is String) {
+      dt = _parseTs(ts);
     }
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
@@ -143,22 +148,22 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
         ),
 
         // ─── Records ───
-        Expanded(child: StreamBuilder<QuerySnapshot>(
-          stream: svc.getMonthlyAttendance(widget.user['uid'] ?? '', _selYear, _selMonth),
+        Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: svc.getMonthlyAttendance(widget.user['uid'] ?? '', _selYear, _selMonth),
           builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
-            final records = docs.map((d) => d.data() as Map<String, dynamic>)
-                .where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix))
-                .toList();
-            records.sort((a, b) => (b['dateKey'] ?? '').compareTo(a['dateKey'] ?? ''));
-            final present = records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).length;
-            final complete = records.where((r) => (r['lastCheckOut'] ?? r['checkOut']) != null).length;
+            final records = List<Map<String, dynamic>>.from(snap.data ?? []);
+            records.sort((a, b) {
+              final ak = (a['dateKey'] ?? a['date_key'] ?? '').toString();
+              final bk = (b['dateKey'] ?? b['date_key'] ?? '').toString();
+              return bk.compareTo(ak);
+            });
+            final present = records.where((r) => (r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in']) != null).length;
+            final complete = records.where((r) => (r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out']) != null).length;
 
             // Calculate total worked hours for the month
             int totalMonthMinutes = 0;
             for (final r in records) {
-              totalMonthMinutes += (r['totalWorkedMinutes'] as int?) ?? 0;
+              totalMonthMinutes += (r['totalWorkedMinutes'] as int?) ?? (r['total_worked_minutes'] as int?) ?? 0;
             }
 
             return ListView(padding: const EdgeInsets.all(14), children: [
@@ -195,7 +200,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
   }
 
   Widget _buildDayCard(Map<String, dynamic> r) {
-    final dateKey = r['dateKey'] ?? '';
+    final dateKey = r['dateKey'] ?? r['date_key'] ?? '';
     final parts = dateKey.split('-');
     final day = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
     final month = parts.length > 1 ? int.tryParse(parts[1]) ?? _selMonth : _selMonth;
@@ -203,9 +208,9 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     final dt = parts.length == 3 ? DateTime(year, month, day) : DateTime.now();
     final dayName = _dayNames[dt.weekday % 7];
 
-    // Use new fields with fallback to legacy
-    final firstIn = r['firstCheckIn'] ?? r['checkIn'];
-    final lastOut = r['lastCheckOut'] ?? r['checkOut'];
+    // Use new fields with fallback to legacy and snake_case
+    final firstIn = r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in'];
+    final lastOut = r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out'];
     final hasOut = lastOut != null;
     final stColor = hasOut ? C.green : C.pri;
     final totalMinutes = (r['totalWorkedMinutes'] as int?) ?? 0;
@@ -314,7 +319,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
           final color = isCheckIn ? C.pri : C.red;
           final icon = isCheckIn ? Icons.login_rounded : Icons.logout_rounded;
           final label = isCheckIn ? 'تسجيل دخول' : 'تسجيل خروج';
-          final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
+          final time = punch['localTime'] ?? punch['timestamp'];
           final isLast = i == punches.length - 1;
 
           return IntrinsicHeight(

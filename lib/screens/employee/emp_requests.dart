@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
 
@@ -14,15 +13,30 @@ class EmpRequestsPage extends StatefulWidget {
 class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   final _svc = RequestsService();
+  List<Map<String, dynamic>>? _requests;
+  bool _loading = true;
 
   @override
-  void initState() { super.initState(); _tabCtrl = TabController(length: 2, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+    _loadRequests();
+  }
+
   @override
   void dispose() { _tabCtrl.dispose(); super.dispose(); }
 
-  String _fmtDate(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  Future<void> _loadRequests() async {
+    setState(() => _loading = true);
+    final reqs = await _svc.getMyRequests(widget.user['uid'] ?? '');
+    if (mounted) setState(() { _requests = reqs; _loading = false; });
+  }
+
+  String _fmtDate(dynamic v) {
+    if (v == null) return '—';
+    DateTime? dt;
+    if (v is String) { try { dt = DateTime.parse(v); } catch(_) {} }
+    if (dt == null) return v.toString();
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -36,6 +50,12 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
         backgroundColor: C.white,
         surfaceTintColor: C.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: C.sub),
+            onPressed: _loadRequests,
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(52),
           child: Column(children: [
@@ -61,32 +81,29 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
       body: TabBarView(
         controller: _tabCtrl,
         children: [
-          // ─── طلباتي من Firestore ───
-          StreamBuilder<QuerySnapshot>(
-            stream: _svc.getMyRequests(widget.user['uid'] ?? ''),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.description_outlined, size: 48, color: C.hint),
-                  const SizedBox(height: 12),
-                  Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
-                  const SizedBox(height: 4),
-                  Text('أنشئ طلب جديد من زر "طلب جديد"', style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
-                ]));
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.all(14),
-                itemCount: docs.length,
-                itemBuilder: (context, i) {
-                  final r = docs[i].data() as Map<String, dynamic>;
-                  return _requestCard(r);
-                },
-              );
-            },
+          // ─── طلباتي ───
+          RefreshIndicator(
+            onRefresh: _loadRequests,
+            child: _loading
+              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+              : (_requests == null || _requests!.isEmpty)
+                ? ListView(children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.description_outlined, size: 48, color: C.hint),
+                        const SizedBox(height: 12),
+                        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+                        const SizedBox(height: 4),
+                        Text('أنشئ طلب جديد من زر "طلب جديد"', style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
+                      ])),
+                    ),
+                  ])
+                : ListView.builder(
+                    padding: const EdgeInsets.all(14),
+                    itemCount: _requests!.length,
+                    itemBuilder: (context, i) => _requestCard(_requests![i]),
+                  ),
           ),
 
           // ─── الطلبات الواردة ───
@@ -102,7 +119,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
 
   Widget _requestCard(Map<String, dynamic> r) {
     final status = r['status'] ?? '';
-    final isLeave = r['requestType'] == 'إجازة';
+    final isLeave = r['requestType'] == 'إجازة' || r['request_type'] == 'إجازة';
     Color stColor;
     Color stBg;
     Color stBd;
@@ -120,17 +137,27 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
     final typeColor = isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009);
 
+    final requestType = r['requestType'] ?? r['request_type'] ?? '';
+    final leaveType = r['leaveType'] ?? r['leave_type'] ?? '';
+    final permType = r['permType'] ?? r['perm_type'] ?? '';
+    final fromTime = r['fromTime'] ?? r['from_time'] ?? '';
+    final toTime = r['toTime'] ?? r['to_time'] ?? '';
+    final startDate = r['startDate'] ?? r['start_date'];
+    final endDate = r['endDate'] ?? r['end_date'];
+    final days = r['days'] ?? 0;
+    final hours = (r['hours'] as num?)?.toStringAsFixed(1);
+    final adminNote = r['adminNote'] ?? r['admin_note'] ?? '';
+
     String desc = '';
     if (isLeave) {
-      desc = '${r['leaveType'] ?? ''} — ${r['days'] ?? 0} يوم';
-      final start = _fmtDate(r['startDate']);
-      final end = _fmtDate(r['endDate']);
+      desc = '$leaveType — $days يوم';
+      final start = _fmtDate(startDate);
+      final end = _fmtDate(endDate);
       desc += '\nمن $start إلى $end';
     } else {
-      desc = '${r['permType'] ?? ''}';
-      final hours = (r['hours'] as num?)?.toStringAsFixed(1);
+      desc = '$permType';
       desc += '${hours != null ? ' — $hours ساعة' : ''}';
-      desc += '\nمن ${r['fromTime'] ?? ''} إلى ${r['toTime'] ?? ''}';
+      desc += '\nمن $fromTime إلى $toTime';
     }
 
     return Container(
@@ -149,7 +176,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
             ]),
           ),
           Row(children: [
-            Text('${r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+            Text('$requestType', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
             const SizedBox(width: 8),
             Container(
               width: 30, height: 30,
@@ -164,13 +191,13 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
           const SizedBox(height: 4),
           Text('السبب: ${r['reason']}', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
         ],
-        if ((r['adminNote'] ?? '').isNotEmpty) ...[
+        if (adminNote.isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6)),
-            child: Text('ملاحظة الإدارة: ${r['adminNote']}', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
+            child: Text('ملاحظة الإدارة: $adminNote', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
           ),
         ],
       ]),

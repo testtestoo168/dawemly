@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
 class AdminNotifications extends StatefulWidget {
   const AdminNotifications({super.key});
@@ -10,60 +10,80 @@ class AdminNotifications extends StatefulWidget {
 }
 
 class _AdminNotificationsState extends State<AdminNotifications> {
-  final _db = FirebaseFirestore.instance;
   String _fType = 'الكل';
+  List<Map<String, dynamic>> _notifs = [];
+  bool _loading = true;
 
   final _typeColor = const {'alert': Color(0xFFF04438), 'urgent': Color(0xFFF04438), 'warning': Color(0xFFF79009), 'security': Color(0xFF7F56D9), 'info': Color(0xFF175CD3)};
   final _typeIcon = const {'alert': Icons.warning_amber, 'urgent': Icons.notifications_active, 'warning': Icons.warning_amber, 'security': Icons.lock, 'info': Icons.notifications};
   final _typeLabel = const {'alert': 'تنبيه', 'urgent': 'مستعجل', 'warning': 'تحذير', 'security': 'أمان', 'info': 'معلومات'};
 
-  String _fmtTime(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifs();
+  }
+
+  Future<void> _loadNotifs() async {
+    setState(() => _loading = true);
+    try {
+      final res = await ApiService.get('admin.php?action=get_notifications');
+      if (res['success'] == true) {
+        final list = (res['notifications'] as List? ?? []).cast<Map<String, dynamic>>();
+        if (mounted) setState(() { _notifs = list; _loading = false; });
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch (_) { return null; } }
+    return null;
+  }
+
+  String _fmtTime(dynamic ts) {
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
 
-  String _fmtDate(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  String _fmtDate(dynamic ts) {
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]}';
   }
 
   void _markAllRead() async {
-    final snap = await _db.collection('notifications').where('read', isEqualTo: false).get();
-    final batch = _db.batch();
-    for (final doc in snap.docs) {
-      batch.update(doc.reference, {'read': true});
+    final unreadIds = _notifs.where((n) => n['read'] == false).map((n) => n['id']?.toString() ?? '').where((id) => id.isNotEmpty).toList();
+    for (final id in unreadIds) {
+      await ApiService.post('admin.php?action=mark_read', {'id': id});
     }
-    await batch.commit();
+    await _loadNotifs();
   }
 
-  void _markRead(String docId) {
-    _db.collection('notifications').doc(docId).update({'read': true});
-  }
-
-  void _deleteNotif(String docId) {
-    _db.collection('notifications').doc(docId).delete();
+  void _markRead(String id) async {
+    await ApiService.post('admin.php?action=mark_read', {'id': id});
+    await _loadNotifs();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('notifications').orderBy('timestamp', descending: true).limit(50).snapshots(),
-      builder: (context, snap) {
-        final allDocs = snap.data?.docs ?? [];
-        final allNotifs = allDocs.map((d) {
-          final m = d.data() as Map<String, dynamic>;
-          m['_docId'] = d.id;
-          return m;
-        }).toList();
+    final allNotifs = _notifs;
+    final unread = allNotifs.where((n) => n['read'] == false).length;
+    final filtered = _fType == 'الكل' ? allNotifs : allNotifs.where((n) => n['type'] == _fType).toList();
 
-        final unread = allNotifs.where((n) => n['read'] == false).length;
-        final filtered = _fType == 'الكل' ? allNotifs : allNotifs.where((n) => n['type'] == _fType).toList();
-
-        return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    return RefreshIndicator(
+      onRefresh: _loadNotifs,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             TextButton(onPressed: _markAllRead, child: Text('✓ تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.sub))),
             Row(children: [
@@ -79,7 +99,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
           ]),
           const SizedBox(height: 18),
 
-          if (snap.connectionState == ConnectionState.waiting && allNotifs.isEmpty)
+          if (_loading)
             const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (filtered.isEmpty)
             Container(padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
@@ -92,14 +112,13 @@ class _AdminNotificationsState extends State<AdminNotifications> {
             ...filtered.map((n) {
               final color = _typeColor[n['type']] ?? C.muted;
               final isRead = n['read'] == true;
-              final docId = n['_docId'] as String;
+              final id = (n['id'] ?? '').toString();
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: isRead ? C.border : color.withOpacity(0.25))),
                 child: Opacity(opacity: isRead ? 0.65 : 1, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16), child: Row(children: [
                   Row(children: [
-                    InkWell(onTap: () => _deleteNotif(docId), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.close, size: 10, color: C.muted))),
-                    if (!isRead) ...[const SizedBox(width: 4), InkWell(onTap: () => _markRead(docId), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.check, size: 10, color: C.green)))],
+                    if (!isRead && id.isNotEmpty) ...[const SizedBox(width: 4), InkWell(onTap: () => _markRead(id), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.check, size: 10, color: C.green)))],
                     const SizedBox(width: 8),
                     Text(_fmtTime(n['timestamp']), style: GoogleFonts.ibmPlexMono(fontSize: 11, color: C.muted)),
                     const SizedBox(width: 6),
@@ -121,8 +140,8 @@ class _AdminNotificationsState extends State<AdminNotifications> {
                 ]))),
               );
             }),
-        ]));
-      },
+        ]),
+      ),
     );
   }
 
