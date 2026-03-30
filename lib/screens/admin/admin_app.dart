@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 import 'admin_dashboard.dart';
 import 'admin_employees.dart';
 import 'admin_user_mgmt.dart';
@@ -38,8 +38,6 @@ class _AdminAppState extends State<AdminApp> {
   static const _sidebarBg = Color(0xFF0F3460);
   static const _sidebarHover = Color(0xFF1A4A7A);
   static const _sidebarActive = Color(0xFF1E5A8E);
-
-  final _db = FirebaseFirestore.instance;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
@@ -402,139 +400,162 @@ class _AdminAppState extends State<AdminApp> {
   }
 
   // ─── Mobile Home Page ───
-  Widget _mobileHome() {
-    return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      // ═══ HEADER — Gradient with stats ═══
-      StreamBuilder<QuerySnapshot>(stream: _db.collection('users').snapshots(), builder: (ctx, uSnap) {
-        final allUsers = (uSnap.data?.docs ?? []).where((d) { final m = d.data() as Map; return (m['name'] ?? '').toString().isNotEmpty && m['role'] != 'admin'; }).length;
-        return StreamBuilder<QuerySnapshot>(stream: AttendanceService().getAllTodayRecords(), builder: (ctx, aSnap) {
-          final att = aSnap.data?.docs ?? [];
-          final complete = att.where((d) => (d.data() as Map)['checkOut'] != null).length;
-          final presentOnly = att.where((d) { final m = d.data() as Map; return m['checkIn'] != null && m['checkOut'] == null; }).length;
-          final totalAttended = att.where((d) => (d.data() as Map)['checkIn'] != null).length;
-          final absent = allUsers > totalAttended ? allUsers - totalAttended : 0;
-          return Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0F4199), C.pri]), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('مدارس المروج النموذجية', style: _tj(13, weight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
-              const SizedBox(height: 4),
-              Text('نظرة عامة على الحضور', style: _tj(11, color: Colors.white.withOpacity(0.4))),
-              const SizedBox(height: 18),
-              Row(children: [
-                Expanded(child: _mStatTap('$absent', 'غائب', const Color(0xFFFF6B6B), () => _openStatDetail('absent', 'الغائبين', const Color(0xFFFF6B6B)))),
-                const SizedBox(width: 10),
-                Expanded(child: _mStatTap('$complete', 'مكتمل', const Color(0xFF74C0FC), () => _openStatDetail('complete', 'المكتملين', const Color(0xFF74C0FC)))),
-                const SizedBox(width: 10),
-                Expanded(child: _mStatTap('$presentOnly', 'حاضر', const Color(0xFF51CF66), () => _openStatDetail('present', 'الحاضرين', const Color(0xFF51CF66)))),
-                const SizedBox(width: 10),
-                Expanded(child: _mStatTap('$allUsers', 'الموظفين', Colors.white, () => _openStatDetail('all', 'جميع الموظفين', C.pri))),
-              ]),
-            ]),
-          );
-        });
-      }),
+  List<Map<String, dynamic>> _mHomeUsers = [];
+  List<Map<String, dynamic>> _mHomeAtt = [];
+  List<Map<String, dynamic>> _mHomeRequests = [];
+  bool _mHomeLoading = true;
 
-      // ═══ QUICK ACTIONS ═══
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
-          child: Row(children: [
-            _quickBtn(Icons.wifi_tethering_outlined, 'إثبات\nالحالة', () => _openMobilePage('verify')),
-            _quickBtn(Icons.assignment_outlined, 'الطلبات', () => setState(() => _mTab = 2)),
-            _quickBtn(Icons.fingerprint_rounded, 'الحضور', () => setState(() => _mTab = 1)),
-            _quickBtn(Icons.bar_chart_outlined, 'التقارير', () => _openMobilePage('reports')),
+  Future<void> _loadMobileHome() async {
+    setState(() => _mHomeLoading = true);
+    try {
+      final usersRes = await ApiService.get('users.php?action=list');
+      final attRes = await AttendanceService().getAllTodayRecords();
+      final reqRes = await ApiService.get('requests.php?action=all');
+      if (mounted) {
+        setState(() {
+          _mHomeUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
+          _mHomeAtt = attRes;
+          final allReqs = (reqRes['requests'] as List? ?? []).cast<Map<String, dynamic>>();
+          _mHomeRequests = allReqs.where((r) => r['status'] == 'تحت الإجراء').toList();
+          _mHomeLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _mHomeLoading = false);
+    }
+  }
+
+  Widget _mobileHome() {
+    // Load on first render if not loaded
+    if (_mHomeLoading && _mHomeUsers.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMobileHome());
+    }
+
+    final allUsers = _mHomeUsers.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').length;
+    final att = _mHomeAtt;
+    final complete = att.where((r) => r['checkOut'] != null).length;
+    final presentOnly = att.where((r) => r['checkIn'] != null && r['checkOut'] == null).length;
+    final totalAttended = att.where((r) => r['checkIn'] != null).length;
+    final absent = allUsers > totalAttended ? allUsers - totalAttended : 0;
+
+    return RefreshIndicator(
+      onRefresh: _loadMobileHome,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        // ═══ HEADER — Gradient with stats ═══
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0F4199), C.pri]), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('مدارس المروج النموذجية', style: _tj(13, weight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
+            const SizedBox(height: 4),
+            Text('نظرة عامة على الحضور', style: _tj(11, color: Colors.white.withOpacity(0.4))),
+            const SizedBox(height: 18),
+            Row(children: [
+              Expanded(child: _mStatTap('$absent', 'غائب', const Color(0xFFFF6B6B), () => _openStatDetail('absent', 'الغائبين', const Color(0xFFFF6B6B)))),
+              const SizedBox(width: 10),
+              Expanded(child: _mStatTap('$complete', 'مكتمل', const Color(0xFF74C0FC), () => _openStatDetail('complete', 'المكتملين', const Color(0xFF74C0FC)))),
+              const SizedBox(width: 10),
+              Expanded(child: _mStatTap('$presentOnly', 'حاضر', const Color(0xFF51CF66), () => _openStatDetail('present', 'الحاضرين', const Color(0xFF51CF66)))),
+              const SizedBox(width: 10),
+              Expanded(child: _mStatTap('$allUsers', 'الموظفين', Colors.white, () => _openStatDetail('all', 'جميع الموظفين', C.pri))),
+            ]),
           ]),
         ),
-      ),
-      const SizedBox(height: 8),
 
-      // ═══ SECTION: الطلبات المعلقة ═══
-      _sectionHeader('الطلبات المعلقة', onTap: () => setState(() => _mTab = 2)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _db.collection('requests').where('status', isEqualTo: 'تحت الإجراء').snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
-                Icon(Icons.check_circle_outline_rounded, size: 40, color: C.green.withOpacity(0.5)),
-                const SizedBox(height: 8),
-                Text('لا توجد طلبات معلقة', style: _tj(13, color: C.muted)),
-              ])));
-              return Column(children: docs.take(5).map((doc) {
-                final r = doc.data() as Map<String, dynamic>;
-                final isFirst = doc == docs.first;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
-                  child: Row(children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(20)),
-                      child: Text('معلق', style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
-                    const Spacer(),
-                    Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                      Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: C.sub), overflow: TextOverflow.ellipsis),
-                    ])),
-                    const SizedBox(width: 10),
-                    Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
-                      child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
-                  ]),
-                );
-              }).toList());
-            },
+        // ═══ QUICK ACTIONS ═══
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            child: Row(children: [
+              _quickBtn(Icons.wifi_tethering_outlined, 'إثبات\nالحالة', () => _openMobilePage('verify')),
+              _quickBtn(Icons.assignment_outlined, 'الطلبات', () => setState(() => _mTab = 2)),
+              _quickBtn(Icons.fingerprint_rounded, 'الحضور', () => setState(() => _mTab = 1)),
+              _quickBtn(Icons.bar_chart_outlined, 'التقارير', () => _openMobilePage('reports')),
+            ]),
           ),
         ),
-      ),
-      const SizedBox(height: 8),
+        const SizedBox(height: 8),
 
-      // ═══ SECTION: آخر الحضور ═══
-      _sectionHeader('آخر الحضور', onTap: () => setState(() => _mTab = 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: AttendanceService().getAllTodayRecords(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
-                Icon(Icons.hourglass_empty_rounded, size: 40, color: C.muted.withOpacity(0.5)),
-                const SizedBox(height: 8),
-                Text('لا يوجد حضور اليوم', style: _tj(13, color: C.muted)),
-              ])));
-              return Column(children: docs.take(6).map((doc) {
-                final r = doc.data() as Map<String, dynamic>;
-                final hasOut = r['checkOut'] != null;
-                final isFirst = doc == docs.first;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
-                  child: Row(children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: hasOut ? const Color(0xFFDCFCE7) : C.priLight, borderRadius: BorderRadius.circular(20)),
-                      child: Text(hasOut ? 'مكتمل' : 'حاضر', style: _tj(10, weight: FontWeight.w600, color: hasOut ? const Color(0xFF166534) : C.pri))),
-                    const Spacer(),
-                    Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                      Text(r['empId'] ?? '', style: _tj(11, color: C.muted)),
-                    ])),
-                    const SizedBox(width: 10),
-                    Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
-                      child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
-                  ]),
-                );
-              }).toList());
-            },
+        // ═══ SECTION: الطلبات المعلقة ═══
+        _sectionHeader('الطلبات المعلقة', onTap: () => setState(() => _mTab = 2)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            child: _mHomeLoading
+              ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+              : _mHomeRequests.isEmpty
+                ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
+                    Icon(Icons.check_circle_outline_rounded, size: 40, color: C.green.withOpacity(0.5)),
+                    const SizedBox(height: 8),
+                    Text('لا توجد طلبات معلقة', style: _tj(13, color: C.muted)),
+                  ])))
+                : Column(children: _mHomeRequests.take(5).map((r) {
+                    final isFirst = r == _mHomeRequests.first;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
+                      child: Row(children: [
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(20)),
+                          child: Text('معلق', style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
+                        const Spacer(),
+                        Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
+                          Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: C.sub), overflow: TextOverflow.ellipsis),
+                        ])),
+                        const SizedBox(width: 10),
+                        Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
+                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
+                      ]),
+                    );
+                  }).toList()),
           ),
         ),
-      ),
-      const SizedBox(height: 24),
-    ]));
+        const SizedBox(height: 8),
+
+        // ═══ SECTION: آخر الحضور ═══
+        _sectionHeader('آخر الحضور', onTap: () => setState(() => _mTab = 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            child: _mHomeLoading
+              ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+              : att.isEmpty
+                ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
+                    Icon(Icons.hourglass_empty_rounded, size: 40, color: C.muted.withOpacity(0.5)),
+                    const SizedBox(height: 8),
+                    Text('لا يوجد حضور اليوم', style: _tj(13, color: C.muted)),
+                  ])))
+                : Column(children: att.take(6).map((r) {
+                    final hasOut = r['checkOut'] != null;
+                    final isFirst = r == att.first;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
+                      child: Row(children: [
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: hasOut ? const Color(0xFFDCFCE7) : C.priLight, borderRadius: BorderRadius.circular(20)),
+                          child: Text(hasOut ? 'مكتمل' : 'حاضر', style: _tj(10, weight: FontWeight.w600, color: hasOut ? const Color(0xFF166534) : C.pri))),
+                        const Spacer(),
+                        Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
+                          Text(r['empId'] ?? '', style: _tj(11, color: C.muted)),
+                        ])),
+                        const SizedBox(width: 10),
+                        Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
+                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
+                      ]),
+                    );
+                  }).toList()),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ])));
   }
 
   Widget _quickBtn(IconData icon, String label, VoidCallback onTap) {
