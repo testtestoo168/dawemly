@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
+import '../../services/api_service.dart';
 
 class AdminEmployees extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -11,29 +11,51 @@ class AdminEmployees extends StatefulWidget {
 }
 
 class _AdminEmployeesState extends State<AdminEmployees> {
-  final _db = FirebaseFirestore.instance;
   final _svc = AttendanceService();
   String _search = '', _fDept = 'الكل', _fSt = 'الكل';
   final _mono = GoogleFonts.ibmPlexMono;
   final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _dayNames = const ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
-  String _todayKey() { final n = DateTime.now(); return '${n.year}-${n.month.toString().padLeft(2,'0')}-${n.day.toString().padLeft(2,'0')}'; }
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _attList = [];
+  List<Map<String, dynamic>> _locations = [];
+  bool _loading = true;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final usersRes = await ApiService.get('users.php?action=list');
+      final attList = await _svc.getAllTodayRecords();
+      final locsRes = await ApiService.get('admin.php?action=get_locations');
+      if (mounted) setState(() {
+        _users = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
+        _attList = attList;
+        _locations = (locsRes['locations'] as List? ?? []).cast<Map<String, dynamic>>();
+        _loading = false;
+      });
+    } catch (_) { if (mounted) setState(() => _loading = false); }
+  }
 
   Future<void> _audit(String action, String target, String details) async {
-    await _db.collection('audit_log').add({
+    await ApiService.post('admin.php?action=audit_log', {
       'user': widget.user['name'] ?? 'مدير النظام',
-      'action': action, 'target': target, 'details': details,
-      'timestamp': FieldValue.serverTimestamp(), 'type': 'edit',
+      'action': action, 'target': target, 'details': details, 'type': 'edit',
     });
   }
 
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch (_) { return null; } }
+    return null;
+  }
+
   String _fmtTs(dynamic ts) {
-    if (ts == null) return '—';
-    DateTime dt;
-    if (ts is Timestamp) { dt = ts.toDate(); }
-    else if (ts is DateTime) { dt = ts; }
-    else { return '—'; }
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
@@ -49,67 +71,58 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('users').snapshots(),
-      builder: (context, usersSnap) {
-        if (usersSnap.hasError) return Center(child: Text('خطأ', style: GoogleFonts.tajawal(color: C.red)));
-        if (usersSnap.connectionState == ConnectionState.waiting && (usersSnap.data?.docs ?? []).isEmpty) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    if (_loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
 
-        final allUsers = (usersSnap.data?.docs ?? []).map((d) { final m = d.data() as Map<String, dynamic>; m['_id'] = d.id; return m; })
-          .where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin')
-          .toList();
-        allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    final allUsers = _users.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
+    allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: _svc.getAllTodayRecords(),
-          builder: (context, attSnap) {
-            final attMap = <String, Map<String, dynamic>>{};
-            for (final doc in (attSnap.data?.docs ?? [])) {
-              final m = doc.data() as Map<String, dynamic>;
-              attMap[m['uid'] ?? ''] = m;
-            }
+    final attMap = <String, Map<String, dynamic>>{};
+    for (final r in _attList) attMap[r['uid'] ?? ''] = r;
 
-            final merged = allUsers.map((u) {
-              final uid = u['uid'] ?? u['_id'] ?? '';
-              final att = attMap[uid];
-              final hasIn = (att?['firstCheckIn'] ?? att?['checkIn']) != null;
-              final hasOut = (att?['lastCheckOut'] ?? att?['checkOut']) != null;
-              final isCheckedIn = att?['isCheckedIn'] == true;
-              String status = 'غائب';
-              if (hasOut && !isCheckedIn) status = 'مكتمل';
-              else if (hasIn || isCheckedIn) status = 'حاضر';
-              return {...u, '_status': status, '_att': att, '_isCheckedIn': isCheckedIn};
-            }).toList();
+    final merged = allUsers.map((u) {
+      final uid = u['uid'] ?? u['_id'] ?? '';
+      final att = attMap[uid];
+      final hasIn = (att?['firstCheckIn'] ?? att?['checkIn']) != null;
+      final hasOut = (att?['lastCheckOut'] ?? att?['checkOut']) != null;
+      final isCheckedIn = att?['isCheckedIn'] == true;
+      String status = 'غائب';
+      if (hasOut && !isCheckedIn) status = 'مكتمل';
+      else if (hasIn || isCheckedIn) status = 'حاضر';
+      return {...u, '_status': status, '_att': att, '_isCheckedIn': isCheckedIn};
+    }).toList();
 
-            final depts = <String>{'الكل', ...merged.map((e) => (e['dept'] ?? '').toString()).where((d) => d.isNotEmpty)};
-            final filtered = merged.where((e) {
-              if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['empId'] ?? '').toString().contains(_search)) return false;
-              if (_fDept != 'الكل' && e['dept'] != _fDept) return false;
-              if (_fSt != 'الكل' && e['_status'] != _fSt) return false;
-              return true;
-            }).toList();
+    final depts = <String>{'الكل', ...merged.map((e) => (e['dept'] ?? '').toString()).where((d) => d.isNotEmpty)};
+    final filtered = merged.where((e) {
+      if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['empId'] ?? '').toString().contains(_search)) return false;
+      if (_fDept != 'الكل' && e['dept'] != _fDept) return false;
+      if (_fSt != 'الكل' && e['_status'] != _fSt) return false;
+      return true;
+    }).toList();
 
-            return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('سجل الموظفين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
-              const SizedBox(height: 20),
-              Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
-                _searchBox(),
-                _drop(_fSt, ['الكل','حاضر','مكتمل','غائب'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
-                _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)),
-                  child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
-              ]),
-              const SizedBox(height: 18),
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('سجل الموظفين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
+          const SizedBox(height: 20),
+          Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
+            _searchBox(),
+            _drop(_fSt, ['الكل','حاضر','مكتمل','غائب'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
+            _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)),
+              child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
+          ]),
+          const SizedBox(height: 18),
 
-              if (filtered.isEmpty)
-                Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-                  child: Center(child: Column(children: [const Icon(Icons.people_outline, size: 48, color: C.hint), const SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))])))
-              else
-                ...filtered.map((e) => _empCard(e)),
-            ]));
-          },
-        );
-      },
+          if (filtered.isEmpty)
+            Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+              child: Center(child: Column(children: [const Icon(Icons.people_outline, size: 48, color: C.hint), const SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))])))
+          else
+            ...filtered.map((e) => _empCard(e)),
+        ]),
+      ),
     );
   }
 
@@ -252,87 +265,33 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Future<void> _adminCheckIn(String uid, String empId, String empName, TimeOfDay time) async {
     final now = DateTime.now();
     final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final adminName = widget.user['name'] ?? 'مدير النظام';
-
-    // Save to attendance log
-    await _db.collection('attendance').add({
-      'uid': uid, 'empId': empId, 'name': empName,
-      'type': 'checkIn',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(punchTime),
-      'dateKey': dateKey,
-      'punchedByAdmin': true,
-      'adminName': adminName,
-      'biometric': false,
+    await ApiService.post('admin.php?action=admin_checkin', {
+      'uid': uid, 'emp_id': empId, 'name': empName,
+      'time_override': punchTime.toIso8601String(),
+      'punched_by_admin': true, 'admin_name': adminName,
     });
-
-    // Update daily summary
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    if (!dailyDoc.exists) {
-      await dailyRef.set({
-        'uid': uid, 'empId': empId, 'name': empName, 'dateKey': dateKey,
-        'firstCheckIn': Timestamp.fromDate(punchTime),
-        'lastCheckOut': null, 'totalWorkedMinutes': 0,
-        'sessions': 1, 'currentSessionStart': Timestamp.fromDate(punchTime),
-        'isCheckedIn': true, 'status': 'حاضر',
-        'punchedByAdmin': true, 'adminName': adminName,
-        'checkIn': Timestamp.fromDate(punchTime),
-      });
-    } else {
-      await dailyRef.update({
-        'currentSessionStart': Timestamp.fromDate(punchTime),
-        'isCheckedIn': true, 'sessions': FieldValue.increment(1),
-        'status': 'حاضر', 'punchedByAdmin': true, 'adminName': adminName,
-      });
-    }
-
     await _audit('بصمة دخول إدارية', empName, 'تسجيل دخول بواسطة $adminName');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+      _load();
+    }
   }
 
   Future<void> _adminCheckOut(String uid, String empId, String empName, TimeOfDay time) async {
     final now = DateTime.now();
     final punchTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final dateKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final adminName = widget.user['name'] ?? 'مدير النظام';
-
-    await _db.collection('attendance').add({
-      'uid': uid, 'empId': empId, 'name': empName,
-      'type': 'checkOut',
-      'timestamp': FieldValue.serverTimestamp(),
-      'localTime': Timestamp.fromDate(punchTime),
-      'dateKey': dateKey,
-      'punchedByAdmin': true,
-      'adminName': adminName,
-      'biometric': false,
+    await ApiService.post('admin.php?action=admin_checkout', {
+      'uid': uid, 'emp_id': empId, 'name': empName,
+      'time_override': punchTime.toIso8601String(),
+      'punched_by_admin': true, 'admin_name': adminName,
     });
-
-    final dailyRef = _db.collection('attendance_daily').doc('${uid}_$dateKey');
-    final dailyDoc = await dailyRef.get();
-
-    int sessionMinutes = 0;
-    if (dailyDoc.exists) {
-      final data = dailyDoc.data()!;
-      final sessionStart = data['currentSessionStart'] as Timestamp?;
-      if (sessionStart != null) {
-        sessionMinutes = now.difference(sessionStart.toDate()).inMinutes;
-        if (sessionMinutes < 0) sessionMinutes = 0;
-      }
-    }
-
-    await dailyRef.set({
-      'lastCheckOut': Timestamp.fromDate(punchTime),
-      'totalWorkedMinutes': FieldValue.increment(sessionMinutes),
-      'isCheckedIn': false, 'status': 'مكتمل',
-      'punchedByAdmin': true, 'adminName': adminName,
-      'checkOut': Timestamp.fromDate(punchTime),
-    }, SetOptions(merge: true));
-
     await _audit('بصمة خروج إدارية', empName, 'تسجيل خروج بواسطة $adminName');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+      _load();
+    }
   }
 
   // ═══════════════════════════════════════════════
@@ -389,14 +348,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             ),
 
             // Records
-            Expanded(child: StreamBuilder<QuerySnapshot>(
-              stream: _svc.getMonthlyAttendance(uid, selYear, selMonth),
+            Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _svc.getMonthlyAttendance(uid, selYear, selMonth),
               builder: (context, snap) {
-                final docs = snap.data?.docs ?? [];
-                final monthPrefix = '$selYear-${selMonth.toString().padLeft(2, '0')}';
-                final records = docs.map((d) => d.data() as Map<String, dynamic>)
-                    .where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix))
-                    .toList();
+                if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                final records = List<Map<String, dynamic>>.from(snap.data ?? []);
                 records.sort((a, b) => (b['dateKey'] ?? '').compareTo(a['dateKey'] ?? ''));
 
                 int totalMonthMin = 0;
@@ -508,15 +464,8 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Widget _buildPunchTimeline(List<Map<String, dynamic>> punches, String uid, String empName) {
     if (punches.isEmpty) return Padding(padding: const EdgeInsets.all(14), child: Center(child: Text('لا توجد تفاصيل', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted))));
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('locations').snapshots(),
-      builder: (ctx, locSnap) {
-        final allLocs = (locSnap.data?.docs ?? []).map((d) {
-          final m = d.data() as Map<String, dynamic>;
-          m['_id'] = d.id;
-          return m;
-        }).toList();
-
+    final allLocs = _locations;
+    return Builder(builder: (ctx) {
         return Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
           child: Column(children: List.generate(punches.length, (i) {
@@ -524,7 +473,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             final isCheckIn = punch['type'] == 'checkIn';
             final color = isCheckIn ? C.pri : C.red;
             final label = isCheckIn ? 'دخول' : 'خروج';
-            final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
+            final time = punch['localTime'] ?? punch['timestamp'];
             final byAdmin = punch['punchedByAdmin'] == true;
             final adminName = punch['adminName'] ?? '';
             final lat = punch['lat'] as num?;
@@ -620,8 +569,8 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final isCheckIn = punch['type'] == 'checkIn';
     final label = isCheckIn ? 'دخول' : 'خروج';
     final color = isCheckIn ? C.pri : C.red;
-    final time = punch['localTime'] as Timestamp? ?? punch['timestamp'] as Timestamp?;
-    final currentTime = time?.toDate() ?? DateTime.now();
+    final time = punch['localTime'] ?? punch['timestamp'];
+    final currentTime = _parseTs(time) ?? DateTime.now();
     
     TimeOfDay selectedTime = TimeOfDay(hour: currentTime.hour, minute: currentTime.minute);
 
@@ -669,13 +618,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 final oldDate = currentTime;
                 final newTime = DateTime(oldDate.year, oldDate.month, oldDate.day, selectedTime.hour, selectedTime.minute);
                 
-                // Update the specific punch document
                 if (punchId.isNotEmpty) {
-                  await _db.collection('attendance').doc(punchId).update({
-                    'localTime': Timestamp.fromDate(newTime),
-                    'manualEdit': true,
-                    'editedBy': widget.user['name'] ?? 'مدير النظام',
-                    'editedAt': FieldValue.serverTimestamp(),
+                  await ApiService.post('attendance.php?action=edit_punch', {
+                    'punch_id': punchId, 'uid': uid,
+                    'new_time': newTime.toIso8601String(),
+                    'edited_by': widget.user['name'] ?? 'مدير النظام',
                   });
                 }
                 
@@ -771,17 +718,13 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         const SizedBox(height: 14),
         SizedBox(width: double.infinity, child: ElevatedButton.icon(
           onPressed: () async {
-            final updates = <String, dynamic>{
-              'manualEdit': true,
-              'editedBy': widget.user['name'] ?? 'مدير النظام',
-              'editedAt': FieldValue.serverTimestamp(),
-            };
-            if (ciCtrl.text.trim().isNotEmpty) updates['checkInManual'] = ciCtrl.text.trim();
-            if (coCtrl.text.trim().isNotEmpty) updates['checkOutManual'] = coCtrl.text.trim();
-            final mins = int.tryParse(minCtrl.text.trim());
-            if (mins != null) updates['totalWorkedMinutes'] = mins;
-
-            await _db.collection('attendance_daily').doc('${uid}_$dateKey').set(updates, SetOptions(merge: true));
+            await ApiService.post('attendance.php?action=edit_day', {
+              'uid': uid, 'date_key': dateKey,
+              if (ciCtrl.text.trim().isNotEmpty) 'check_in_manual': ciCtrl.text.trim(),
+              if (coCtrl.text.trim().isNotEmpty) 'check_out_manual': coCtrl.text.trim(),
+              if (int.tryParse(minCtrl.text.trim()) != null) 'total_worked_minutes': int.parse(minCtrl.text.trim()),
+              'edited_by': widget.user['name'] ?? 'مدير النظام',
+            });
             await _audit('تعديل بصمة يدوي', empName, 'تعديل يوم $dateKey — حضور: ${ciCtrl.text} خروج: ${coCtrl.text} دقائق: ${minCtrl.text}');
 
             if (ctx.mounted) Navigator.pop(ctx);
