@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
 class AdminAudit extends StatefulWidget {
   const AdminAudit({super.key});
@@ -10,9 +10,10 @@ class AdminAudit extends StatefulWidget {
 }
 
 class _AdminAuditState extends State<AdminAudit> {
-  final _db = FirebaseFirestore.instance;
   String _fType = 'الكل';
   int? _expandedIdx;
+  List<Map<String, dynamic>> _logs = [];
+  bool _loading = true;
 
   final _typeMap = const {
     'create': {'l': 'إنشاء', 'c': 0xFF17B26A, 'bg': 0xFFECFDF3},
@@ -27,16 +28,43 @@ class _AdminAuditState extends State<AdminAudit> {
     'delete': {'l': 'حذف', 'c': 0xFFF04438, 'bg': 0xFFFEF3F2},
   };
 
-  String _fmtTime(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  @override
+  void initState() {
+    super.initState();
+    _loadLogs();
+  }
+
+  Future<void> _loadLogs() async {
+    setState(() => _loading = true);
+    try {
+      final res = await ApiService.get('admin.php?action=get_audit_log');
+      if (res['success'] == true) {
+        final list = (res['logs'] as List? ?? []).cast<Map<String, dynamic>>();
+        if (mounted) setState(() { _logs = list; _loading = false; });
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  DateTime? _parseTs(dynamic v) {
+    if (v == null) return null;
+    if (v is String) { try { return DateTime.parse(v); } catch (_) { return null; } }
+    return null;
+  }
+
+  String _fmtTime(dynamic ts) {
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
   }
 
-  String _fmtDate(Timestamp? ts) {
-    if (ts == null) return '—';
-    final dt = ts.toDate();
+  String _fmtDate(dynamic ts) {
+    final dt = _parseTs(ts);
+    if (dt == null) return '—';
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -44,20 +72,14 @@ class _AdminAuditState extends State<AdminAudit> {
   @override
   Widget build(BuildContext context) {
     final types = ['الكل', 'create', 'edit', 'approve', 'reject', 'disable', 'settings', 'verify', 'security', 'login', 'delete'];
+    final filtered = _fType == 'الكل' ? _logs : _logs.where((l) => l['type'] == _fType).toList();
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: _db.collection('audit_log').orderBy('timestamp', descending: true).limit(100).snapshots(),
-      builder: (context, snap) {
-        final allDocs = snap.data?.docs ?? [];
-        final allLogs = allDocs.map((d) {
-          final m = d.data() as Map<String, dynamic>;
-          m['_id'] = d.id;
-          return m;
-        }).toList();
-
-        final filtered = _fType == 'الكل' ? allLogs : allLogs.where((l) => l['type'] == _fType).toList();
-
-        return SingleChildScrollView(padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    return RefreshIndicator(
+      onRefresh: _loadLogs,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)), child: Text('${filtered.length} سجل', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
             Text('سجل التدقيق', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
@@ -66,14 +88,14 @@ class _AdminAuditState extends State<AdminAudit> {
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: types.map((t) {
             final on = _fType == t;
             final tm = _typeMap[t];
-            return InkWell(onTap: () => setState(() => _fType = t), borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), decoration: BoxDecoration(color: on ? C.pri : C.white, borderRadius: BorderRadius.circular(8), border: on ? null : Border.all(color: C.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [
+            return InkWell(onTap: () => setState(() { _fType = t; _expandedIdx = null; }), borderRadius: BorderRadius.circular(8), child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), decoration: BoxDecoration(color: on ? C.pri : C.white, borderRadius: BorderRadius.circular(8), border: on ? null : Border.all(color: C.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [
               if (t != 'الكل') Container(width: 8, height: 8, margin: const EdgeInsets.only(left: 4), decoration: BoxDecoration(color: on ? Colors.white : Color(tm!['c'] as int), shape: BoxShape.circle)),
-              Text(t == 'الكل' ? 'الكل (${allLogs.length})' : (tm?['l'] as String? ?? t), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: on ? Colors.white : C.sub)),
+              Text(t == 'الكل' ? 'الكل (${_logs.length})' : (tm?['l'] as String? ?? t), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: on ? Colors.white : C.sub)),
             ])));
           }).toList()),
           const SizedBox(height: 18),
 
-          if (snap.connectionState == ConnectionState.waiting && allLogs.isEmpty)
+          if (_loading)
             const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (filtered.isEmpty)
             Container(padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
@@ -143,8 +165,8 @@ class _AdminAuditState extends State<AdminAudit> {
                 ),
               );
             }),
-        ]));
-      },
+        ]),
+      ),
     );
   }
 

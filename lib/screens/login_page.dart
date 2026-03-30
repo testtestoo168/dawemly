@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onLogin;
@@ -13,18 +12,13 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> {
   final _auth = AuthService();
   final _localAuth = LocalAuthentication();
-  int _method = 0;
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-  final _otpCtrl = TextEditingController();
-  bool _showPass = false, _otpSent = false, _loading = false, _remember = false;
+  bool _showPass = false, _loading = false, _remember = false;
   String? _error;
-  String? _verificationId;
-  late TabController _tabCtrl;
 
   static const _navy = Color(0xFF0C2D57);
 
@@ -34,26 +28,27 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-    _tabCtrl.addListener(() => setState(() { _method = _tabCtrl.index; _error = null; }));
   }
 
   @override
-  void dispose() { _tabCtrl.dispose(); _emailCtrl.dispose(); _passCtrl.dispose(); _phoneCtrl.dispose(); _otpCtrl.dispose(); super.dispose(); }
+  void dispose() { _emailCtrl.dispose(); _passCtrl.dispose(); super.dispose(); }
 
   // ─── Auth methods ───
   void _biometricLogin() async {
     setState(() { _loading = true; _error = null; });
     try {
+      // Biometric requires an active session — user must log in with email first
+      final currentUser = ApiService.currentUser;
+      if (currentUser == null) {
+        setState(() { _error = 'سجّل دخول بالبريد أولاً ثم استخدم البصمة'; _loading = false; });
+        return;
+      }
       final canCheck = await _localAuth.canCheckBiometrics;
       final isSupported = await _localAuth.isDeviceSupported();
       if (!canCheck && !isSupported) { setState(() { _error = 'البصمة غير مدعومة على هذا الجهاز'; _loading = false; }); return; }
       final authenticated = await _localAuth.authenticate(localizedReason: 'استخدم البصمة لتسجيل الدخول', options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false));
       if (!authenticated) { setState(() { _error = 'فشل التحقق من البصمة'; _loading = false; }); return; }
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) { setState(() { _error = 'سجّل دخول بالبريد أولاً ثم استخدم البصمة'; _loading = false; }); return; }
-      final doc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-      if (doc.exists) { widget.onLogin(doc.data()!); } else { setState(() { _error = 'الحساب غير موجود'; _loading = false; }); }
+      widget.onLogin(currentUser);
     } catch (e) { setState(() { _error = 'خطأ في البصمة — سجّل دخول بالبريد أولاً'; _loading = false; }); }
   }
 
@@ -75,26 +70,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     }
   }
 
-  void _sendOtp() async {
-    if (_phoneCtrl.text.isEmpty || _phoneCtrl.text.length < 10) { setState(() => _error = 'يرجى إدخال رقم هاتف صحيح'); return; }
-    setState(() { _loading = true; _error = null; });
-    await _auth.sendOtp(_phoneCtrl.text.trim(), (vId) => setState(() { _verificationId = vId; _otpSent = true; _loading = false; }), (err) => setState(() { _error = err; _loading = false; }));
-  }
-
-  void _verifyOtp() async {
-    if (_otpCtrl.text.isEmpty || _otpCtrl.text.length < 6) { setState(() => _error = 'يرجى إدخال رمز التحقق كاملاً'); return; }
-    setState(() { _loading = true; _error = null; });
-    try {
-      final user = await _auth.verifyOtp(_verificationId!, _otpCtrl.text.trim());
-      if (user != null) { widget.onLogin(user); } else { setState(() { _error = 'رمز التحقق غير صحيح'; _loading = false; }); }
-    } catch (e) { setState(() { _error = 'رمز التحقق غير صحيح'; _loading = false; }); }
-  }
-
   void _forgotPass() async {
     if (_emailCtrl.text.isEmpty) { setState(() => _error = 'يرجى إدخال البريد الإلكتروني'); return; }
-    setState(() { _loading = true; _error = null; });
-    try { await _auth.resetPassword(_emailCtrl.text.trim()); _showMsg('تم إرسال رابط إعادة التعيين إلى بريدك'); } catch (e) { setState(() => _error = 'خطأ في إرسال الرابط'); }
-    setState(() => _loading = false);
+    _showMsg('تواصل مع المدير لإعادة تعيين كلمة المرور');
   }
 
   void _showMsg(String msg) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _tj(13, color: Colors.white)), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))); }
