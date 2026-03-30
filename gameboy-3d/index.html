@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D GameBoy Viewer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+  }
+  canvas { display: block; }
+  #info {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.5);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    pointer-events: none;
+    user-select: none;
+  }
+  #title {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(100,200,255,0.5);
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div id="title">3D GAMEBOY VIEWER</div>
+<div id="info">Click &amp; drag to rotate · Scroll to zoom · Right-click to pan</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// Scene setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 1, 8);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 4;
+controls.maxDistance = 15;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.5;
+
+// Lights
+const ambientLight = new THREE.AmbientLight(0x404060, 0.8);
+scene.add(ambientLight);
+
+const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+mainLight.position.set(5, 8, 5);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set(1024, 1024);
+scene.add(mainLight);
+
+const fillLight = new THREE.DirectionalLight(0x8888ff, 0.4);
+fillLight.position.set(-5, 3, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(0x64c8ff, 0.6, 20);
+rimLight.position.set(-3, 2, -4);
+scene.add(rimLight);
+
+// Materials
+const bodyColor = 0x8b8b99;
+const bodyMat = new THREE.MeshStandardMaterial({
+  color: bodyColor,
+  roughness: 0.35,
+  metalness: 0.05,
+});
+
+const darkMat = new THREE.MeshStandardMaterial({
+  color: 0x2a2a35,
+  roughness: 0.5,
+  metalness: 0.1,
+});
+
+const screenBorderMat = new THREE.MeshStandardMaterial({
+  color: 0x3a3a48,
+  roughness: 0.4,
+  metalness: 0.05,
+});
+
+const screenMat = new THREE.MeshStandardMaterial({
+  color: 0x6b7d3a,
+  roughness: 0.2,
+  metalness: 0.0,
+  emissive: 0x3a4a20,
+  emissiveIntensity: 0.3,
+});
+
+const redMat = new THREE.MeshStandardMaterial({
+  color: 0x9b1b30,
+  roughness: 0.3,
+  metalness: 0.05,
+});
+
+const dpadMat = new THREE.MeshStandardMaterial({
+  color: 0x1a1a22,
+  roughness: 0.6,
+  metalness: 0.0,
+});
+
+const labelMat = new THREE.MeshStandardMaterial({
+  color: 0x4444aa,
+  roughness: 0.3,
+  metalness: 0.1,
+  emissive: 0x222266,
+  emissiveIntensity: 0.2,
+});
+
+const purpleMat = new THREE.MeshStandardMaterial({
+  color: 0x5b3a8c,
+  roughness: 0.35,
+  metalness: 0.05,
+});
+
+// GameBoy group
+const gameboy = new THREE.Group();
+
+// --- Main body ---
+const bodyGeo = new RoundedBoxGeometry(3.2, 5.2, 0.8, 4, 0.1);
+const body = new THREE.Mesh(bodyGeo, bodyMat);
+body.castShadow = true;
+body.receiveShadow = true;
+gameboy.add(body);
+
+// Battery bulge on back
+const bulgeGeo = new RoundedBoxGeometry(2.4, 2.0, 0.3, 3, 0.08);
+const bulge = new THREE.Mesh(bulgeGeo, bodyMat);
+bulge.position.set(0, -1.0, -0.5);
+bulge.castShadow = true;
+gameboy.add(bulge);
+
+// --- Screen area ---
+// Screen recess/border
+const screenBorderGeo = new RoundedBoxGeometry(2.5, 2.3, 0.15, 3, 0.05);
+const screenBorder = new THREE.Mesh(screenBorderGeo, screenBorderMat);
+screenBorder.position.set(0, 1.1, 0.38);
+gameboy.add(screenBorder);
+
+// Actual screen (greenish LCD)
+const screenGeo = new THREE.PlaneGeometry(1.8, 1.6);
+const screen = new THREE.Mesh(screenGeo, screenMat);
+screen.position.set(0, 1.1, 0.47);
+gameboy.add(screen);
+
+// Screen pixel grid effect
+const gridCanvas = document.createElement('canvas');
+gridCanvas.width = 160;
+gridCanvas.height = 144;
+const ctx = gridCanvas.getContext('2d');
+ctx.fillStyle = '#6b7d3a';
+ctx.fillRect(0, 0, 160, 144);
+// Draw pixel grid
+ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+ctx.lineWidth = 0.5;
+for (let x = 0; x <= 160; x += 2) {
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, 144);
+  ctx.stroke();
+}
+for (let y = 0; y <= 144; y += 2) {
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(160, y);
+  ctx.stroke();
+}
+// Draw a little sprite (a simple smiley)
+ctx.fillStyle = '#2a3a10';
+// Simple pixel art
+const sprite = [
+  [0,0,1,1,1,1,0,0],
+  [0,1,0,0,0,0,1,0],
+  [1,0,1,0,0,1,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,1,0,0,1,0,1],
+  [1,0,0,1,1,0,0,1],
+  [0,1,0,0,0,0,1,0],
+  [0,0,1,1,1,1,0,0],
+];
+const sx = 64, sy = 56, ps = 3;
+sprite.forEach((row, ry) => {
+  row.forEach((px, rx) => {
+    if (px) ctx.fillRect(sx + rx * ps, sy + ry * ps, ps, ps);
+  });
+});
+
+const gridTexture = new THREE.CanvasTexture(gridCanvas);
+gridTexture.magFilter = THREE.NearestFilter;
+gridTexture.minFilter = THREE.NearestFilter;
+screen.material = new THREE.MeshStandardMaterial({
+  map: gridTexture,
+  roughness: 0.15,
+  metalness: 0.0,
+  emissive: 0xffffff,
+  emissiveMap: gridTexture,
+  emissiveIntensity: 0.15,
+});
+
+// "DOT MATRIX" label above screen
+const labelGeo = new RoundedBoxGeometry(1.4, 0.18, 0.02, 2, 0.02);
+const label = new THREE.Mesh(labelGeo, labelMat);
+label.position.set(0, 2.05, 0.42);
+gameboy.add(label);
+
+// Power LED
+const ledGeo = new THREE.CircleGeometry(0.06, 16);
+const ledMat = new THREE.MeshStandardMaterial({
+  color: 0xff0000,
+  emissive: 0xff0000,
+  emissiveIntensity: 0.8,
+});
+const led = new THREE.Mesh(ledGeo, ledMat);
+led.position.set(-1.05, 2.05, 0.42);
+gameboy.add(led);
+
+// --- D-Pad ---
+const dpadGroup = new THREE.Group();
+dpadGroup.position.set(-0.75, -0.9, 0.38);
+
+// D-pad cross (horizontal)
+const dpadH = new THREE.Mesh(
+  new RoundedBoxGeometry(1.0, 0.33, 0.15, 2, 0.04),
+  dpadMat
+);
+dpadH.castShadow = true;
+dpadGroup.add(dpadH);
+
+// D-pad cross (vertical)
+const dpadV = new THREE.Mesh(
+  new RoundedBoxGeometry(0.33, 1.0, 0.15, 2, 0.04),
+  dpadMat
+);
+dpadV.castShadow = true;
+dpadGroup.add(dpadV);
+
+// D-pad center circle
+const dpadCenter = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.1, 0.1, 0.16, 16),
+  dpadMat
+);
+dpadCenter.rotation.x = Math.PI / 2;
+dpadCenter.position.z = 0.01;
+dpadGroup.add(dpadCenter);
+
+gameboy.add(dpadGroup);
+
+// --- A & B Buttons ---
+const btnGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.15, 24);
+
+const btnA = new THREE.Mesh(btnGeo, redMat);
+btnA.rotation.x = Math.PI / 2;
+btnA.position.set(1.15, -0.65, 0.42);
+btnA.castShadow = true;
+gameboy.add(btnA);
+
+const btnB = new THREE.Mesh(btnGeo, redMat);
+btnB.rotation.x = Math.PI / 2;
+btnB.position.set(0.5, -1.05, 0.42);
+btnB.castShadow = true;
+gameboy.add(btnB);
+
+// Button labels (small circles on top)
+const btnLabelGeo = new THREE.CircleGeometry(0.12, 16);
+const btnLabelMat = new THREE.MeshStandardMaterial({ color: 0xcc2244, roughness: 0.2 });
+
+const btnALabel = new THREE.Mesh(btnLabelGeo, btnLabelMat);
+btnALabel.position.set(1.15, -0.65, 0.505);
+gameboy.add(btnALabel);
+
+const btnBLabel = new THREE.Mesh(btnLabelGeo, btnLabelMat);
+btnBLabel.position.set(0.5, -1.05, 0.505);
+gameboy.add(btnBLabel);
+
+// --- Start & Select buttons ---
+const startSelectGeo = new RoundedBoxGeometry(0.5, 0.16, 0.08, 2, 0.03);
+
+const selectBtn = new THREE.Mesh(startSelectGeo, darkMat);
+selectBtn.position.set(-0.35, -1.85, 0.4);
+selectBtn.rotation.z = -0.35;
+selectBtn.castShadow = true;
+gameboy.add(selectBtn);
+
+const startBtn = new THREE.Mesh(startSelectGeo, darkMat);
+startBtn.position.set(0.35, -1.85, 0.4);
+startBtn.rotation.z = -0.35;
+startBtn.castShadow = true;
+gameboy.add(startBtn);
+
+// --- Speaker grille ---
+const speakerGroup = new THREE.Group();
+speakerGroup.position.set(1.05, -2.0, 0.41);
+speakerGroup.rotation.z = -0.5;
+
+for (let i = 0; i < 6; i++) {
+  const slitGeo = new RoundedBoxGeometry(0.6, 0.04, 0.02, 1, 0.01);
+  const slit = new THREE.Mesh(slitGeo, darkMat);
+  slit.position.y = i * 0.1 - 0.25;
+  speakerGroup.add(slit);
+}
+gameboy.add(speakerGroup);
+
+// --- Cartridge slot on top ---
+const cartSlotGeo = new RoundedBoxGeometry(2.0, 0.15, 0.5, 2, 0.03);
+const cartSlot = new THREE.Mesh(cartSlotGeo, darkMat);
+cartSlot.position.set(0, 2.65, -0.05);
+gameboy.add(cartSlot);
+
+// --- "Nintendo GAME BOY" text area (embossed strip) ---
+const nintendoGeo = new RoundedBoxGeometry(2.2, 0.25, 0.02, 2, 0.02);
+const nintendoLabel = new THREE.Mesh(nintendoGeo, purpleMat);
+nintendoLabel.position.set(0, 0.0, 0.42);
+gameboy.add(nintendoLabel);
+
+// --- Side details ---
+// Volume slider on left
+const volGeo = new RoundedBoxGeometry(0.08, 0.6, 0.12, 2, 0.02);
+const volSlider = new THREE.Mesh(volGeo, darkMat);
+volSlider.position.set(-1.62, 0.5, 0);
+gameboy.add(volSlider);
+
+// Contrast dial on left
+const contrastGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
+const contrastDial = new THREE.Mesh(contrastGeo, darkMat);
+contrastDial.rotation.z = Math.PI / 2;
+contrastDial.position.set(-1.62, 1.5, 0);
+gameboy.add(contrastDial);
+
+// Power switch on top
+const powerGeo = new RoundedBoxGeometry(0.5, 0.12, 0.2, 2, 0.03);
+const powerSwitch = new THREE.Mesh(powerGeo, darkMat);
+powerSwitch.position.set(-1.1, 2.62, 0.1);
+gameboy.add(powerSwitch);
+
+// Link port on left side bottom
+const linkGeo = new RoundedBoxGeometry(0.3, 0.08, 0.2, 2, 0.02);
+const linkPort = new THREE.Mesh(linkGeo, darkMat);
+linkPort.position.set(0, -2.62, 0);
+gameboy.add(linkPort);
+
+scene.add(gameboy);
+
+// Ground plane for shadow
+const groundGeo = new THREE.PlaneGeometry(20, 20);
+const groundMat = new THREE.ShadowMaterial({ opacity: 0.3 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -3.5;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Floating particles
+const particleCount = 80;
+const particleGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+for (let i = 0; i < particleCount; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 16;
+  positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+}
+particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const particleMat = new THREE.PointsMaterial({
+  color: 0x64c8ff,
+  size: 0.04,
+  transparent: true,
+  opacity: 0.6,
+});
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+
+// Animation
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Gentle float
+  gameboy.position.y = Math.sin(t * 0.8) * 0.12;
+  gameboy.rotation.x = Math.sin(t * 0.5) * 0.03;
+
+  // LED blink
+  ledMat.emissiveIntensity = 0.5 + Math.sin(t * 3) * 0.3;
+
+  // Animate particles
+  const pos = particles.geometry.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    pos[i * 3 + 1] += Math.sin(t + i) * 0.002;
+  }
+  particles.geometry.attributes.position.needsUpdate = true;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize handling
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Stop auto-rotate on interaction
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+</script>
+</body>
+</html>
