@@ -24,13 +24,10 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final results = await Future.wait([
-        ApiService.get('users.php?action=list'),
-        AttendanceService().getAllTodayRecords(),
-      ]);
-      final allUsers = (results[0]['users'] as List? ?? []).cast<Map<String, dynamic>>()
+      final usersRes = await ApiService.get('users.php?action=list');
+      final attList = await AttendanceService().getAllTodayRecords();
+      final allUsers = ((usersRes['users'] as List?) ?? []).cast<Map<String, dynamic>>()
           .where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
-      final attList = results[1] as List<Map<String, dynamic>>;
       final attMap = <String, Map<String, dynamic>>{};
       for (final r in attList) attMap[r['uid'] ?? ''] = r;
 
