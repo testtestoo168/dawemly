@@ -96,7 +96,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
     // Base: accumulated minutes from completed sessions
     final totalWorkedMinutes = (_todayRecord!['totalWorkedMinutes'] as int?) ?? (_todayRecord!['total_worked_minutes'] as int?) ?? 0;
-    final isCheckedIn = _todayRecord!['isCheckedIn'] == true || _todayRecord!['is_checked_in'] == true;
+    final isCheckedIn = _toBool(_todayRecord!['isCheckedIn']) || _toBool(_todayRecord!['is_checked_in']);
 
     if (isCheckedIn) {
       // Currently in a session — add live elapsed from currentSessionStart
@@ -511,6 +511,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
     ))));
   }
 
+  // Handle PHP returning 1/0 (int) or true/false (bool) for boolean fields
+  bool _toBool(dynamic v) => v == true || v == 1 || v == '1';
+
   DateTime? _parseTs(dynamic v) {
     if (v == null) return null;
     if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
@@ -537,7 +540,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
     // isCheckedIn: use new field if available, otherwise fallback to old logic
     final bool isCurrentlyCheckedIn;
     if (_todayRecord != null && (_todayRecord!.containsKey('isCheckedIn') || _todayRecord!.containsKey('is_checked_in'))) {
-      isCurrentlyCheckedIn = _todayRecord!['isCheckedIn'] == true || _todayRecord!['is_checked_in'] == true;
+      isCurrentlyCheckedIn = _toBool(_todayRecord!['isCheckedIn']) || _toBool(_todayRecord!['is_checked_in']);
     } else {
       // Old data fallback: checked in if has checkIn but no checkOut
       isCurrentlyCheckedIn = hasCheckIn && !hasCheckOut;
@@ -797,7 +800,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
               return ListView.builder(shrinkWrap: true, itemCount: docs.length, itemBuilder: (ctx, i) {
                 final n = docs[i];
                 final docId = n['id']?.toString() ?? '';
-                final isRead = n['read'] == true;
+                final isRead = _toBool(n['read']);
                 final isVerifyRequest = n['type'] == 'verify_request';
                 final isUrgent = n['type'] == 'urgent' || isVerifyRequest;
                 return InkWell(
