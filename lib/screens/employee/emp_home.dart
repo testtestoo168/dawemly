@@ -282,6 +282,19 @@ class _EmpHomePageState extends State<EmpHomePage> {
     }
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
+      // Immediately update local state so UI reflects check-in NOW
+      final now = DateTime.now();
+      setState(() {
+        _todayRecord ??= {};
+        _todayRecord!['is_checked_in'] = 1;
+        _todayRecord!['first_check_in'] ??= now.toIso8601String();
+        _todayRecord!['check_in'] ??= now.toIso8601String();
+        _todayRecord!['current_session_start'] = now.toIso8601String();
+        _todayRecord!['status'] = 'حاضر';
+        _loadingRecord = false;
+      });
+      _updateElapsed();
+      // Also refresh from server in background
       _loadToday();
       _showLocationResultDialog(true, 'تم إثبات الحضور ✓', result['time'] ?? '', result['lat'], result['lng']);
     } else {
@@ -396,6 +409,16 @@ class _EmpHomePageState extends State<EmpHomePage> {
     }
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
+      // Immediately update local state so UI reflects check-out NOW
+      setState(() {
+        if (_todayRecord != null) {
+          _todayRecord!['is_checked_in'] = 0;
+          _todayRecord!['last_check_out'] = DateTime.now().toIso8601String();
+          _todayRecord!['check_out'] = DateTime.now().toIso8601String();
+          _todayRecord!['status'] = 'مكتمل';
+        }
+      });
+      _updateElapsed();
       _loadToday();
       _showLocationResultDialog(true, 'تم إثبات الخروج ✓', result['time'] ?? '', result['lat'], result['lng']);
     } else {
@@ -643,14 +666,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
             const SizedBox(height: 12),
           ],
 
-          // Check-in / Check-out buttons
-          Row(children: [
-            if (isCurrentlyCheckedIn) ...[
-              Expanded(flex: 4, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, _checkOut)),
-              const SizedBox(width: 12),
-            ],
-            Expanded(flex: 6, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
-          ]),
+          // Check-in / Check-out buttons — show only ONE at a time
+          if (isCurrentlyCheckedIn)
+            SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, _checkOut))
+          else
+            SizedBox(width: double.infinity, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
         ]),
       ),
 
