@@ -60,8 +60,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
           String scheduleName = 'الجدول الافتراضي';
 
           for (final data in allSchedules) {
-            final empIds = (data['empIds'] as List?)?.cast<String>() ??
-                (data['emp_ids'] as List?)?.cast<String>() ?? [];
+            final empIds = ((data['empIds'] ?? data['emp_ids']) as List? ?? []).map((e) => e.toString()).toList();
             if (empIds.contains(widget.user['uid']) || empIds.contains(widget.user['empId'])) {
               assignedSchedule = data;
               scheduleName = data['name'] ?? 'الجدول الافتراضي';
@@ -75,8 +74,13 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
             scheduleName = assignedSchedule['name'] ?? 'الجدول الافتراضي';
           }
 
-          final shiftId = assignedSchedule?['shiftId'] ?? assignedSchedule?['shift_id'] ?? 1;
-          final workDays = (assignedSchedule?['days'] as List?)?.cast<String>() ?? ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس'];
+          final shiftId = int.tryParse('${assignedSchedule?['shiftId'] ?? assignedSchedule?['shift_id'] ?? 1}') ?? 1;
+          // days can be int indices [0,1,2,3,4] or Arabic names ['أحد','إثنين',...]
+          final rawDays = (assignedSchedule?['days'] as List?) ?? [];
+          final workDays = rawDays.map((d) {
+            if (d is int && d >= 0 && d < _daysShort.length) return _daysShort[d];
+            return d.toString();
+          }).toList();
           final shift = _shifts.firstWhere((s) => s['id'] == shiftId, orElse: () => _shifts[0]);
 
           return ListView(

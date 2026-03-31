@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geolocator/geolocator.dart';
 import 'package:local_auth/local_auth.dart';
 import 'api_service.dart';
@@ -7,6 +8,7 @@ class AttendanceService {
 
   // ─── Biometric check ───
   Future<bool> authenticateBiometric() async {
+    if (kIsWeb) return true; // Biometrics not available on web
     final canCheck = await _localAuth.canCheckBiometrics;
     final isSupported = await _localAuth.isDeviceSupported();
     if (!canCheck || !isSupported) return false;
@@ -18,6 +20,7 @@ class AttendanceService {
 
   // ─── Biometric check with detailed error ───
   Future<({bool success, String error})> authenticateBiometricWithDetails() async {
+    if (kIsWeb) return (success: true, error: ''); // Skip biometrics on web
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isSupported = await _localAuth.isDeviceSupported();

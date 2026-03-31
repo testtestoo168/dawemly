@@ -73,7 +73,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
 
-    final allUsers = _users.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
+    final allUsers = _users.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
     allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
     final attMap = <String, Map<String, dynamic>>{};
@@ -82,18 +82,17 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final merged = allUsers.map((u) {
       final uid = u['uid'] ?? u['_id'] ?? '';
       final att = attMap[uid];
-      final hasIn = (att?['firstCheckIn'] ?? att?['checkIn']) != null;
-      final hasOut = (att?['lastCheckOut'] ?? att?['checkOut']) != null;
-      final isCheckedIn = att?['isCheckedIn'] == true;
+      final hasIn = (att?['first_check_in'] ?? att?['check_in']) != null;
+      final isCheckedIn = att?['is_checked_in'] == 1 || att?['is_checked_in'] == true;
       String status = 'غائب';
-      if (hasOut && !isCheckedIn) status = 'مكتمل';
-      else if (hasIn || isCheckedIn) status = 'حاضر';
+      if (isCheckedIn) status = 'حاضر';
+      else if (hasIn) status = 'مكتمل';
       return {...u, '_status': status, '_att': att, '_isCheckedIn': isCheckedIn};
     }).toList();
 
     final depts = <String>{'الكل', ...merged.map((e) => (e['dept'] ?? '').toString()).where((d) => d.isNotEmpty)};
     final filtered = merged.where((e) {
-      if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['empId'] ?? '').toString().contains(_search)) return false;
+      if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['empId'] ?? e['emp_id'] ?? '').toString().contains(_search)) return false;
       if (_fDept != 'الكل' && e['dept'] != _fDept) return false;
       if (_fSt != 'الكل' && e['_status'] != _fSt) return false;
       return true;
@@ -131,12 +130,12 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final av = n.length >= 2 ? n.substring(0,2) : 'م';
     final status = e['_status'] ?? 'غائب';
     final att = e['_att'] as Map<String, dynamic>?;
-    final ci = _fmtTs(att?['firstCheckIn'] ?? att?['checkIn']);
-    final co = _fmtTs(att?['lastCheckOut'] ?? att?['checkOut']);
-    final totalMin = (att?['totalWorkedMinutes'] as int?) ?? 0;
+    final ci = _fmtTs(att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in']);
+    final co = _fmtTs(att?['lastCheckOut'] ?? att?['last_check_out'] ?? att?['checkOut'] ?? att?['check_out']);
+    final totalMin = (att?['totalWorkedMinutes'] ?? att?['total_worked_minutes'] as int?) ?? 0;
     final isCheckedIn = e['_isCheckedIn'] == true;
     final stColor = status == 'مكتمل' ? C.green : status == 'حاضر' ? C.pri : C.red;
-    final byAdmin = att?['punchedByAdmin'] == true;
+    final byAdmin = att?['punchedByAdmin'] == true || att?['punched_by_admin'] == 1 || att?['punched_by_admin'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -160,7 +159,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
               if (byAdmin) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(4)), child: Text('بصمة إدارية', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: C.orange))),
               Text(n, style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
             ]),
-            Text('${e['dept'] ?? ''} • ${e['empId'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+            Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
           ]),
           const SizedBox(width: 10),
           Stack(children: [
@@ -189,7 +188,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   void _adminPunchDialog(Map<String, dynamic> e) {
     final empName = e['name'] ?? '—';
     final uid = e['uid'] ?? e['_id'] ?? '';
-    final empId = e['empId'] ?? '';
+    final empId = e['empId'] ?? e['emp_id'] ?? '';
     final isCheckedIn = e['_isCheckedIn'] == true;
     TimeOfDay selectedTime = TimeOfDay.now();
 
@@ -325,7 +324,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 const Spacer(),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Text('سجل حضور: $empName', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                  Text('${e['dept'] ?? ''} • ${e['empId'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: Colors.white70)),
+                  Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: Colors.white70)),
                 ]),
                 const SizedBox(width: 12),
                 Container(width: 44, height: 44, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.15)),
@@ -353,11 +352,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                 final records = List<Map<String, dynamic>>.from(snap.data ?? []);
-                records.sort((a, b) => (b['dateKey'] ?? '').compareTo(a['dateKey'] ?? ''));
+                records.sort((a, b) => (b['dateKey'] ?? b['date_key'] ?? '').compareTo(a['dateKey'] ?? a['date_key'] ?? ''));
 
                 int totalMonthMin = 0;
-                for (final r in records) totalMonthMin += (r['totalWorkedMinutes'] as int?) ?? 0;
-                final present = records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).length;
+                for (final r in records) totalMonthMin += ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as int?) ?? 0;
+                final present = records.where((r) => (r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in']) != null).length;
 
                 return ListView(padding: const EdgeInsets.all(14), children: [
                   // Stats
@@ -378,21 +377,21 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                     Padding(padding: const EdgeInsets.all(30), child: Center(child: Text('لا توجد بيانات في ${_months[selMonth - 1]}', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))))
                   else
                     ...records.map((r) {
-                      final dateKey = r['dateKey'] ?? '';
+                      final dateKey = r['dateKey'] ?? r['date_key'] ?? '';
                       final parts = dateKey.split('-');
                       final day = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
                       final month = parts.length > 1 ? int.tryParse(parts[1]) ?? selMonth : selMonth;
                       final year = parts.isNotEmpty ? int.tryParse(parts[0]) ?? selYear : selYear;
                       final dt = parts.length == 3 ? DateTime(year, month, day) : DateTime.now();
                       final dayName = _dayNames[dt.weekday % 7];
-                      final firstIn = r['firstCheckIn'] ?? r['checkIn'];
-                      final lastOut = r['lastCheckOut'] ?? r['checkOut'];
+                      final firstIn = r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in'];
+                      final lastOut = r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out'];
                       final hasOut = lastOut != null;
-                      final totalMin = (r['totalWorkedMinutes'] as int?) ?? 0;
-                      final sessions = (r['sessions'] as int?) ?? 1;
+                      final totalMin = ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as int?) ?? 0;
+                      final sessions = ((r['sessions'] ?? 0) as int?) ?? 1;
                       final stColor = hasOut ? C.green : C.pri;
                       final isExpanded = expandedDateKey == dateKey;
-                      final wasByAdmin = r['punchedByAdmin'] == true;
+                      final wasByAdmin = r['punchedByAdmin'] == true || r['punched_by_admin'] == 1 || r['punched_by_admin'] == true;
 
                       return GestureDetector(
                         onTap: () async {
@@ -473,18 +472,18 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             final isCheckIn = punch['type'] == 'checkIn';
             final color = isCheckIn ? C.pri : C.red;
             final label = isCheckIn ? 'دخول' : 'خروج';
-            final time = punch['localTime'] ?? punch['timestamp'];
-            final byAdmin = punch['punchedByAdmin'] == true;
-            final adminName = punch['adminName'] ?? '';
+            final time = punch['localTime'] ?? punch['local_time'] ?? punch['timestamp'];
+            final byAdmin = punch['punchedByAdmin'] == true || punch['punched_by_admin'] == 1 || punch['punched_by_admin'] == true;
+            final adminName = punch['adminName'] ?? punch['admin_name'] ?? '';
             final lat = punch['lat'] as num?;
             final lng = punch['lng'] as num?;
             final hasLoc = lat != null && lng != null;
             final isLast = i == punches.length - 1;
-            final authMethod = punch['authMethod'] as String? ?? '';
-            final facePhotoUrl = punch['facePhotoUrl'] as String?;
+            final authMethod = (punch['authMethod'] ?? punch['auth_method'] ?? '') as String;
+            final facePhotoUrl = (punch['facePhotoUrl'] ?? punch['face_photo_url']) as String?;
             final isFace = authMethod == 'face' || (facePhotoUrl != null && facePhotoUrl.isNotEmpty);
-            final isFingerprint = !isFace && !byAdmin; // Default: fingerprint for any non-face, non-admin punch
-            final punchId = punch['id'] as String? ?? '';
+            final isFingerprint = !isFace && !byAdmin;
+            final punchId = '${punch['id'] ?? ''}';
 
             // Find matching location name
             String locName = '';

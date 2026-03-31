@@ -55,17 +55,17 @@ class _AdminOvertimeState extends State<AdminOvertime> {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
 
-    final records = _allRecords.where((r) => (r['dateKey'] ?? '').toString().startsWith(monthPrefix)).toList();
+    final records = _allRecords.where((r) => (r['date_key'] ?? '').toString().startsWith(monthPrefix)).toList();
 
     final withOT = <Map<String, dynamic>>[];
     double totalOT = 0;
     for (final r in records) {
-      final ci = r['firstCheckIn'] ?? r['checkIn'];
-      final co = r['lastCheckOut'] ?? r['checkOut'];
+      final ci = r['first_check_in'] ?? r['check_in'];
+      final co = r['last_check_out'] ?? r['check_out'];
       if (ci != null && co != null) {
-        final totalMin = (r['totalWorkedMinutes'] is int)
-            ? r['totalWorkedMinutes'] as int
-            : int.tryParse('${r['totalWorkedMinutes'] ?? ''}') ?? 0;
+        final totalMin = (r['total_worked_minutes'] is int)
+            ? r['total_worked_minutes'] as int
+            : int.tryParse('${r['total_worked_minutes'] ?? ''}') ?? 0;
         double hours;
         if (totalMin > 0) {
           hours = totalMin / 60.0;
@@ -74,9 +74,9 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           final coDt = _parseTs(co);
           hours = (ciDt != null && coDt != null) ? coDt.difference(ciDt).inMinutes / 60.0 : 0;
         }
-        final otManualRaw = r['overtimeManualMinutes'];
+        final otManualRaw = r['overtime_manual_minutes'];
         final otManual = otManualRaw != null ? (otManualRaw is int ? otManualRaw : int.tryParse('$otManualRaw')) : null;
-        final otCancelled = r['overtimeCancelled'] == true;
+        final otCancelled = r['overtime_cancelled'] == true;
 
         double ot;
         if (otCancelled) {
@@ -88,7 +88,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         }
 
         if (ot > 0 || otCancelled || otManual != null) {
-          withOT.add({...r, 'workH': hours, 'overtime': ot, 'otCancelled': otCancelled, 'otReason': r['overtimeReason'] ?? ''});
+          withOT.add({...r, 'workH': hours, 'overtime': ot, 'otCancelled': otCancelled, 'otReason': r['overtime_reason'] ?? ''});
           totalOT += ot;
         }
       }
@@ -150,14 +150,14 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
               headingRowColor: WidgetStateProperty.all(C.bg),
               columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
-              rows: records.where((r) => (r['firstCheckIn'] ?? r['checkIn']) != null).map((r) {
-                final ci = r['firstCheckIn'] ?? r['checkIn'];
+              rows: records.where((r) => (r['first_check_in'] ?? r['check_in']) != null).map((r) {
+                final ci = r['first_check_in'] ?? r['check_in'];
                 double workH = 0; double ot = 0;
                 if (ci != null) {
-                  final co = r['lastCheckOut'] ?? r['checkOut'];
-                  final totalMin = (r['totalWorkedMinutes'] is int)
-                      ? r['totalWorkedMinutes'] as int
-                      : int.tryParse('${r['totalWorkedMinutes'] ?? ''}') ?? 0;
+                  final co = r['last_check_out'] ?? r['check_out'];
+                  final totalMin = (r['total_worked_minutes'] is int)
+                      ? r['total_worked_minutes'] as int
+                      : int.tryParse('${r['total_worked_minutes'] ?? ''}') ?? 0;
                   if (totalMin > 0) {
                     workH = totalMin / 60.0;
                   } else if (co != null) {
@@ -167,7 +167,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
                   }
                   ot = (workH - 8.0).clamp(0.0, 24.0);
                 }
-                final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
+                final hasOut = (r['last_check_out'] ?? r['check_out']) != null;
                 return DataRow(cells: [
                   DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)) : Text('—', style: GoogleFonts.tajawal(color: C.muted))),
                   DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),

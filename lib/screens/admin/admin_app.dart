@@ -431,11 +431,11 @@ class _AdminAppState extends State<AdminApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadMobileHome());
     }
 
-    final allUsers = _mHomeUsers.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').length;
+    final allUsers = _mHomeUsers.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').length;
     final att = _mHomeAtt;
-    final complete = att.where((r) => r['checkOut'] != null).length;
-    final presentOnly = att.where((r) => r['checkIn'] != null && r['checkOut'] == null).length;
-    final totalAttended = att.where((r) => r['checkIn'] != null).length;
+    final presentOnly = att.where((r) => r['is_checked_in'] == 1 || r['is_checked_in'] == true).length;
+    final complete = att.where((r) => (r['is_checked_in'] == 0 || r['is_checked_in'] == false) && (r['check_in'] ?? r['first_check_in']) != null).length;
+    final totalAttended = att.where((r) => (r['check_in'] ?? r['first_check_in']) != null).length;
     final absent = allUsers > totalAttended ? allUsers - totalAttended : 0;
 
     return RefreshIndicator(
@@ -533,7 +533,7 @@ class _AdminAppState extends State<AdminApp> {
                     Text('لا يوجد حضور اليوم', style: _tj(13, color: C.muted)),
                   ])))
                 : Column(children: att.take(6).map((r) {
-                    final hasOut = r['checkOut'] != null;
+                    final hasOut = (r['is_checked_in'] == 0 || r['is_checked_in'] == false) && (r['check_in'] ?? r['first_check_in']) != null;
                     final isFirst = r == att.first;
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -544,7 +544,7 @@ class _AdminAppState extends State<AdminApp> {
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                          Text(r['empId'] ?? '', style: _tj(11, color: C.muted)),
+                          Text(r['empId'] ?? r['emp_id'] ?? '', style: _tj(11, color: C.muted)),
                         ])),
                         const SizedBox(width: 10),
                         Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),

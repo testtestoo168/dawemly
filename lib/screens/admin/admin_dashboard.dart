@@ -72,9 +72,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 800;
 
-    final totalEmps = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').length;
-    final present = _attRecords.where((r) => (r['checkIn'] ?? r['check_in'] ?? r['first_check_in']) != null).length;
-    final complete = _attRecords.where((r) => (r['checkOut'] ?? r['check_out'] ?? r['last_check_out']) != null).length;
+    final totalEmps = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').length;
+    final present = _attRecords.where((r) => r['is_checked_in'] == 1 || r['is_checked_in'] == true).length;
+    final complete = _attRecords.where((r) => (r['is_checked_in'] == 0 || r['is_checked_in'] == false) && (r['check_in'] ?? r['first_check_in']) != null).length;
     final absent = totalEmps > present ? totalEmps - present : 0;
     final pendingReqs = _pendingReqs.length;
 
@@ -249,17 +249,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<List<int>> _getLast7Days() async {
     final now = DateTime.now();
-    List<int> counts = [];
-    for (int i = 6; i >= 0; i--) {
-      final d = now.subtract(Duration(days: i));
-      final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      try {
-        final res = await ApiService.get('attendance.php?action=all_records');
-        final records = (res['records'] as List? ?? []).cast<Map<String, dynamic>>();
-        counts.add(records.where((r) => (r['dateKey'] ?? r['date'] ?? '').toString() == dateStr).length);
-      } catch (_) { counts.add(0); }
-    }
-    return counts;
+    // Single API call instead of 7 separate calls
+    try {
+      final res = await ApiService.get('attendance.php?action=all_records');
+      final records = (res['records'] as List? ?? []).cast<Map<String, dynamic>>();
+      List<int> counts = [];
+      for (int i = 6; i >= 0; i--) {
+        final d = now.subtract(Duration(days: i));
+        final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        counts.add(records.where((r) => (r['date_key'] ?? r['dateKey'] ?? '').toString() == dateStr).length);
+      }
+      return counts;
+    } catch (_) { return List.filled(7, 0); }
   }
 
   // ─── Top Attendance — URS "الأكثر مبيعاً" style ───
@@ -311,7 +312,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ─── Who's In/Out — Jibble style ───
   Widget _whosInOut() {
-    final allUsers = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
+    final allUsers = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').toList();
     allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
     final attMap = <String, Map<String, dynamic>>{};
@@ -453,7 +454,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
               child: Row(textDirection: TextDirection.rtl, children: [
                 Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
-                Expanded(flex: 2, child: Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
+                Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
                 Expanded(child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),

@@ -34,6 +34,12 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
   static const double _standardHours = 8.0;
 
+  // Cached auth requirements (loaded once on init)
+  bool _cachedRequireBiometric = true;
+  bool _cachedRequireLocation = true;
+  bool _cachedFaceRequired = false;
+  bool _authReqsLoaded = false;
+
   final _months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   final _days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
@@ -42,8 +48,24 @@ class _EmpHomePageState extends State<EmpHomePage> {
     super.initState();
     _loadToday();
     _loadLocations();
+    _loadAuthRequirements(); // Pre-cache so biometric is instant
     _startClock();
     _checkPendingVerification();
+  }
+
+  void _loadAuthRequirements() async {
+    final uid = widget.user['uid'] ?? '';
+    if (uid.isEmpty) return;
+    try {
+      final reqs = await _attService.getAuthRequirements(uid);
+      final faceReq = await FaceRecognitionService.isFaceAuthRequired(uid);
+      if (mounted) {
+        _cachedRequireBiometric = reqs.requireBiometric;
+        _cachedRequireLocation = reqs.requireLocation;
+        _cachedFaceRequired = faceReq;
+        _authReqsLoaded = true;
+      }
+    } catch (_) {}
   }
 
   // Auto-check for pending verification requests and show banner immediately
@@ -57,14 +79,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
         final verifications = (result['verifications'] as List? ?? []).cast<Map<String, dynamic>>();
         final pending = verifications.where((v) =>
           (v['uid'] == uid) &&
-          (v['status'] == 'pending') &&
-          (v['read'] != true)
+          (v['status'] == 'pending')
         ).toList();
         if (pending.isNotEmpty && mounted) {
-          // Mark as read via API
-          final id = pending.first['id'];
-          ApiService.post('admin.php?action=mark_read', {'id': id}).catchError((_) => <String, dynamic>{});
-          _respondToVerification(uid);
+          final verificationId = pending.first['id'];
+          _respondToVerification(uid, verificationId: verificationId);
         }
       }
     } catch (_) {}
@@ -175,25 +194,35 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     String? facePhotoUrl;
     bool usedFaceAuth = false;
-    // Save position from location check to avoid fetching twice
     double? savedLat, savedLng, savedAccuracy;
 
-    // ─── Step 1: Check if face auth is required ───
-    final faceRequired = await FaceRecognitionService.isFaceAuthRequired(uid);
+    // Use cached requirements (loaded at init) — no API delay
+    final requireBiometric = _cachedRequireBiometric;
+    final requireLocation = _cachedRequireLocation;
+    final faceRequired = _cachedFaceRequired;
+
+    // ─── Step 1: Biometric FIRST (instant, no API calls before this) ───
+    if (requireBiometric && !faceRequired) {
+      final bioResult = await _attService.authenticateBiometricWithDetails();
+      if (!mounted) return;
+      if (!bioResult.success) {
+        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        return;
+      }
+    }
+
+    // ─── Step 2: Face auth if required (instead of fingerprint) ───
     if (faceRequired) {
       final hasRegistered = await FaceRecognitionService.hasFaceRegistered(uid);
       if (!hasRegistered) {
-        // Must register face first
         if (!mounted) return;
         Navigator.push(context, MaterialPageRoute(builder: (_) => FaceRegistrationPage(
           uid: uid,
           userName: widget.user['name'] ?? '',
-          onComplete: () { if (mounted) _checkIn(); }, // Retry after registration
+          onComplete: () { if (mounted) _checkIn(); },
         )));
         return;
       }
-
-      // Verify face
       if (!mounted) return;
       final faceResult = await showFaceVerifyDialog(context, uid);
       if (faceResult == null || faceResult['success'] != true) {
@@ -201,10 +230,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
         return;
       }
       facePhotoUrl = faceResult['photoUrl'] as String?;
-      usedFaceAuth = true; // Face flow was used regardless of photo upload result
+      usedFaceAuth = true;
     }
-    // ─── Step 2: Check location if required (handled by AttendanceService via API) ───
-    // We still show UI feedback for out-of-range
+
+    // ─── Step 3: Location check ───
     final loc = _selectedLocation;
     bool showLocCheck = loc != null && loc.isNotEmpty;
     if (showLocCheck) {
@@ -221,7 +250,6 @@ class _EmpHomePageState extends State<EmpHomePage> {
         _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور');
         return;
       }
-      // Save position to reuse later (avoid double GPS fetch)
       savedLat = pos.latitude;
       savedLng = pos.longitude;
       savedAccuracy = pos.accuracy;
@@ -237,38 +265,19 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Show loading, load auth requirements in background ───
+    // ─── Step 4: Send check-in to API ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
     _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
 
-    late ({bool requireBiometric, bool requireLocation}) reqs;
-    try {
-      reqs = await _attService.getAuthRequirements(uid);
-    } catch (_) {
-      reqs = (requireBiometric: true, requireLocation: true);
-    }
-
-    // ─── Step 4: If biometric required, dismiss dialog then show fingerprint ───
-    if (reqs.requireBiometric && !usedFaceAuth) {
-      if (mounted) Navigator.pop(context);
-      final bioResult = await _attService.authenticateBiometricWithDetails();
-      if (!mounted) return;
-      if (!bioResult.success) {
-        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
-        return;
-      }
-      _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
-    }
-
-    // ─── Step 5: Record attendance (pass saved coordinates to avoid double fetch) ───
+    // ─── Step 5: Record attendance ───
     Map<String, dynamic> result;
     try {
       result = await _attService.checkIn(
         uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
         facePhotoUrl: facePhotoUrl,
         authMethod: authMethod,
-        requireBiometric: reqs.requireBiometric,
-        requireLocation: reqs.requireLocation,
+        requireBiometric: requireBiometric,
+        requireLocation: requireLocation,
         lat: savedLat,
         lng: savedLng,
         accuracy: savedAccuracy,
@@ -309,11 +318,24 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     String? facePhotoUrl;
     bool usedFaceAuth = false;
-    // Save position from location check to avoid fetching twice
     double? savedLat, savedLng, savedAccuracy;
 
-    // ─── Step 1: Face verification if required ───
-    final faceRequired = await FaceRecognitionService.isFaceAuthRequired(uid);
+    // Use cached requirements — no API delay
+    final requireBiometric = _cachedRequireBiometric;
+    final requireLocation = _cachedRequireLocation;
+    final faceRequired = _cachedFaceRequired;
+
+    // ─── Step 1: Biometric FIRST (instant) ───
+    if (requireBiometric && !faceRequired) {
+      final bioResult = await _attService.authenticateBiometricWithDetails();
+      if (!mounted) return;
+      if (!bioResult.success) {
+        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        return;
+      }
+    }
+
+    // ─── Step 2: Face auth if required ───
     if (faceRequired) {
       final hasRegistered = await FaceRecognitionService.hasFaceRegistered(uid);
       if (!hasRegistered) {
@@ -328,10 +350,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
         return;
       }
       facePhotoUrl = faceResult['photoUrl'] as String?;
-      usedFaceAuth = true; // Face flow was used
+      usedFaceAuth = true;
     }
 
-    // ─── Step 2: Location check (UI feedback only, service handles validation) ───
+    // ─── Step 3: Location check ───
     final loc2 = _selectedLocation;
     bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
     if (showLocCheck2) {
@@ -348,7 +370,6 @@ class _EmpHomePageState extends State<EmpHomePage> {
         _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف');
         return;
       }
-      // Save position to reuse later (avoid double GPS fetch)
       savedLat = pos.latitude;
       savedLng = pos.longitude;
       savedAccuracy = pos.accuracy;
@@ -364,38 +385,19 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Show loading, load auth requirements in background ───
+    // ─── Step 4: Send check-out to API ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
     _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
 
-    late ({bool requireBiometric, bool requireLocation}) reqs;
-    try {
-      reqs = await _attService.getAuthRequirements(uid);
-    } catch (_) {
-      reqs = (requireBiometric: true, requireLocation: true);
-    }
-
-    // ─── Step 4: If biometric required, dismiss dialog then show fingerprint ───
-    if (reqs.requireBiometric && !usedFaceAuth) {
-      if (mounted) Navigator.pop(context);
-      final bioResult = await _attService.authenticateBiometricWithDetails();
-      if (!mounted) return;
-      if (!bioResult.success) {
-        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
-        return;
-      }
-      _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
-    }
-
-    // ─── Step 5: Record checkout (pass saved coordinates to avoid double fetch) ───
+    // ─── Step 5: Record checkout ───
     Map<String, dynamic> result;
     try {
       result = await _attService.checkOut(
         uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
         facePhotoUrl: facePhotoUrl,
         authMethod: authMethod,
-        requireBiometric: reqs.requireBiometric,
-        requireLocation: reqs.requireLocation,
+        requireBiometric: requireBiometric,
+        requireLocation: requireLocation,
         lat: savedLat,
         lng: savedLng,
         accuracy: savedAccuracy,
@@ -820,13 +822,13 @@ class _EmpHomePageState extends State<EmpHomePage> {
               return ListView.builder(shrinkWrap: true, itemCount: docs.length, itemBuilder: (ctx, i) {
                 final n = docs[i];
                 final docId = n['id']?.toString() ?? '';
-                final isRead = _toBool(n['read']);
+                final isRead = _toBool(n['read']) || _toBool(n['is_read']);
                 final isVerifyRequest = n['type'] == 'verify_request';
                 final isUrgent = n['type'] == 'urgent' || isVerifyRequest;
                 return InkWell(
                   onTap: () {
                     if (!isRead && docId.isNotEmpty) ApiService.post('admin.php?action=mark_read', {'id': docId}).catchError((_) => <String, dynamic>{});
-                    if (isVerifyRequest) { Navigator.pop(ctx); _respondToVerification(uid); }
+                    if (isVerifyRequest) { Navigator.pop(ctx); _respondToVerification(uid, verificationId: n['verification_id'] ?? n['id']); }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -855,7 +857,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   // ═══ Verification response — FORCED dialog ═══
-  void _respondToVerification(String uid) async {
+  void _respondToVerification(String uid, {dynamic verificationId}) async {
     showDialog(context: context, barrierDismissible: false, builder: (ctx) => PopScope(
       canPop: false,
       child: Center(child: Container(
@@ -869,7 +871,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
           Text('الإدارة تطلب إثبات تواجدك في نطاق العمل الآن', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub, height: 1.5), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
-            onPressed: () async { Navigator.pop(ctx); _doVerificationResponse(uid); },
+            onPressed: () async { Navigator.pop(ctx); _doVerificationResponse(uid, verificationId: verificationId); },
             style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 4),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.my_location, size: 20), const SizedBox(width: 8), Text('إثبات موقعي الآن', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700))]),
           )),
@@ -878,7 +880,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
     ));
   }
 
-  void _doVerificationResponse(String uid) async {
+  void _doVerificationResponse(String uid, {dynamic verificationId}) async {
     _showLoadingDialog('جارٍ إثبات الحالة...', 'جاري تحديد موقعك وحساب المسافة', C.orange);
     try {
       final locResultV = await _attService.getCurrentLocation();
@@ -918,10 +920,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
       // Respond to verification via API
       try {
         await ApiService.post('admin.php?action=respond_verification', {
+          'id': verificationId,
           'uid': uid,
           'lat': pos.latitude,
           'lng': pos.longitude,
-          'distance': distance.round(),
         });
       } catch (_) {}
 
