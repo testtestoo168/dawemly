@@ -140,7 +140,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
           setState(() {
             _allLocations = locs;
             _loadingLocations = false;
-            if (locs.length == 1) _selectedLocationId = locs.first['id'];
+            if (locs.length == 1) _selectedLocationId = locs.first['id'].toString();
           });
         }
       } else {
@@ -154,7 +154,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
   // ═══ Get selected location data ═══
   Map<String, dynamic>? get _selectedLocation {
     if (_selectedLocationId == null) return _allLocations.isNotEmpty ? _allLocations.first : null;
-    return _allLocations.firstWhere((l) => l['id'] == _selectedLocationId, orElse: () => _allLocations.isNotEmpty ? _allLocations.first : {});
+    return _allLocations.firstWhere((l) => l['id'].toString() == _selectedLocationId, orElse: () => _allLocations.isNotEmpty ? _allLocations.first : {});
   }
 
   double get _workedHours => _elapsed.inMinutes / 60.0;
@@ -519,13 +519,13 @@ class _EmpHomePageState extends State<EmpHomePage> {
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.2))),
               child: DropdownButtonHideUnderline(child: DropdownButton<String>(
                 isExpanded: true,
-                value: _selectedLocationId ?? (_allLocations.isNotEmpty ? _allLocations.first['id'] : null),
+                value: _selectedLocationId ?? (_allLocations.isNotEmpty ? _allLocations.first['id'].toString() : null),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
                 dropdownColor: const Color(0xFF0F4199),
                 style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
                 hint: Text('اختر موقع البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
                 items: _allLocations.map((loc) => DropdownMenuItem<String>(
-                  value: loc['id'],
+                  value: loc['id'].toString(),
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                     Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white)),
                     const SizedBox(width: 8),
