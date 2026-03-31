@@ -231,10 +231,30 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Record attendance ───
+    // ─── Step 3: Load auth requirements ───
+    _showLoadingDialog('جارٍ التحقق من الإعدادات...', 'يرجى الانتظار', C.green);
+    final reqs = await _attService.getAuthRequirements(uid);
+    if (mounted) Navigator.pop(context);
+
+    // ─── Step 4: Biometric BEFORE loading dialog so system prompt is visible ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    _showLoadingDialog('جارٍ إثبات الحضور...', 'التحقق من البصمة', C.green);
-    final result = await _attService.checkIn(uid, widget.user['empId'] ?? '', widget.user['name'] ?? '', facePhotoUrl: facePhotoUrl, authMethod: authMethod);
+    if (reqs.requireBiometric && !usedFaceAuth) {
+      final bioOk = await _attService.authenticateBiometric();
+      if (!bioOk) {
+        if (mounted) _showResultDialog(false, 'فشل التحقق من البصمة', 'يرجى المحاولة مرة أخرى');
+        return;
+      }
+    }
+
+    // ─── Step 5: Record attendance ───
+    _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
+    final result = await _attService.checkIn(
+      uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
+      facePhotoUrl: facePhotoUrl,
+      authMethod: authMethod,
+      requireBiometric: reqs.requireBiometric,
+      requireLocation: reqs.requireLocation,
+    );
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
       _loadToday();
@@ -300,10 +320,30 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Record checkout ───
+    // ─── Step 3: Load auth requirements ───
+    _showLoadingDialog('جارٍ التحقق من الإعدادات...', 'يرجى الانتظار', C.red);
+    final reqs = await _attService.getAuthRequirements(uid);
+    if (mounted) Navigator.pop(context);
+
+    // ─── Step 4: Biometric BEFORE loading dialog so system prompt is visible ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    _showLoadingDialog('جارٍ إثبات الخروج...', 'التحقق من البصمة', C.red);
-    final result = await _attService.checkOut(uid, widget.user['empId'] ?? '', widget.user['name'] ?? '', facePhotoUrl: facePhotoUrl, authMethod: authMethod);
+    if (reqs.requireBiometric && !usedFaceAuth) {
+      final bioOk = await _attService.authenticateBiometric();
+      if (!bioOk) {
+        if (mounted) _showResultDialog(false, 'فشل التحقق من البصمة', 'يرجى المحاولة مرة أخرى');
+        return;
+      }
+    }
+
+    // ─── Step 5: Record checkout ───
+    _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
+    final result = await _attService.checkOut(
+      uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
+      facePhotoUrl: facePhotoUrl,
+      authMethod: authMethod,
+      requireBiometric: reqs.requireBiometric,
+      requireLocation: reqs.requireLocation,
+    );
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
       _loadToday();

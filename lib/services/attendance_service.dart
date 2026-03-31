@@ -38,17 +38,11 @@ class AttendanceService {
     return settings['general'] as Map<String, dynamic>? ?? {};
   }
 
-  // ─── Check In ───
-  Future<Map<String, dynamic>> checkIn(
-    String uid, String empId, String name, {
-    String? facePhotoUrl,
-    String authMethod = 'fingerprint',
-    String? locationId,
-  }) async {
+  // ─── Get auth requirements for a user (call BEFORE showing loading dialog) ───
+  Future<({bool requireBiometric, bool requireLocation})> getAuthRequirements(String uid) async {
     final settings = await _loadSettings();
     final userRes = await ApiService.get('users.php?action=get', params: {'uid': uid});
     final userData = userRes['user'] as Map<String, dynamic>? ?? {};
-
     final hasOverride = userData['authOverride'] == true;
     final requireBiometric = hasOverride
         ? (userData['authBiometric'] ?? settings['authFinger'] ?? true)
@@ -56,14 +50,23 @@ class AttendanceService {
     final requireLocation = hasOverride
         ? (userData['authLoc'] ?? settings['authLoc'] ?? true)
         : (settings['authLoc'] ?? true);
+    return (
+      requireBiometric: requireBiometric == true,
+      requireLocation: requireLocation == true,
+    );
+  }
 
-    if (requireBiometric == true) {
-      final bioOk = await authenticateBiometric();
-      if (!bioOk) return {'success': false, 'error': 'فشل التحقق من البصمة'};
-    }
-
+  // ─── Check In ───
+  Future<Map<String, dynamic>> checkIn(
+    String uid, String empId, String name, {
+    String? facePhotoUrl,
+    String authMethod = 'fingerprint',
+    String? locationId,
+    bool requireBiometric = false,
+    bool requireLocation = true,
+  }) async {
     Position? pos;
-    if (requireLocation == true) {
+    if (requireLocation) {
       final locResult = await getCurrentLocation();
       pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
@@ -74,7 +77,7 @@ class AttendanceService {
       'uid': uid, 'emp_id': empId, 'name': name,
       'lat': pos?.latitude, 'lng': pos?.longitude,
       'accuracy': pos?.accuracy,
-      'biometric': requireBiometric == true,
+      'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
     };
@@ -90,26 +93,11 @@ class AttendanceService {
     String? facePhotoUrl,
     String authMethod = 'fingerprint',
     String? locationId,
+    bool requireBiometric = false,
+    bool requireLocation = true,
   }) async {
-    final settings = await _loadSettings();
-    final userRes = await ApiService.get('users.php?action=get', params: {'uid': uid});
-    final userData = userRes['user'] as Map<String, dynamic>? ?? {};
-
-    final hasOverride = userData['authOverride'] == true;
-    final requireBiometric = hasOverride
-        ? (userData['authBiometric'] ?? settings['authFinger'] ?? true)
-        : (settings['authFinger'] ?? true);
-    final requireLocation = hasOverride
-        ? (userData['authLoc'] ?? settings['authLoc'] ?? true)
-        : (settings['authLoc'] ?? true);
-
-    if (requireBiometric == true) {
-      final bioOk = await authenticateBiometric();
-      if (!bioOk) return {'success': false, 'error': 'فشل التحقق من البصمة'};
-    }
-
     Position? pos;
-    if (requireLocation == true) {
+    if (requireLocation) {
       final locResult = await getCurrentLocation();
       pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
@@ -120,7 +108,7 @@ class AttendanceService {
       'uid': uid, 'emp_id': empId, 'name': name,
       'lat': pos?.latitude, 'lng': pos?.longitude,
       'accuracy': pos?.accuracy,
-      'biometric': requireBiometric == true,
+      'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
     };
