@@ -86,7 +86,7 @@ class _AdminDevicesState extends State<AdminDevices> {
     final totalUsers = _users.length;
     final presentCount = _attMap.length;
     final activeDevices = _sessionMap.length;
-    final withLocation = _attMap.values.where((a) => a['checkInLat'] != null || a['firstCheckInLat'] != null).length;
+    final withLocation = _attMap.values.where((a) => a['checkInLat'] ?? a['check_in_lat'] ?? a['firstCheckInLat'] ?? a['first_check_in_lat'] != null).length;
 
     List<Map<String, dynamic>> displayUsers = _users;
     if (_filter == 'online') {
@@ -173,19 +173,19 @@ class _AdminDevicesState extends State<AdminDevices> {
     final uid = emp['uid'] ?? emp['_id'] ?? '';
     final att = _attMap[uid];
     final session = _sessionMap[uid];
-    final isPresent = att != null && (att['firstCheckIn'] ?? att['checkIn']) != null;
-    final hasCheckOut = att?['checkOut'] != null || att?['lastCheckOut'] != null;
-    final hasLoc = att?['checkInLat'] != null || att?['firstCheckInLat'] != null;
-    final lat = att?['firstCheckInLat'] ?? att?['checkInLat'];
-    final lng = att?['firstCheckInLng'] ?? att?['checkInLng'];
+    final isPresent = att != null && (att['firstCheckIn'] ?? att['first_check_in'] ?? att['checkIn'] ?? att['check_in']) != null;
+    final hasCheckOut = (att?['checkOut'] ?? att?['check_out'] ?? att?['lastCheckOut'] ?? att?['last_check_out']) != null;
+    final hasLoc = (att?['checkInLat'] ?? att?['check_in_lat'] ?? att?['firstCheckInLat'] ?? att?['first_check_in_lat']) != null;
+    final lat = att?['firstCheckInLat'] ?? att?['first_check_in_lat'] ?? att?['checkInLat'] ?? att?['check_in_lat'];
+    final lng = att?['firstCheckInLng'] ?? att?['first_check_in_lng'] ?? att?['checkInLng'] ?? att?['check_in_lng'];
     final av = (emp['name'] ?? 'م').toString().length >= 2 ? (emp['name'] ?? 'م').toString().substring(0, 2) : 'م';
 
     final hasActiveSession = session != null;
-    final deviceModel = (session?['deviceModel'] ?? emp['lastDeviceModel'] ?? '').toString();
-    final platform = (session?['platform'] ?? emp['lastPlatform'] ?? '').toString();
-    final osVersion = (session?['osVersion'] ?? emp['lastOsVersion'] ?? '').toString();
-    final deviceBrand = (session?['deviceBrand'] ?? emp['lastDeviceBrand'] ?? '').toString();
-    final multiDeviceAllowed = emp['multiDeviceAllowed'] == true;
+    final deviceModel = (session?['deviceModel'] ?? session?['device_model'] ?? emp['lastDeviceModel'] ?? emp['last_device_model'] ?? '').toString();
+    final platform = (session?['platform'] ?? emp['lastPlatform'] ?? emp['last_platform'] ?? '').toString();
+    final osVersion = (session?['osVersion'] ?? session?['os_version'] ?? emp['lastOsVersion'] ?? emp['last_os_version'] ?? '').toString();
+    final deviceBrand = (session?['deviceBrand'] ?? session?['device_brand'] ?? emp['lastDeviceBrand'] ?? emp['last_device_brand'] ?? '').toString();
+    final multiDeviceAllowed = emp['multiDeviceAllowed'] == true || emp['multi_device_allowed'] == 1 || emp['multi_device_allowed'] == true;
 
     final statusText = hasActiveSession ? (hasCheckOut ? 'مكتمل — متصل' : isPresent ? 'حاضر — متصل' : 'متصل') : (hasCheckOut ? 'مكتمل' : isPresent ? 'حاضر' : 'غائب');
     final statusColor = hasCheckOut ? C.green : isPresent ? C.pri : (hasActiveSession ? const Color(0xFF0BA5EC) : C.muted);

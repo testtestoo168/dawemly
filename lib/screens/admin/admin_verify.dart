@@ -90,11 +90,11 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     final presentUids = <String>{};
     for (final rec in _todayAttendance) {
-      if ((rec['firstCheckIn'] ?? rec['checkIn']) != null) presentUids.add(rec['uid'] ?? '');
+      if ((rec['firstCheckIn'] ?? rec['first_check_in'] ?? rec['checkIn'] ?? rec['check_in']) != null) presentUids.add(rec['uid'] ?? '');
     }
     final active = all.where((e) => presentUids.contains(e['uid'] ?? e['_id'])).toList();
 
-    final locations = _locations.where((l) => l['active'] == true).toList();
+    final locations = _locations.where((l) => l['active'] == true || l['active'] == 1).toList();
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -282,8 +282,8 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     final responded = requests.where((r) => r['status'] == 'responded').length;
     final pending = requests.where((r) => r['status'] == 'pending').length;
-    final inRange = requests.where((r) => r['inRange'] == true).length;
-    final outRange = requests.where((r) => r['inRange'] == false && r['status'] == 'responded').length;
+    final inRange = requests.where((r) => r['inRange'] == true || r['in_range'] == 1 || r['in_range'] == true).length;
+    final outRange = requests.where((r) => (r['inRange'] == false || r['in_range'] == 0) && r['status'] == 'responded').length;
 
     return Column(children: [
       Row(children: [
@@ -298,7 +298,7 @@ class _AdminVerifyState extends State<AdminVerify> {
       const SizedBox(height: 14),
       ...requests.map((r) {
         final isPending = r['status'] == 'pending';
-        final isInRange = r['inRange'] == true;
+        final isInRange = r['inRange'] == true || r['in_range'] == 1 || r['in_range'] == true;
         final stColor = isPending ? C.orange : (isInRange ? C.green : C.red);
         final stText = isPending ? 'بانتظار الاستجابة' : (isInRange ? 'داخل النطاق ✓' : 'خارج النطاق ⚠');
         final dist = r['distance'];

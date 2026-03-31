@@ -73,8 +73,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     final totalEmps = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').length;
-    final present = _attRecords.where((r) => r['checkIn'] != null).length;
-    final complete = _attRecords.where((r) => r['checkOut'] != null).length;
+    final present = _attRecords.where((r) => (r['checkIn'] ?? r['check_in'] ?? r['first_check_in']) != null).length;
+    final complete = _attRecords.where((r) => (r['checkOut'] ?? r['check_out'] ?? r['last_check_out']) != null).length;
     final absent = totalEmps > present ? totalEmps - present : 0;
     final pendingReqs = _pendingReqs.length;
 
@@ -280,8 +280,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Padding(padding: const EdgeInsets.all(40), child: Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted))))
         else
           Column(children: _attRecords.take(5).map((r) {
-            final hasOut = (r['lastCheckOut'] ?? r['checkOut']) != null;
-            final isCheckedIn = r['isCheckedIn'] == true;
+            final hasOut = (r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out']) != null;
+            final isCheckedIn = r['isCheckedIn'] == true || r['is_checked_in'] == 1 || r['is_checked_in'] == true;
             final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : 'م';
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -325,8 +325,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     for (final u in allUsers) {
       final uid = u['uid'] ?? u['_id'] ?? '';
       final att = attMap[uid];
-      final isIn = att != null && (att['isCheckedIn'] == true);
-      final hasCheckIn = att != null && (att['firstCheckIn'] ?? att['checkIn']) != null;
+      final isIn = att != null && (att['isCheckedIn'] == true || att['is_checked_in'] == 1 || att['is_checked_in'] == true);
+      final hasCheckIn = att != null && (att['firstCheckIn'] ?? att['first_check_in'] ?? att['checkIn'] ?? att['check_in']) != null;
       if (isIn) {
         inList.add({...u, '_att': att});
       } else if (hasCheckIn) {
@@ -363,7 +363,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Text('حاضرون الآن', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
           ...inList.map((u) {
             final att = u['_att'] as Map<String, dynamic>?;
-            final checkInTime = att?['firstCheckIn'] ?? att?['checkIn'];
+            final checkInTime = att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in'];
             final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
