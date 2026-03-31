@@ -294,7 +294,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         _locLat.text = lat.toStringAsFixed(6);
         _locLng.text = lng.toStringAsFixed(6);
       }
-      final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
+      final assigned = ((loc['assignedEmployees'] ?? loc['assigned_employees']) as List?)?.cast<String>() ?? [];
       _locSelectedEmps = assigned.toSet();
     });
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -492,7 +492,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       final locId = loc['id'] ?? loc['_id'] ?? '';
       final active = loc['active'] ?? true;
       final radius = loc['radius'] ?? 200;
-      final assignedEmps = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
+      final assignedEmps = ((loc['assignedEmployees'] ?? loc['assigned_employees']) as List?)?.cast<String>() ?? [];
       return Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: active ? const Color(0xFFABEFC6) : C.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(children: [
           InkWell(onTap: () async { await ApiService.post('admin.php?action=delete_location', {'id': locId}); _loadSettings(); }, child: Container(width: 30, height: 30, decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.delete_outline, size: 16, color: C.red))),
