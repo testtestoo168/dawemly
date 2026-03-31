@@ -421,9 +421,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
             Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng), infoWindow: InfoWindow(title: locName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
           },
           circles: {
-            Circle(circleId: const CircleId('zone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: const Color(0xFF17B26A).withOpacity(0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2),
+            Circle(circleId: const CircleId('zone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: const Color(0xFF17B26A).withValues(alpha: 0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2),
           },
-          myLocationEnabled: false, zoomControlsEnabled: false, liteModeEnabled: true,
+          myLocationEnabled: false, zoomControlsEnabled: false, liteModeEnabled: false,
         ))),
         const SizedBox(height: 10),
         Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(10)),
@@ -489,15 +489,15 @@ class _EmpHomePageState extends State<EmpHomePage> {
         Text('الوقت: $time', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 14),
         if (lat != null && lng != null) ClipRRect(borderRadius: BorderRadius.circular(14), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
-          initialCameraPosition: CameraPosition(target: LatLng(empLat, empLng), zoom: 16),
+          initialCameraPosition: CameraPosition(target: LatLng(adminLat ?? empLat, adminLng ?? empLng), zoom: 15),
           markers: {
-            Marker(markerId: const MarkerId('employee'), position: LatLng(empLat, empLng), infoWindow: const InfoWindow(title: 'موقعك الحالي')),
-            if (adminLat != null) Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng!), infoWindow: InfoWindow(title: adminName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)),
+            Marker(markerId: const MarkerId('employee'), position: LatLng(empLat, empLng), infoWindow: const InfoWindow(title: 'موقع البصمة'), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
+            if (adminLat != null) Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng!), infoWindow: InfoWindow(title: adminName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
           },
           circles: {
-            if (adminLat != null) Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng!), radius: adminRadius, fillColor: C.pri.withOpacity(0.1), strokeColor: C.pri.withOpacity(0.4), strokeWidth: 2),
+            if (adminLat != null) Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng!), radius: adminRadius, fillColor: const Color(0xFF17B26A).withValues(alpha: 0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2),
           },
-          myLocationEnabled: false, zoomControlsEnabled: false, mapToolbarEnabled: false, liteModeEnabled: true,
+          myLocationEnabled: false, zoomControlsEnabled: false, mapToolbarEnabled: false, liteModeEnabled: false,
         ))),
         const SizedBox(height: 8),
         Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: C.greenL, borderRadius: BorderRadius.circular(8)),
