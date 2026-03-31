@@ -207,10 +207,16 @@ class _EmpHomePageState extends State<EmpHomePage> {
     bool showLocCheck = loc != null && loc.isNotEmpty;
     if (showLocCheck) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.green);
-      final pos = await _attService.getCurrentLocation();
+      final locResult = await _attService.getCurrentLocation();
+      final pos = locResult.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
         _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
+        return;
+      }
+      if (locResult.isMocked) {
+        if (mounted) Navigator.pop(context);
+        _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور');
         return;
       }
       final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
@@ -270,10 +276,16 @@ class _EmpHomePageState extends State<EmpHomePage> {
     bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
     if (showLocCheck2) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.red);
-      final pos = await _attService.getCurrentLocation();
+      final locResult2 = await _attService.getCurrentLocation();
+      final pos = locResult2.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
         _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
+        return;
+      }
+      if (locResult2.isMocked) {
+        if (mounted) Navigator.pop(context);
+        _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف');
         return;
       }
       final adminLat = (loc2['lat'] as num?)?.toDouble() ?? 0;
@@ -756,8 +768,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
   void _doVerificationResponse(String uid) async {
     _showLoadingDialog('جارٍ إثبات الحالة...', 'جاري تحديد موقعك وحساب المسافة', C.orange);
     try {
-      final pos = await _attService.getCurrentLocation();
+      final locResultV = await _attService.getCurrentLocation();
+      final pos = locResultV.position;
       if (pos == null) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS'); return; }
+      if (locResultV.isMocked) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع'); return; }
 
       final loc = _selectedLocation;
       double adminLat = 0, adminLng = 0, radius = 300;
