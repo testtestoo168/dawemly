@@ -16,19 +16,20 @@ class AttendanceService {
     );
   }
 
-  // ─── Get current location ───
-  Future<Position?> getCurrentLocation() async {
+  // ─── Get current location with mock detection ───
+  Future<({Position? position, bool isMocked})> getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return null;
+    if (!serviceEnabled) return (position: null, isMocked: false);
     LocationPermission perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.denied) return null;
+      if (perm == LocationPermission.denied) return (position: null, isMocked: false);
     }
-    if (perm == LocationPermission.deniedForever) return null;
-    return await Geolocator.getCurrentPosition(
+    if (perm == LocationPermission.deniedForever) return (position: null, isMocked: false);
+    final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
+    return (position: pos, isMocked: pos.isMocked);
   }
 
   Future<Map<String, dynamic>> _loadSettings() async {
@@ -63,8 +64,10 @@ class AttendanceService {
 
     Position? pos;
     if (requireLocation == true) {
-      pos = await getCurrentLocation();
+      final locResult = await getCurrentLocation();
+      pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
+      if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور'};
     }
 
     final body = <String, dynamic>{
@@ -73,6 +76,7 @@ class AttendanceService {
       'accuracy': pos?.accuracy,
       'biometric': requireBiometric == true,
       'auth_method': authMethod,
+      'is_mocked': false,
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;
     if (locationId != null) body['location_id'] = locationId;
@@ -106,8 +110,10 @@ class AttendanceService {
 
     Position? pos;
     if (requireLocation == true) {
-      pos = await getCurrentLocation();
+      final locResult = await getCurrentLocation();
+      pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
+      if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف'};
     }
 
     final body = <String, dynamic>{
@@ -116,6 +122,7 @@ class AttendanceService {
       'accuracy': pos?.accuracy,
       'biometric': requireBiometric == true,
       'auth_method': authMethod,
+      'is_mocked': false,
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;
     if (locationId != null) body['location_id'] = locationId;
