@@ -57,9 +57,12 @@ class ApiService {
     Map<String, String>? params,
   }) async {
     try {
-      final uri = Uri.parse('$baseUrl/$endpoint').replace(
-        queryParameters: params,
-      );
+      var uri = Uri.parse('$baseUrl/$endpoint');
+      if (params != null && params.isNotEmpty) {
+        // Merge params with existing query parameters (don't replace action, etc.)
+        final merged = Map<String, String>.from(uri.queryParameters)..addAll(params);
+        uri = uri.replace(queryParameters: merged);
+      }
       final response = await http
           .get(uri, headers: _headers)
           .timeout(const Duration(seconds: 30));

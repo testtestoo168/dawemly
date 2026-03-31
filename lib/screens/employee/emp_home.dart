@@ -175,6 +175,8 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     String? facePhotoUrl;
     bool usedFaceAuth = false;
+    // Save position from location check to avoid fetching twice
+    double? savedLat, savedLng, savedAccuracy;
 
     // ─── Step 1: Check if face auth is required ───
     final faceRequired = await FaceRecognitionService.isFaceAuthRequired(uid);
@@ -219,6 +221,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
         _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور');
         return;
       }
+      // Save position to reuse later (avoid double GPS fetch)
+      savedLat = pos.latitude;
+      savedLng = pos.longitude;
+      savedAccuracy = pos.accuracy;
       final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
       final adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
@@ -231,30 +237,49 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Load auth requirements ───
-    _showLoadingDialog('جارٍ التحقق من الإعدادات...', 'يرجى الانتظار', C.green);
-    final reqs = await _attService.getAuthRequirements(uid);
-    if (mounted) Navigator.pop(context);
-
-    // ─── Step 4: Biometric BEFORE loading dialog so system prompt is visible ───
+    // ─── Step 3: Show loading, load auth requirements in background ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    if (reqs.requireBiometric && !usedFaceAuth) {
-      final bioOk = await _attService.authenticateBiometric();
-      if (!bioOk) {
-        if (mounted) _showResultDialog(false, 'فشل التحقق من البصمة', 'يرجى المحاولة مرة أخرى');
-        return;
-      }
+    _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
+
+    late ({bool requireBiometric, bool requireLocation}) reqs;
+    try {
+      reqs = await _attService.getAuthRequirements(uid);
+    } catch (_) {
+      reqs = (requireBiometric: true, requireLocation: true);
     }
 
-    // ─── Step 5: Record attendance ───
-    _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
-    final result = await _attService.checkIn(
-      uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
-      facePhotoUrl: facePhotoUrl,
-      authMethod: authMethod,
-      requireBiometric: reqs.requireBiometric,
-      requireLocation: reqs.requireLocation,
-    );
+    // ─── Step 4: If biometric required, dismiss dialog then show fingerprint ───
+    if (reqs.requireBiometric && !usedFaceAuth) {
+      if (mounted) Navigator.pop(context);
+      final bioResult = await _attService.authenticateBiometricWithDetails();
+      if (!mounted) return;
+      if (!bioResult.success) {
+        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        return;
+      }
+      _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
+    }
+
+    // ─── Step 5: Record attendance (pass saved coordinates to avoid double fetch) ───
+    Map<String, dynamic> result;
+    try {
+      result = await _attService.checkIn(
+        uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
+        facePhotoUrl: facePhotoUrl,
+        authMethod: authMethod,
+        requireBiometric: reqs.requireBiometric,
+        requireLocation: reqs.requireLocation,
+        lat: savedLat,
+        lng: savedLng,
+        accuracy: savedAccuracy,
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showResultDialog(false, 'خطأ في إثبات الحضور', e.toString());
+      }
+      return;
+    }
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
       _loadToday();
@@ -271,6 +296,8 @@ class _EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     String? facePhotoUrl;
     bool usedFaceAuth = false;
+    // Save position from location check to avoid fetching twice
+    double? savedLat, savedLng, savedAccuracy;
 
     // ─── Step 1: Face verification if required ───
     final faceRequired = await FaceRecognitionService.isFaceAuthRequired(uid);
@@ -308,6 +335,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
         _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف');
         return;
       }
+      // Save position to reuse later (avoid double GPS fetch)
+      savedLat = pos.latitude;
+      savedLng = pos.longitude;
+      savedAccuracy = pos.accuracy;
       final adminLat = (loc2['lat'] as num?)?.toDouble() ?? 0;
       final adminLng = (loc2['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc2['radius'] as num?)?.toDouble() ?? 300;
@@ -320,30 +351,49 @@ class _EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
     }
 
-    // ─── Step 3: Load auth requirements ───
-    _showLoadingDialog('جارٍ التحقق من الإعدادات...', 'يرجى الانتظار', C.red);
-    final reqs = await _attService.getAuthRequirements(uid);
-    if (mounted) Navigator.pop(context);
-
-    // ─── Step 4: Biometric BEFORE loading dialog so system prompt is visible ───
+    // ─── Step 3: Show loading, load auth requirements in background ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    if (reqs.requireBiometric && !usedFaceAuth) {
-      final bioOk = await _attService.authenticateBiometric();
-      if (!bioOk) {
-        if (mounted) _showResultDialog(false, 'فشل التحقق من البصمة', 'يرجى المحاولة مرة أخرى');
-        return;
-      }
+    _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
+
+    late ({bool requireBiometric, bool requireLocation}) reqs;
+    try {
+      reqs = await _attService.getAuthRequirements(uid);
+    } catch (_) {
+      reqs = (requireBiometric: true, requireLocation: true);
     }
 
-    // ─── Step 5: Record checkout ───
-    _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
-    final result = await _attService.checkOut(
-      uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
-      facePhotoUrl: facePhotoUrl,
-      authMethod: authMethod,
-      requireBiometric: reqs.requireBiometric,
-      requireLocation: reqs.requireLocation,
-    );
+    // ─── Step 4: If biometric required, dismiss dialog then show fingerprint ───
+    if (reqs.requireBiometric && !usedFaceAuth) {
+      if (mounted) Navigator.pop(context);
+      final bioResult = await _attService.authenticateBiometricWithDetails();
+      if (!mounted) return;
+      if (!bioResult.success) {
+        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        return;
+      }
+      _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
+    }
+
+    // ─── Step 5: Record checkout (pass saved coordinates to avoid double fetch) ───
+    Map<String, dynamic> result;
+    try {
+      result = await _attService.checkOut(
+        uid, widget.user['empId'] ?? '', widget.user['name'] ?? '',
+        facePhotoUrl: facePhotoUrl,
+        authMethod: authMethod,
+        requireBiometric: reqs.requireBiometric,
+        requireLocation: reqs.requireLocation,
+        lat: savedLat,
+        lng: savedLng,
+        accuracy: savedAccuracy,
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showResultDialog(false, 'خطأ في إثبات الخروج', e.toString());
+      }
+      return;
+    }
     if (mounted) Navigator.pop(context);
     if (result['success'] == true) {
       _loadToday();

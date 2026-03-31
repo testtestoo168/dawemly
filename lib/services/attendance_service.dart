@@ -16,6 +16,28 @@ class AttendanceService {
     );
   }
 
+  // ─── Biometric check with detailed error ───
+  Future<({bool success, String error})> authenticateBiometricWithDetails() async {
+    try {
+      final canCheck = await _localAuth.canCheckBiometrics;
+      final isSupported = await _localAuth.isDeviceSupported();
+      if (!isSupported) {
+        return (success: false, error: 'جهازك لا يدعم البصمة — استخدم قفل الشاشة');
+      }
+      if (!canCheck) {
+        return (success: false, error: 'لم يتم تسجيل بصمة على الجهاز — سجّل بصمة من إعدادات الجهاز');
+      }
+      final result = await _localAuth.authenticate(
+        localizedReason: 'يرجى استخدام بصمة الإصبع لإثبات الهوية',
+        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
+      );
+      if (result) return (success: true, error: '');
+      return (success: false, error: 'تم إلغاء التحقق — حاول مرة أخرى');
+    } catch (e) {
+      return (success: false, error: 'خطأ في البصمة: $e');
+    }
+  }
+
   // ─── Get current location with mock detection ───
   Future<({Position? position, bool isMocked})> getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -64,19 +86,28 @@ class AttendanceService {
     String? locationId,
     bool requireBiometric = false,
     bool requireLocation = true,
+    double? lat,
+    double? lng,
+    double? accuracy,
   }) async {
-    Position? pos;
-    if (requireLocation) {
+    // Use provided coordinates if available, otherwise fetch location
+    double? finalLat = lat;
+    double? finalLng = lng;
+    double? finalAccuracy = accuracy;
+    if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
-      pos = locResult.position;
+      final pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
       if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور'};
+      finalLat = pos.latitude;
+      finalLng = pos.longitude;
+      finalAccuracy = pos.accuracy;
     }
 
     final body = <String, dynamic>{
       'uid': uid, 'emp_id': empId, 'name': name,
-      'lat': pos?.latitude, 'lng': pos?.longitude,
-      'accuracy': pos?.accuracy,
+      'lat': finalLat, 'lng': finalLng,
+      'accuracy': finalAccuracy,
       'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
@@ -95,19 +126,28 @@ class AttendanceService {
     String? locationId,
     bool requireBiometric = false,
     bool requireLocation = true,
+    double? lat,
+    double? lng,
+    double? accuracy,
   }) async {
-    Position? pos;
-    if (requireLocation) {
+    // Use provided coordinates if available, otherwise fetch location
+    double? finalLat = lat;
+    double? finalLng = lng;
+    double? finalAccuracy = accuracy;
+    if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
-      pos = locResult.position;
+      final pos = locResult.position;
       if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
       if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف'};
+      finalLat = pos.latitude;
+      finalLng = pos.longitude;
+      finalAccuracy = pos.accuracy;
     }
 
     final body = <String, dynamic>{
       'uid': uid, 'emp_id': empId, 'name': name,
-      'lat': pos?.latitude, 'lng': pos?.longitude,
-      'accuracy': pos?.accuracy,
+      'lat': finalLat, 'lng': finalLng,
+      'accuracy': finalAccuracy,
       'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
@@ -128,7 +168,7 @@ class AttendanceService {
   // ─── Day punches ───
   Future<List<Map<String, dynamic>>> getDayPunches(String uid, String dateKey) async {
     final result = await ApiService.get('attendance.php?action=punches',
-        params: {'uid': uid, 'date': dateKey});
+        params: {'uid': uid, 'date_key': dateKey});
     if (result['success'] == true) {
       return (result['punches'] as List? ?? []).cast<Map<String, dynamic>>();
     }
