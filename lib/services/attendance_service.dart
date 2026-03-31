@@ -9,10 +9,10 @@ class AttendanceService {
   Future<bool> authenticateBiometric() async {
     final canCheck = await _localAuth.canCheckBiometrics;
     final isSupported = await _localAuth.isDeviceSupported();
-    if (!canCheck || !isSupported) return true;
+    if (!canCheck || !isSupported) return false;
     return await _localAuth.authenticate(
       localizedReason: 'يرجى استخدام بصمة الإصبع لإثبات الهوية',
-      options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
+      options: const AuthenticationOptions(stickyAuth: false, biometricOnly: false),
     );
   }
 
@@ -33,7 +33,8 @@ class AttendanceService {
 
   Future<Map<String, dynamic>> _loadSettings() async {
     final res = await ApiService.get('admin.php?action=get_settings');
-    return res['settings'] as Map<String, dynamic>? ?? {};
+    final settings = res['settings'] as Map<String, dynamic>? ?? {};
+    return settings['general'] as Map<String, dynamic>? ?? {};
   }
 
   // ─── Check In ───
