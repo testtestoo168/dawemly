@@ -91,11 +91,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
   void _updateElapsed() {
     if (_todayRecord == null) return;
-    final firstIn = _todayRecord!['firstCheckIn'] ?? _todayRecord!['checkIn'];
+    final firstIn = _todayRecord!['firstCheckIn'] ?? _todayRecord!['first_check_in'] ?? _todayRecord!['checkIn'] ?? _todayRecord!['check_in'];
     if (firstIn == null) return;
 
     // Base: accumulated minutes from completed sessions
-    final totalWorkedMinutes = (_todayRecord!['totalWorkedMinutes'] as int?) ?? (_todayRecord!['total_worked_minutes'] as int?) ?? 0;
+    final totalWorkedMinutes = ((_todayRecord!['totalWorkedMinutes'] ?? _todayRecord!['total_worked_minutes']) as int?) ?? 0;
     final isCheckedIn = _toBool(_todayRecord!['isCheckedIn']) || _toBool(_todayRecord!['is_checked_in']);
 
     if (isCheckedIn) {
@@ -103,8 +103,8 @@ class _EmpHomePageState extends State<EmpHomePage> {
       final sessionStartRaw = _todayRecord!['currentSessionStart'] ?? _todayRecord!['current_session_start'];
       final sessionStart = _parseTs(sessionStartRaw);
       if (sessionStart != null) {
-        final liveMinutes = DateTime.now().difference(sessionStart).inSeconds;
-        if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveMinutes));
+        final liveSeconds = DateTime.now().difference(sessionStart).inSeconds;
+        if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveSeconds));
       } else {
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));
       }
