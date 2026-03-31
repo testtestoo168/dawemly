@@ -84,13 +84,6 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   static const _mapsApiKey = 'AIzaSyB-CkusFlHFxJujo_GagT1kSNoQtmCq630';
 
-  // Search using Google Places Autocomplete API directly
-  // Helper to add CORS proxy for web
-  String _proxyUrl(String url) {
-    if (kIsWeb) return 'https://corsproxy.io/?${Uri.encodeComponent(url)}';
-    return url;
-  }
-
   void _searchLocation() async {
     if (_locSearchCtrl.text.trim().length < 2) {
       setState(() => _searchResults = []);
@@ -99,10 +92,15 @@ class _AdminSettingsState extends State<AdminSettings> {
     setState(() => _searching = true);
     try {
       final query = Uri.encodeComponent(_locSearchCtrl.text.trim());
-      
-      // Use Text Search directly (simpler, one API call)
-      final tsUrl = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&language=ar&key=$_mapsApiKey';
-      final tsResponse = await http.get(Uri.parse(_proxyUrl(tsUrl)));
+
+      Uri searchUri;
+      if (kIsWeb) {
+        searchUri = Uri.parse('${ApiService.baseUrl}/places.php?query=$query');
+      } else {
+        searchUri = Uri.parse('https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&language=ar&key=$_mapsApiKey');
+      }
+
+      final tsResponse = await http.get(searchUri);
       final tsData = jsonDecode(tsResponse.body);
       
       final results = <Map<String, dynamic>>[];
