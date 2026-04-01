@@ -101,16 +101,19 @@ class _EmpHomePageState extends State<EmpHomePage> {
     try {
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      // Get initial position once
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
       if (mounted) setState(() => _livePosition = pos);
-      _locationTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-        try {
-          final p = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-          if (mounted) {
-            setState(() => _livePosition = p);
-            _liveMapController?.animateCamera(CameraUpdate.newLatLng(LatLng(p.latitude, p.longitude)));
-          }
-        } catch (_) {}
+      // Only update when user actually moves 15+ meters
+      final stream = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 15,
+        ),
+      );
+      _locationTimer = Timer(Duration.zero, () {}); // placeholder so dispose works
+      stream.listen((p) {
+        if (mounted) setState(() => _livePosition = p);
       });
     } catch (_) {}
   }
@@ -160,10 +163,14 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   void _loadToday() async {
-    final rec = await _attService.getTodayRecord(widget.user['uid'] ?? '');
-    if (mounted) {
-      setState(() { _todayRecord = rec; _loadingRecord = false; });
-      _updateElapsed();
+    try {
+      final rec = await _attService.getTodayRecord(widget.user['uid'] ?? '');
+      if (mounted) {
+        setState(() { _todayRecord = rec; _loadingRecord = false; });
+        _updateElapsed();
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingRecord = false);
     }
   }
 
@@ -878,7 +885,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
                 circles: circles,
                 onMapCreated: (c) => _liveMapController = c,
                 myLocationEnabled: false,
-                zoomControlsEnabled: false,
+                zoomControlsEnabled: true,
                 mapToolbarEnabled: false,
                 liteModeEnabled: false,
               ),
