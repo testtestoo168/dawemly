@@ -318,6 +318,12 @@ class _AdminRolesState extends State<AdminRoles> {
             const SizedBox(width: 10),
             CircleAvatar(radius: 19, backgroundColor: C.priLight,
               child: Text(initials, style: _tj(12, w: FontWeight.w700, color: C.pri))),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() { _selectedUser = null; _editPerms = {}; }),
+              child: Container(width: 28, height: 28, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.border)),
+                child: const Icon(Icons.close_rounded, size: 14, color: C.muted)),
+            ),
           ]),
         ),
 
@@ -367,7 +373,7 @@ class _AdminRolesState extends State<AdminRoles> {
                   child: Container(
                     width: 26, height: 26,
                     decoration: BoxDecoration(color: allOn ? color.withValues(alpha: 0.15) : C.div, borderRadius: BorderRadius.circular(7)),
-                    child: Icon(allOn ? Icons.check_rounded : Icons.add_rounded, size: 13, color: allOn ? color : C.hint),
+                    child: Icon(allOn ? Icons.remove_rounded : Icons.add_rounded, size: 13, color: allOn ? color : C.hint),
                   ),
                 ),
                 const SizedBox(width: 6),
