@@ -17,6 +17,7 @@ class _AdminRolesState extends State<AdminRoles> {
   Map<String, bool> _editPerms = {};
   bool _saving = false;
   bool _saved = false;
+  bool _listVisible = true;
 
   static const _sections = [
     {
@@ -142,14 +143,12 @@ class _AdminRolesState extends State<AdminRoles> {
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               // ── Permissions panel (left) ──
               Expanded(
-                flex: 6,
-                child: _selectedUser == null
-                    ? _emptyState()
-                    : _permsPanel(),
+                child: _selectedUser == null ? _emptyState() : _permsPanel(),
               ),
-              const SizedBox(width: 16),
-              // ── Employee list (right) ──
-              SizedBox(width: 300, child: _employeeList()),
+              if (_listVisible) ...[
+                const SizedBox(width: 16),
+                SizedBox(width: 290, child: _employeeList()),
+              ],
             ]),
           ),
         ]),
@@ -197,9 +196,18 @@ class _AdminRolesState extends State<AdminRoles> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         // Header
         Container(
-          padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+          padding: const EdgeInsets.fromLTRB(10, 11, 14, 11),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           child: Row(children: [
+            GestureDetector(
+              onTap: () => setState(() => _listVisible = !_listVisible),
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(7), border: Border.all(color: C.border)),
+                child: Icon(_listVisible ? Icons.remove_rounded : Icons.add_rounded, size: 14, color: C.sub),
+              ),
+            ),
+            const SizedBox(width: 6),
             Text('${_users.length}', style: _tj(11, color: C.muted)),
             const Spacer(),
             Text('الموظفون', style: _tj(14, w: FontWeight.w800, color: C.text)),
@@ -252,8 +260,7 @@ class _AdminRolesState extends State<AdminRoles> {
 
     return GestureDetector(
       onTap: () => _selectUser(u),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? C.priLight : Colors.transparent,
@@ -299,8 +306,7 @@ class _AdminRolesState extends State<AdminRoles> {
               ? const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 2))
               : GestureDetector(
                   onTap: _savePerms,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(color: _saved ? C.green : C.pri, borderRadius: BorderRadius.circular(9)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -396,8 +402,8 @@ class _AdminRolesState extends State<AdminRoles> {
                 final activeColor = isDanger ? C.red : color;
                 return GestureDetector(
                   onTap: () => setState(() => _editPerms[key] = !on),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
+                  child: Container(
+      
                     margin: const EdgeInsets.only(bottom: 5),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
@@ -406,8 +412,8 @@ class _AdminRolesState extends State<AdminRoles> {
                       border: Border.all(color: on ? activeColor.withValues(alpha: 0.25) : C.div),
                     ),
                     child: Row(children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                      Container(
+          
                         width: 18, height: 18,
                         decoration: BoxDecoration(
                           color: on ? activeColor : C.div,
