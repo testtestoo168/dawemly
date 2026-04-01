@@ -72,7 +72,7 @@ class _AdminAppState extends State<AdminApp> {
   List<_NI> get _allItems => _navSections.expand((s) => s.items).toList();
 
   @override
-  void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) => _tick()); }
+  void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) { _tick(); if (_mTab == 0) _loadMobileHome(); }); }
   @override void dispose() { _timer?.cancel(); super.dispose(); }
   void _tick() { final n = DateTime.now(); final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
 
@@ -364,7 +364,7 @@ class _AdminAppState extends State<AdminApp> {
               final on = _mTab == i;
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _mTab = i),
+                  onTap: () { if (i == 0 && _mTab != 0) _loadMobileHome(); setState(() => _mTab = i); },
                   behavior: HitTestBehavior.opaque,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -436,7 +436,7 @@ class _AdminAppState extends State<AdminApp> {
     final presentOnly = att.where((r) => r['is_checked_in'] == 1 || r['is_checked_in'] == true).length;
     final complete = att.where((r) => (r['is_checked_in'] == 0 || r['is_checked_in'] == false) && (r['check_in'] ?? r['first_check_in']) != null).length;
     final totalAttended = att.where((r) => (r['check_in'] ?? r['first_check_in']) != null).length;
-    final absent = allUsers > totalAttended ? allUsers - totalAttended : 0;
+    final absent = (allUsers - presentOnly).clamp(0, allUsers);
 
     return RefreshIndicator(
       onRefresh: _loadMobileHome,
@@ -454,13 +454,9 @@ class _AdminAppState extends State<AdminApp> {
             Text('نظرة عامة على الحضور', style: _tj(11, color: Colors.white.withOpacity(0.4))),
             const SizedBox(height: 18),
             Row(children: [
-              Expanded(child: _mStatTap('$absent', 'غائب', const Color(0xFFFF6B6B), () => _openStatDetail('absent', 'الغائبين', const Color(0xFFFF6B6B)))),
-              const SizedBox(width: 10),
-              Expanded(child: _mStatTap('$complete', 'مكتمل', const Color(0xFF74C0FC), () => _openStatDetail('complete', 'المكتملين', const Color(0xFF74C0FC)))),
+              Expanded(child: _mStatTap('$absent', 'خروج', const Color(0xFFFF6B6B), () => _openStatDetail('absent', 'الخروج', const Color(0xFFFF6B6B)))),
               const SizedBox(width: 10),
               Expanded(child: _mStatTap('$presentOnly', 'حاضر', const Color(0xFF51CF66), () => _openStatDetail('present', 'الحاضرين', const Color(0xFF51CF66)))),
-              const SizedBox(width: 10),
-              Expanded(child: _mStatTap('$allUsers', 'الموظفين', Colors.white, () => _openStatDetail('all', 'جميع الموظفين', C.pri))),
             ]),
           ]),
         ),
@@ -518,40 +514,73 @@ class _AdminAppState extends State<AdminApp> {
         ),
         const SizedBox(height: 8),
 
-        // ═══ SECTION: آخر الحضور ═══
-        _sectionHeader('آخر الحضور', onTap: () => setState(() => _mTab = 1)),
+        // ═══ SECTION: حضور الموظفين ═══
+        _sectionHeader('حضور الموظفين', onTap: () => setState(() => _mTab = 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
             decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
             child: _mHomeLoading
               ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-              : att.isEmpty
+              : _mHomeUsers.isEmpty
                 ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
                     Icon(Icons.hourglass_empty_rounded, size: 40, color: C.muted.withOpacity(0.5)),
                     const SizedBox(height: 8),
-                    Text('لا يوجد حضور اليوم', style: _tj(13, color: C.muted)),
+                    Text('لا يوجد موظفون', style: _tj(13, color: C.muted)),
                   ])))
-                : Column(children: att.take(6).map((r) {
-                    final hasOut = (r['is_checked_in'] == 0 || r['is_checked_in'] == false) && (r['check_in'] ?? r['first_check_in']) != null;
-                    final isFirst = r == att.first;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
-                      child: Row(children: [
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: hasOut ? const Color(0xFFDCFCE7) : C.priLight, borderRadius: BorderRadius.circular(20)),
-                          child: Text(hasOut ? 'مكتمل' : 'حاضر', style: _tj(10, weight: FontWeight.w600, color: hasOut ? const Color(0xFF166534) : C.pri))),
-                        const Spacer(),
-                        Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                          Text(r['empId'] ?? r['emp_id'] ?? '', style: _tj(11, color: C.muted)),
-                        ])),
-                        const SizedBox(width: 10),
-                        Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
-                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
-                      ]),
-                    );
-                  }).toList()),
+                : Column(children: () {
+                    // Build merged list: all non-admin employees with their attendance status
+                    final employees = _mHomeUsers.where((u) =>
+                      (u['name'] ?? '').toString().isNotEmpty &&
+                      u['role'] != 'admin' && u['role'] != 'superadmin'
+                    ).toList();
+                    // Sort: حاضر first
+                    final attByUid = <String, Map<String, dynamic>>{};
+                    for (final a in att) {
+                      final uid = (a['uid'] ?? a['emp_uid'] ?? '').toString();
+                      if (uid.isNotEmpty) attByUid[uid] = a;
+                    }
+                    employees.sort((a, b) {
+                      final aUid = (a['uid'] ?? '').toString();
+                      final bUid = (b['uid'] ?? '').toString();
+                      final aPresent = attByUid[aUid]?['is_checked_in'] == 1 || attByUid[aUid]?['is_checked_in'] == true;
+                      final bPresent = attByUid[bUid]?['is_checked_in'] == 1 || attByUid[bUid]?['is_checked_in'] == true;
+                      if (aPresent && !bPresent) return -1;
+                      if (!aPresent && bPresent) return 1;
+                      return 0;
+                    });
+                    return employees.map((emp) {
+                      final uid = (emp['uid'] ?? '').toString();
+                      final attRec = attByUid[uid];
+                      final isPresent = attRec?['is_checked_in'] == 1 || attRec?['is_checked_in'] == true;
+                      final isFirst = emp == employees.first;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
+                        child: Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              isPresent ? 'حاضر' : 'خروج',
+                              style: _tj(10, weight: FontWeight.w600, color: isPresent ? const Color(0xFF166534) : const Color(0xFF991B1B)),
+                            ),
+                          ),
+                          const Spacer(),
+                          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            Text(emp['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
+                            Text(emp['empId'] ?? emp['emp_id'] ?? '', style: _tj(11, color: C.muted)),
+                          ])),
+                          const SizedBox(width: 10),
+                          Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+                            child: Center(child: Text(_getInitials(emp['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: isPresent ? const Color(0xFF166534) : C.muted)))),
+                        ]),
+                      );
+                    }).toList();
+                  }()),
           ),
         ),
         const SizedBox(height: 24),

@@ -31,21 +31,30 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
       final attMap = <String, Map<String, dynamic>>{};
       for (final r in attList) attMap[r['uid'] ?? ''] = r;
 
+      // Attach attendance record to each user
+      final allUsersWithAtt = allUsers.map((u) {
+        final att = attMap[u['uid'] ?? ''];
+        return {...u, if (att != null) '_att': att};
+      }).toList();
+
       List<Map<String, dynamic>> filtered = [];
       if (widget.filter == 'all') {
-        filtered = allUsers;
+        filtered = allUsersWithAtt;
       } else if (widget.filter == 'present') {
-        filtered = allUsers.where((u) {
+        filtered = allUsersWithAtt.where((u) {
           final att = attMap[u['uid'] ?? ''];
-          return att != null && (att['checkIn'] ?? att['first_check_in']) != null && (att['checkOut'] ?? att['last_check_out']) == null;
+          return att != null && (att['is_checked_in'] == 1 || att['is_checked_in'] == true);
         }).toList();
       } else if (widget.filter == 'complete') {
-        filtered = allUsers.where((u) {
+        filtered = allUsersWithAtt.where((u) {
           final att = attMap[u['uid'] ?? ''];
-          return att != null && (att['checkOut'] ?? att['last_check_out']) != null;
+          return att != null && (att['is_checked_in'] == 0 || att['is_checked_in'] == false) && (att['check_in'] ?? att['first_check_in']) != null;
         }).toList();
       } else if (widget.filter == 'absent') {
-        filtered = allUsers.where((u) => !attMap.containsKey(u['uid'] ?? '')).toList();
+        filtered = allUsersWithAtt.where((u) {
+          final att = attMap[u['uid'] ?? ''];
+          return att == null || (att['is_checked_in'] == 0 || att['is_checked_in'] == false) && (att['check_in'] ?? att['first_check_in']) == null;
+        }).toList();
       }
 
       if (mounted) setState(() { _filtered = filtered; _loading = false; });

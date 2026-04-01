@@ -84,7 +84,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
       final att = attMap[uid];
       final hasIn = (att?['first_check_in'] ?? att?['check_in']) != null;
       final isCheckedIn = att?['is_checked_in'] == 1 || att?['is_checked_in'] == true;
-      String status = 'غائب';
+      String status = 'غير حاضر';
       if (isCheckedIn) status = 'حاضر';
       else if (hasIn) status = 'مكتمل';
       return {...u, '_status': status, '_att': att, '_isCheckedIn': isCheckedIn};
@@ -108,7 +108,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           const SizedBox(height: 20),
           Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
             _searchBox(),
-            _drop(_fSt, ['الكل','حاضر','مكتمل','غائب'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
+            _drop(_fSt, ['الكل','حاضر','مكتمل','غير حاضر'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
             _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
             Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)),
               child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
@@ -128,7 +128,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Widget _empCard(Map<String, dynamic> e) {
     final n = e['name'] ?? '—';
     final av = n.length >= 2 ? n.substring(0,2) : 'م';
-    final status = e['_status'] ?? 'غائب';
+    final status = e['_status'] ?? 'غير حاضر';
     final att = e['_att'] as Map<String, dynamic>?;
     final ci = _fmtTs(att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in']);
     final co = _fmtTs(att?['lastCheckOut'] ?? att?['last_check_out'] ?? att?['checkOut'] ?? att?['check_out']);

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,6 +35,11 @@ class _EmpHomePageState extends State<EmpHomePage> {
 
   static const double _standardHours = 8.0;
 
+  // Live map
+  Position? _livePosition;
+  GoogleMapController? _liveMapController;
+  Timer? _locationTimer;
+
   // Cached auth requirements (loaded once on init)
   bool _cachedRequireBiometric = true;
   bool _cachedRequireLocation = true;
@@ -51,6 +57,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
     _loadAuthRequirements(); // Pre-cache so biometric is instant
     _startClock();
     _checkPendingVerification();
+    _startLiveLocation();
   }
 
   void _loadAuthRequirements() async {
@@ -89,8 +96,27 @@ class _EmpHomePageState extends State<EmpHomePage> {
     } catch (_) {}
   }
 
+  void _startLiveLocation() async {
+    if (kIsWeb) return;
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (mounted) setState(() => _livePosition = pos);
+      _locationTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+        try {
+          final p = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+          if (mounted) {
+            setState(() => _livePosition = p);
+            _liveMapController?.animateCamera(CameraUpdate.newLatLng(LatLng(p.latitude, p.longitude)));
+          }
+        } catch (_) {}
+      });
+    } catch (_) {}
+  }
+
   @override
-  void dispose() { _timer?.cancel(); super.dispose(); }
+  void dispose() { _timer?.cancel(); _locationTimer?.cancel(); _liveMapController?.dispose(); super.dispose(); }
 
   void _startClock() {
     _updateTime();
@@ -571,7 +597,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
       isCurrentlyCheckedIn = hasCheckIn && !hasCheckOut;
     }
     final status = hasCheckOut && !isCurrentlyCheckedIn ? 'مكتمل' : isCurrentlyCheckedIn ? 'حاضر' : hasCheckIn ? 'حاضر' : 'لم يسجّل';
-    final stColor = (hasCheckOut && !isCurrentlyCheckedIn) ? C.green : hasCheckIn ? C.pri : C.muted;
+    final stColor = isCurrentlyCheckedIn ? C.green : (hasCheckOut && !isCurrentlyCheckedIn) ? C.green : hasCheckIn ? C.pri : C.muted;
     final av = (widget.user['name'] ?? 'م').toString().length >= 2 ? (widget.user['name'] ?? 'م').toString().substring(0, 2) : 'م';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -691,6 +717,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
         ),
       ),
 
+      // ═══ LIVE MAP ═══
+      if (!kIsWeb) _buildLiveMap(),
+
       // ═══ WORK TIMER ═══
       if (hasCheckIn) Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -754,6 +783,110 @@ class _EmpHomePageState extends State<EmpHomePage> {
       )),
       const SizedBox(height: 24),
     ])));
+  }
+
+  Widget _buildLiveMap() {
+    final loc = _selectedLocation;
+    final authLat = (loc?['lat'] as num?)?.toDouble();
+    final authLng = (loc?['lng'] as num?)?.toDouble();
+    final authRadius = (loc?['radius'] as num?)?.toDouble() ?? 300.0;
+    final authName = loc?['name'] ?? 'الموقع المصرح';
+
+    final empLat = _livePosition?.latitude;
+    final empLng = _livePosition?.longitude;
+
+    // Determine initial camera target
+    final centerLat = authLat ?? empLat ?? 24.7136;
+    final centerLng = authLng ?? empLng ?? 46.6753;
+
+    final markers = <Marker>{};
+    if (empLat != null && empLng != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('employee'),
+        position: LatLng(empLat, empLng),
+        infoWindow: const InfoWindow(title: 'موقعي الحالي'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      ));
+    }
+    if (authLat != null && authLng != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('auth'),
+        position: LatLng(authLat, authLng),
+        infoWindow: InfoWindow(title: authName),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+      ));
+    }
+
+    final circles = <Circle>{};
+    if (authLat != null && authLng != null) {
+      circles.add(Circle(
+        circleId: const CircleId('authZone'),
+        center: LatLng(authLat, authLng),
+        radius: authRadius,
+        fillColor: const Color(0xFFFF9500).withValues(alpha: 0.15),
+        strokeColor: const Color(0xFFFF9500),
+        strokeWidth: 2,
+      ));
+    }
+
+    // Determine if employee is inside zone
+    bool? insideZone;
+    if (empLat != null && empLng != null && authLat != null && authLng != null) {
+      final dist = Geolocator.distanceBetween(empLat, empLng, authLat, authLng);
+      insideZone = dist <= authRadius;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: C.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: C.border),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          // Header row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: Row(children: [
+              if (insideZone != null) Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: insideZone ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(insideZone ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 12, color: insideZone ? C.green : C.red),
+                  const SizedBox(width: 4),
+                  Text(insideZone ? 'داخل النطاق' : 'خارج النطاق', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: insideZone ? C.green : C.red)),
+                ]),
+              ),
+              const Spacer(),
+              const Icon(Icons.location_on_rounded, size: 14, color: C.sub),
+              const SizedBox(width: 4),
+              Text(authName, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text)),
+            ]),
+          ),
+          // Map
+          ClipRRect(
+            borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+            child: SizedBox(
+              height: 220,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(target: LatLng(centerLat, centerLng), zoom: 15),
+                markers: markers,
+                circles: circles,
+                onMapCreated: (c) => _liveMapController = c,
+                myLocationEnabled: false,
+                zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+                liteModeEnabled: false,
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
   }
 
   // ─── Quick action button — CONNECTED ───
