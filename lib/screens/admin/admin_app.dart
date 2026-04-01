@@ -60,7 +60,7 @@ class _AdminAppState extends State<AdminApp> {
     ]),
     _NavSection('التقارير والمراقبة', [
       _NI('reports', 'التقارير', Icons.bar_chart_outlined),
-      _NI('devices', 'مراقبة الأجهزة', Icons.devices_outlined),
+      _NI('devices', 'أمان الأجهزة', Icons.security_outlined),
       _NI('notifications', 'الإشعارات', Icons.notifications_outlined),
       _NI('audit', 'سجل التدقيق', Icons.history_outlined),
     ]),
