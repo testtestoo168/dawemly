@@ -18,10 +18,17 @@ class EmpHomePage extends StatefulWidget {
   final Function(int)? onTabChange;
   const EmpHomePage({super.key, required this.user, this.onTabChange});
   @override
-  State<EmpHomePage> createState() => _EmpHomePageState();
+  State<EmpHomePage> createState() => EmpHomePageState();
 }
 
-class _EmpHomePageState extends State<EmpHomePage> {
+class EmpHomePageState extends State<EmpHomePage> {
+  // Called externally (e.g. from FCM handler) to trigger verification
+  void triggerVerification({dynamic verificationId}) {
+    final uid = widget.user['uid'] ?? '';
+    if (uid.isEmpty || _verifyDialogShowing) return;
+    _verifyDialogShowing = true;
+    _respondToVerification(uid, verificationId: verificationId);
+  }
   final _attService = AttendanceService();
   Map<String, dynamic>? _todayRecord;
   bool _loadingRecord = true;

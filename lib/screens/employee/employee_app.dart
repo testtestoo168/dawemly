@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../theme/app_colors.dart';
 import 'emp_home.dart';
 import 'emp_attendance.dart';
@@ -17,6 +19,41 @@ class EmployeeApp extends StatefulWidget {
 
 class _EmployeeAppState extends State<EmployeeApp> {
   int _i = 0;
+  final GlobalKey<EmpHomePageState> _homeKey = GlobalKey<EmpHomePageState>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) _setupFcmHandlers();
+  }
+
+  void _setupFcmHandlers() {
+    // App in foreground — FCM message arrives
+    FirebaseMessaging.onMessage.listen((RemoteMessage msg) {
+      if (msg.data['type'] == 'verify_request') {
+        _handleVerifyRequest(msg.data);
+      }
+    });
+    // App in background/killed — user taps notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
+      if (msg.data['type'] == 'verify_request') {
+        _handleVerifyRequest(msg.data);
+      }
+    });
+    // App was killed — opened via notification tap
+    FirebaseMessaging.instance.getInitialMessage().then((msg) {
+      if (msg != null && msg.data['type'] == 'verify_request') {
+        Future.delayed(const Duration(milliseconds: 800), () => _handleVerifyRequest(msg.data));
+      }
+    });
+  }
+
+  void _handleVerifyRequest(Map<String, dynamic> data) {
+    if (!mounted) return;
+    setState(() => _i = 0); // Switch to home tab
+    final verificationId = data['verification_id'];
+    _homeKey.currentState?.triggerVerification(verificationId: verificationId);
+  }
 
   void _goToTab(int tab) {
     if (mounted) setState(() => _i = tab);
@@ -25,7 +62,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      EmpHomePage(user: widget.user, onTabChange: _goToTab),
+      EmpHomePage(key: _homeKey, user: widget.user, onTabChange: _goToTab),
       EmpAttendancePage(user: widget.user),
       EmpNewRequestPage(user: widget.user),
       EmpRequestsPage(user: widget.user),
