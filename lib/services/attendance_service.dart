@@ -108,6 +108,7 @@ class AttendanceService {
     double? finalLat = lat;
     double? finalLng = lng;
     double? finalAccuracy = accuracy;
+    bool isMocked = false;
     if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
       final pos = locResult.position;
@@ -116,6 +117,7 @@ class AttendanceService {
       finalLat = pos.latitude;
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;
+      isMocked = locResult.isMocked;
     }
 
     final body = <String, dynamic>{
@@ -124,7 +126,7 @@ class AttendanceService {
       'accuracy': finalAccuracy,
       'biometric': requireBiometric,
       'auth_method': authMethod,
-      'is_mocked': false,
+      'is_mocked': isMocked,
       'client_time': DateTime.now().toIso8601String().substring(0, 19).replaceAll('T', ' '),
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;
@@ -149,6 +151,7 @@ class AttendanceService {
     double? finalLat = lat;
     double? finalLng = lng;
     double? finalAccuracy = accuracy;
+    bool isMocked = false;
     if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
       final pos = locResult.position;
@@ -157,6 +160,7 @@ class AttendanceService {
       finalLat = pos.latitude;
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;
+      isMocked = locResult.isMocked;
     }
 
     final body = <String, dynamic>{
@@ -165,7 +169,7 @@ class AttendanceService {
       'accuracy': finalAccuracy,
       'biometric': requireBiometric,
       'auth_method': authMethod,
-      'is_mocked': false,
+      'is_mocked': isMocked,
       'client_time': DateTime.now().toIso8601String().substring(0, 19).replaceAll('T', ' '),
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;

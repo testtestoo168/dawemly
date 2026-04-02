@@ -55,8 +55,16 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       setState(() => _error = 'يرجى تحديد تاريخ البداية والنهاية');
       return;
     }
+    if (_endDate!.isBefore(_startDate!)) {
+      setState(() => _error = 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
+      return;
+    }
     if (_reasonCtrl.text.trim().isEmpty) {
       setState(() => _error = 'يرجى كتابة سبب الإجازة');
+      return;
+    }
+    if (_reasonCtrl.text.trim().length > 500) {
+      setState(() => _error = 'السبب طويل جداً — الحد الأقصى 500 حرف');
       return;
     }
     setState(() { _loading = true; _error = null; });

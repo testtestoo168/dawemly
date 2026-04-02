@@ -85,7 +85,7 @@ class _AdminReportsState extends State<AdminReports> {
   Future<List<Map<String, dynamic>>> _buildReportData() async {
     final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
     final attRecords = _allRecords.where((r) {
-      final dk = (r['dateKey'] ?? '').toString();
+      final dk = (r['date_key'] ?? r['dateKey'] ?? '').toString();
       if (!dk.startsWith(monthPrefix)) return false;
       if (_selectedUid != 'الكل' && r['uid'] != _selectedUid) return false;
       return true;
@@ -96,18 +96,22 @@ class _AdminReportsState extends State<AdminReports> {
       final user = _allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == att['uid'], orElse: () => {});
       if (user.isEmpty) continue;
 
-      final dateKey = att['dateKey'] ?? '';
+      final dateKey = att['date_key'] ?? att['dateKey'] ?? '';
       final parts = dateKey.split('-');
       final dt = parts.length == 3 ? DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])) : DateTime.now();
       final dayName = _dayNames[(dt.weekday - 1) % 7];
 
-      final ci = att['firstCheckIn'] ?? att['checkIn'];
-      final co = att['lastCheckOut'] ?? att['checkOut'];
-      final totalMinRaw = att['totalWorkedMinutes'];
+      final ci = att['first_check_in'] ?? att['firstCheckIn'] ?? att['check_in'] ?? att['checkIn'];
+      final co = att['last_check_out'] ?? att['lastCheckOut'] ?? att['check_out'] ?? att['checkOut'];
+      final totalMinRaw = att['total_worked_minutes'] ?? att['totalWorkedMinutes'];
       final totalMin = totalMinRaw != null ? (totalMinRaw is int ? totalMinRaw : int.tryParse('$totalMinRaw') ?? 0) : 0;
       double workedHours = totalMin > 0 ? totalMin / 60.0 : 0;
       double overtime = 0;
       String lateTime = '—';
+
+      // Use stored late_minutes if available, otherwise calculate from check-in
+      final storedLate = att['late_minutes'];
+      final storedLateMin = storedLate != null ? (storedLate is int ? storedLate : int.tryParse('$storedLate') ?? 0) : 0;
 
       if (ci != null) {
         final checkIn = _parseTs(ci);
@@ -117,6 +121,14 @@ class _AdminReportsState extends State<AdminReports> {
             if (checkOut != null) workedHours = checkOut.difference(checkIn).inMinutes / 60.0;
           }
           if (co != null) overtime = (workedHours - _standardHours).clamp(0, 24);
+        }
+      }
+
+      if (storedLateMin > 0) {
+        lateTime = '$storedLateMin د';
+      } else if (ci != null) {
+        final checkIn = _parseTs(ci);
+        if (checkIn != null) {
           final expectedStart = DateTime(checkIn.year, checkIn.month, checkIn.day, _startHour, _startMinute);
           if (checkIn.isAfter(expectedStart)) {
             final lateMins = checkIn.difference(expectedStart).inMinutes;
@@ -126,7 +138,7 @@ class _AdminReportsState extends State<AdminReports> {
       }
 
       rows.add({
-        'empId': user['empId'] ?? '—',
+        'empId': user['emp_id'] ?? user['empId'] ?? '—',
         'name': user['name'] ?? '—',
         'date': dateKey,
         'day': dayName,
@@ -282,7 +294,7 @@ class _AdminReportsState extends State<AdminReports> {
                   ),
                   items: [
                     DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
-                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
+                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
                   onChanged: (v) => setState(() => _selectedUid = v ?? 'الكل'),
                 )),

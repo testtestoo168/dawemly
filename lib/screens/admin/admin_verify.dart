@@ -186,7 +186,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                       return InkWell(
                         onTap: () => setState(() { sel ? _sel.remove(selKey) : _sel.add(selKey); }),
                         child: Container(
-                          width: 200, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          constraints: const BoxConstraints(minWidth: 140, maxWidth: 200), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           decoration: BoxDecoration(color: sel ? W.priLight : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: sel ? W.pri : W.border)),
                           child: Row(children: [
                             Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? W.pri : W.muted),
@@ -210,7 +210,34 @@ class _AdminVerifyState extends State<AdminVerify> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-            child: Row(children: [
+            child: Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.filter_list, size: 18, color: W.pri),
+                const SizedBox(width: 6),
+                Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+              ]),
+              // Year picker
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                  value: _filterYear,
+                  style: GoogleFonts.ibmPlexMono(fontSize: 13, color: W.text),
+                  items: List.generate(3, (i) => DropdownMenuItem(value: now.year - i, child: Text('${now.year - i}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
+                  onChanged: (v) => setState(() { _filterYear = v ?? now.year; _updateDaysInMonth(); }),
+                )),
+              ),
+              // Month picker
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                  value: _filterMonth,
+                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+                  items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_months[i], style: GoogleFonts.tajawal(fontSize: 12)))),
+                  onChanged: (v) => setState(() { _filterMonth = v ?? now.month; _updateDaysInMonth(); }),
+                )),
+              ),
               // Day picker
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -225,34 +252,6 @@ class _AdminVerifyState extends State<AdminVerify> {
                   onChanged: (v) => setState(() => _filterDay = v ?? 0),
                 )),
               ),
-              const SizedBox(width: 8),
-              // Month picker
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-                  value: _filterMonth,
-                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-                  items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_months[i], style: GoogleFonts.tajawal(fontSize: 12)))),
-                  onChanged: (v) => setState(() { _filterMonth = v ?? now.month; _updateDaysInMonth(); }),
-                )),
-              ),
-              const SizedBox(width: 8),
-              // Year picker
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-                  value: _filterYear,
-                  style: GoogleFonts.ibmPlexMono(fontSize: 13, color: W.text),
-                  items: List.generate(3, (i) => DropdownMenuItem(value: now.year - i, child: Text('${now.year - i}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
-                  onChanged: (v) => setState(() { _filterYear = v ?? now.year; _updateDaysInMonth(); }),
-                )),
-              ),
-              const Spacer(),
-              Icon(Icons.filter_list, size: 18, color: W.pri),
-              const SizedBox(width: 6),
-              Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
             ]),
           ),
           const SizedBox(height: 10),

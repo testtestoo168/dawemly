@@ -1,3 +1,4 @@
+import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
@@ -60,10 +61,13 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) {
+        final screenW = MediaQuery.of(ctx).size.width;
+        final dialogW = min<double>(520, screenW - 40);
+        final isMobile = screenW < 600;
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           child: Container(
-            width: 520,
+            width: dialogW,
             constraints: const BoxConstraints(maxHeight: 600),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               // Header
@@ -85,11 +89,16 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   child: Column(children: [
                     _formField('الاسم الكامل *', nameCtrl),
                     const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
-                    ]),
+                    if (isMobile) ...[
+                      _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true),
+                      const SizedBox(height: 12),
+                      _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true),
+                    ] else
+                      Row(children: [
+                        Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
+                      ]),
                     if (existing == null) ...[
                       const SizedBox(height: 12),
                       _formField('كلمة المرور *', passCtrl, hint: '••••••••', isPass: true),
@@ -185,6 +194,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         onPressed: loading ? null : () async {
                           if (nameCtrl.text.isEmpty || emailCtrl.text.isEmpty) return;
                           setDState(() => loading = true);
+                          final nav = Navigator.of(ctx);
                           try {
                             if (existing == null) {
                               await ApiService.post('users.php?action=create', {
@@ -207,9 +217,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                               });
                               await _audit('تعديل مستخدم', nameCtrl.text.trim(), 'تم تعديل بيانات المستخدم — القسم: $dept — الصلاحية: $userRole', 'edit');
                             }
-                            if (ctx.mounted) Navigator.pop(ctx);
+                            if (mounted) nav.pop();
                           } catch (e) {
-                            setDState(() => loading = false);
+                            if (ctx.mounted) setDState(() => loading = false);
                           }
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),

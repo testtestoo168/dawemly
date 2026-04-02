@@ -1,3 +1,4 @@
+import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
@@ -245,7 +246,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
 
     showDialog(context: context, builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      child: Container(width: 380, padding: const EdgeInsets.all(20),
+      child: Container(width: min(380, MediaQuery.of(context).size.width - 40), padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             Text('تعديل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
@@ -308,7 +309,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
 
     showDialog(context: context, builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      child: Container(width: 360, padding: const EdgeInsets.all(20),
+      child: Container(width: min(360, MediaQuery.of(context).size.width - 40), padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             Text('إلغاء الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.red)),

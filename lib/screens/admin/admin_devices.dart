@@ -179,7 +179,7 @@ class _AdminDevicesState extends State<AdminDevices> {
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-                  border: Border(bottom: BorderSide(color: W.div)),
+                  border: Border(bottom: BorderSide(color: C.div)),
                 ),
                 child: Row(children: [
                   Expanded(flex: 2, child: Text('الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
@@ -240,7 +240,7 @@ class _AdminDevicesState extends State<AdminDevices> {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: isWide ? 14 : 12),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: W.div))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: C.div))),
       child: isWide ? _wideRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg)
                     : _mobileRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg),
     );

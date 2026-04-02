@@ -180,6 +180,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
 
       final format = InputImageFormatValue.fromRawValue(image.format.raw);
       if (format == null) return null;
+      if (image.planes.isEmpty) return null;
 
       final plane = image.planes.first;
       return InputImage.fromBytes(

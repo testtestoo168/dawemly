@@ -38,6 +38,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   bool _blinkDetected = false;
   bool _waitingForBlink = true;
   bool _eyesWereClosed = false;
+  Timer? _blinkTimeout;
 
   @override
   void initState() {
@@ -57,10 +58,25 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (mounted) {
         setState(() { _initialized = true; _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
         _startDetection();
+        _startBlinkTimeout();
       }
     } catch (e) {
       if (mounted) setState(() { _status = 'خطأ في الكاميرا'; _statusColor = C.red; });
     }
+  }
+
+  void _startBlinkTimeout() {
+    _blinkTimeout?.cancel();
+    _blinkTimeout = Timer(const Duration(seconds: 15), () {
+      if (!mounted || _blinkDetected) return;
+      // Skip blink if user can't blink in time — proceed to face check
+      setState(() {
+        _blinkDetected = true;
+        _waitingForBlink = false;
+        _status = 'جارٍ التحقق...';
+        _statusColor = C.pri;
+      });
+    });
   }
 
   void _startDetection() {
@@ -187,7 +203,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
               _waitingForBlink = true;
               _eyesWereClosed = false;
             });
-            try { _startDetection(); } catch (_) {}
+            try { _startDetection(); _startBlinkTimeout(); } catch (_) {}
           }
         }
       }
@@ -202,6 +218,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (rotation == null) return null;
       final format = InputImageFormatValue.fromRawValue(image.format.raw);
       if (format == null) return null;
+      if (image.planes.isEmpty) return null;
       final plane = image.planes.first;
       return InputImage.fromBytes(
         bytes: plane.bytes,
@@ -217,14 +234,16 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
   @override
   void dispose() {
+    _blinkTimeout?.cancel();
     _camCtrl?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Center(child: Container(
-      width: 340, height: 500,
+      width: screenWidth < 360 ? screenWidth - 40 : 340, height: 500,
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.hardEdge,

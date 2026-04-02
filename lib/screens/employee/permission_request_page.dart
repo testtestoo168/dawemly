@@ -62,8 +62,18 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
       setState(() => _error = 'يرجى تحديد وقت البداية والنهاية');
       return;
     }
+    final fromMin = _fromTime!.hour * 60 + _fromTime!.minute;
+    final toMin = _toTime!.hour * 60 + _toTime!.minute;
+    if (toMin <= fromMin) {
+      setState(() => _error = 'وقت النهاية يجب أن يكون بعد وقت البداية');
+      return;
+    }
     if (_reasonCtrl.text.trim().isEmpty) {
       setState(() => _error = 'يرجى كتابة السبب');
+      return;
+    }
+    if (_reasonCtrl.text.trim().length > 500) {
+      setState(() => _error = 'السبب طويل جداً — الحد الأقصى 500 حرف');
       return;
     }
     setState(() { _loading = true; _error = null; });

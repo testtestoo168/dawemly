@@ -24,7 +24,8 @@ class ServerTimeService {
       final res = await ApiService.get('auth.php?action=time');
       final after = DateTime.now();
       if (res['success'] == true && res['server_time'] != null) {
-        final serverTime = DateTime.parse(res['server_time'].toString());
+        final serverTime = DateTime.tryParse(res['server_time'].toString());
+        if (serverTime == null) return;
         // Account for network latency (half round-trip)
         final latency = after.difference(before) ~/ 2;
         final adjustedServer = serverTime.add(latency);

@@ -70,7 +70,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 800;
+    final screenW = MediaQuery.of(context).size.width;
+    final isWide = screenW > 800;
+    final isSmall = screenW < 600;
 
     final totalEmps = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').length;
     final present = _attRecords.where((r) => r['is_checked_in'] == 1 || r['is_checked_in'] == true).length;
@@ -91,8 +93,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           else
             GridView.count(
               crossAxisCount: isWide ? 4 : 2,
-              mainAxisSpacing: 20, crossAxisSpacing: 20,
-              childAspectRatio: isWide ? 2.6 : 1.8,
+              mainAxisSpacing: isSmall ? 12 : 20,
+              crossAxisSpacing: isSmall ? 12 : 20,
+              childAspectRatio: isWide ? 2.6 : (isSmall ? 1.4 : 1.8),
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               children: [
                 _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف'),
@@ -106,8 +109,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           // ═══ QUICK ACTIONS — URS exact style ═══
           GridView.count(
             crossAxisCount: isWide ? 4 : 2,
-            mainAxisSpacing: 12, crossAxisSpacing: 12,
-            childAspectRatio: isWide ? 3.5 : 2.8,
+            mainAxisSpacing: isSmall ? 8 : 12,
+            crossAxisSpacing: isSmall ? 8 : 12,
+            childAspectRatio: isWide ? 3.5 : (isSmall ? 2.2 : 2.8),
             shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
             children: [
               _quickAction(Icons.wifi_tethering_rounded, 'إثبات الحالة', () => widget.onNav('verify')),
@@ -312,6 +316,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ─── Who's In/Out — Jibble style ───
   Widget _whosInOut() {
+    final screenW = MediaQuery.of(context).size.width;
+    final isSmall = screenW < 600;
     final allUsers = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').toList();
     allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
 
@@ -340,22 +346,38 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
-        // Header with tabs
+        // Header with tabs — wraps on small screens
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
-          child: Row(textDirection: TextDirection.rtl, children: [
-            Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
-            const SizedBox(width: 8),
-            Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
-            const Spacer(),
-            // Counters
-            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
-              child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
-            const SizedBox(width: 8),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
-              child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
-          ]),
+          child: isSmall
+            ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Row(textDirection: TextDirection.rtl, children: [
+                  Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
+                  const SizedBox(width: 8),
+                  Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
+                ]),
+                const SizedBox(height: 8),
+                Row(textDirection: TextDirection.rtl, mainAxisAlignment: MainAxisAlignment.end, children: [
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
+                    child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
+                  const SizedBox(width: 8),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                    child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
+                ]),
+              ])
+            : Row(textDirection: TextDirection.rtl, children: [
+                Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
+                const SizedBox(width: 8),
+                Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
+                const Spacer(),
+                // Counters
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
+                  child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
+                const SizedBox(width: 8),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                  child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
+              ]),
         ),
 
         // IN list
@@ -415,6 +437,53 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ─── Recent Requests Table — URS "آخر فواتير المبيعات" style ───
   Widget _recentRequestsTable() {
+    final screenW = MediaQuery.of(context).size.width;
+    final isSmall = screenW < 600;
+
+    Widget tableHeader = Container(
+      color: _secondary,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(textDirection: TextDirection.rtl, children: [
+        Expanded(flex: 2, child: Text('الموظف', style: _tj(12, weight: FontWeight.w500, color: _muted))),
+        Expanded(flex: 2, child: Text('نوع الطلب', style: _tj(12, weight: FontWeight.w500, color: _muted))),
+        Expanded(child: Text('الحالة', style: _tj(12, weight: FontWeight.w500, color: _muted))),
+      ]),
+    );
+
+    Widget tableBody;
+    if (_pendingReqs.isEmpty) {
+      tableBody = Padding(padding: const EdgeInsets.all(32), child: Center(child: Text('لا توجد طلبات معلقة', style: _tj(13, color: _muted))));
+    } else {
+      tableBody = Column(children: _pendingReqs.take(8).map((r) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
+          child: Row(textDirection: TextDirection.rtl, children: [
+            Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
+            Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
+            Expanded(child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),
+              child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
+            )),
+          ]),
+        );
+      }).toList());
+    }
+
+    Widget tableContent = Column(children: [tableHeader, tableBody]);
+
+    // Wrap in horizontal scroll on small screens to prevent overflow
+    if (isSmall) {
+      tableContent = SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 520),
+          child: tableContent,
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
@@ -435,34 +504,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ]),
         ),
-        // Table header
-        Container(
-          color: _secondary,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Row(textDirection: TextDirection.rtl, children: [
-            Expanded(flex: 2, child: Text('الموظف', style: _tj(12, weight: FontWeight.w500, color: _muted))),
-            Expanded(flex: 2, child: Text('نوع الطلب', style: _tj(12, weight: FontWeight.w500, color: _muted))),
-            Expanded(child: Text('الحالة', style: _tj(12, weight: FontWeight.w500, color: _muted))),
-          ]),
-        ),
-        if (_pendingReqs.isEmpty)
-          Padding(padding: const EdgeInsets.all(32), child: Center(child: Text('لا توجد طلبات معلقة', style: _tj(13, color: _muted))))
-        else
-          Column(children: _pendingReqs.take(8).map((r) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
-              child: Row(textDirection: TextDirection.rtl, children: [
-                Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
-                Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
-                Expanded(child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),
-                  child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
-                )),
-              ]),
-            );
-          }).toList()),
+        tableContent,
       ]),
     );
   }

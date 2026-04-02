@@ -90,7 +90,7 @@ class AuthService {
   }
 
   // ─── Save FCM token ───
-  void _saveFcmToken() async {
+  Future<void> _saveFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
@@ -100,7 +100,7 @@ class AuthService {
   }
 
   // ─── Static refresh FCM ───
-  static void refreshFcmToken() async {
+  static Future<void> refreshFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {

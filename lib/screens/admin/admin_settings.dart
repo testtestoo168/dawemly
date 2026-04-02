@@ -275,7 +275,13 @@ class _AdminSettingsState extends State<AdminSettings> {
   // ─────────────────── فترات العمل ───────────────────
   Widget _buildShifts() => Column(children: [
     if (_showAddShift) _card(border: W.pri, child: Column(children: [
-      Row(children: [Expanded(child: _input(_shiftEnd, 'وقت الانتهاء', '04:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, 'وقت البداية', '08:00 ص', isLtr: true)), const SizedBox(width: 10), Expanded(flex: 2, child: _input(_shiftName, 'اسم الفترة', 'الفترة الرابعة'))]),
+      Builder(builder: (ctx) {
+        final isWide = MediaQuery.of(ctx).size.width > 500;
+        if (isWide) {
+          return Row(children: [Expanded(child: _input(_shiftEnd, 'وقت الانتهاء', '04:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, 'وقت البداية', '08:00 ص', isLtr: true)), const SizedBox(width: 10), Expanded(flex: 2, child: _input(_shiftName, 'اسم الفترة', 'الفترة الرابعة'))]);
+        }
+        return Column(children: [_input(_shiftName, 'اسم الفترة', 'الفترة الرابعة'), const SizedBox(height: 10), Row(children: [Expanded(child: _input(_shiftEnd, 'وقت الانتهاء', '04:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, 'وقت البداية', '08:00 ص', isLtr: true))])]);
+      }),
       const SizedBox(height: 12),
       Row(children: [_greenBtn('✓ إضافة', () { if (_shiftName.text.isEmpty) return; setState(() { _shifts.add({'id': DateTime.now().millisecondsSinceEpoch, 'name': _shiftName.text, 'start': _shiftStart.text, 'end': _shiftEnd.text, 'color': [W.pri, Color(0xFF7F56D9), Color(0xFF0BA5EC), W.orange][_shifts.length % 4], 'active': true}); _shiftName.clear(); _shiftStart.clear(); _shiftEnd.clear(); _showAddShift = false; }); }), SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddShift = false))]),
     ])),

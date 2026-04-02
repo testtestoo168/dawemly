@@ -48,7 +48,7 @@ class ApiService {
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    if (_token != null) 'Authorization': 'Bearer $_token',
+    if (_token != null && _token!.isNotEmpty) 'Authorization': 'Bearer $_token',
   };
 
   // ─── GET ───
@@ -123,6 +123,15 @@ class ApiService {
 
   // ─── Handle Response ───
   static Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode == 401) {
+      return {'success': false, 'error': 'انتهت الجلسة — يرجى تسجيل الدخول مرة أخرى', 'unauthorized': true};
+    }
+    if (response.statusCode == 403) {
+      return {'success': false, 'error': 'غير مصرح لك بهذا الإجراء'};
+    }
+    if (response.statusCode >= 500) {
+      return {'success': false, 'error': 'خطأ في السيرفر (${response.statusCode})'};
+    }
     try {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;

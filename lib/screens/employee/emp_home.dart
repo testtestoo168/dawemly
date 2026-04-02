@@ -47,6 +47,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   Position? _livePosition;
   GoogleMapController? _liveMapController;
   Timer? _locationTimer;
+  StreamSubscription<Position>? _locationStreamSub;
 
   // Verification polling
   Timer? _verifyPollTimer;
@@ -120,21 +121,26 @@ class EmpHomePageState extends State<EmpHomePage> {
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
       if (mounted) setState(() => _livePosition = pos);
       // Only update when user actually moves 15+ meters
-      final stream = Geolocator.getPositionStream(
+      _locationStreamSub = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
           distanceFilter: 15,
         ),
-      );
-      _locationTimer = Timer(Duration.zero, () {}); // placeholder so dispose works
-      stream.listen((p) {
+      ).listen((p) {
         if (mounted) setState(() => _livePosition = p);
       });
     } catch (_) {}
   }
 
   @override
-  void dispose() { _timer?.cancel(); _locationTimer?.cancel(); _verifyPollTimer?.cancel(); _liveMapController?.dispose(); super.dispose(); }
+  void dispose() {
+    _timer?.cancel();
+    _locationTimer?.cancel();
+    _locationStreamSub?.cancel();
+    _verifyPollTimer?.cancel();
+    _liveMapController?.dispose();
+    super.dispose();
+  }
 
   void _startClock() {
     _updateTime();
@@ -209,6 +215,8 @@ class EmpHomePageState extends State<EmpHomePage> {
             _loadingLocations = false;
             if (locs.length == 1) _selectedLocationId = locs.first['id'].toString();
           });
+          // Animate map camera to admin-defined location once loaded
+          _animateMapToAdminLocation();
         }
       } else {
         if (mounted) setState(() => _loadingLocations = false);
@@ -218,10 +226,26 @@ class EmpHomePageState extends State<EmpHomePage> {
     }
   }
 
+  // ═══ Animate map to admin location ═══
+  void _animateMapToAdminLocation() {
+    final loc = _selectedLocation;
+    final lat = (loc?['lat'] as num?)?.toDouble();
+    final lng = (loc?['lng'] as num?)?.toDouble();
+    if (lat != null && lng != null && _liveMapController != null) {
+      _liveMapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15),
+      );
+    }
+  }
+
   // ═══ Get selected location data ═══
   Map<String, dynamic>? get _selectedLocation {
     if (_selectedLocationId == null) return _allLocations.isNotEmpty ? _allLocations.first : null;
-    return _allLocations.firstWhere((l) => l['id'].toString() == _selectedLocationId, orElse: () => _allLocations.isNotEmpty ? _allLocations.first : {});
+    try {
+      return _allLocations.firstWhere((l) => l['id'].toString() == _selectedLocationId);
+    } catch (_) {
+      return _allLocations.isNotEmpty ? _allLocations.first : null;
+    }
   }
 
   double get _workedHours => _elapsed.inMinutes / 60.0;
@@ -305,7 +329,9 @@ class EmpHomePageState extends State<EmpHomePage> {
       final adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-      if (distance > radius) {
+      // Factor in GPS accuracy: reject only if clearly outside range
+      final effectiveDistance = (distance - pos.accuracy).clamp(0, double.infinity);
+      if (effectiveDistance > radius) {
         if (mounted) Navigator.pop(context);
         _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? 'الموقع المحدد');
         return;
@@ -437,7 +463,8 @@ class EmpHomePageState extends State<EmpHomePage> {
       final adminLng = (loc2['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc2['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-      if (distance > radius) {
+      final effectiveDistance = (distance - pos.accuracy).clamp(0, double.infinity);
+      if (effectiveDistance > radius) {
         if (mounted) Navigator.pop(context);
         _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? 'الموقع المحدد');
         return;
@@ -722,7 +749,10 @@ class EmpHomePageState extends State<EmpHomePage> {
                     const Icon(Icons.location_on_rounded, size: 16, color: Colors.white70),
                   ]),
                 )).toList(),
-                onChanged: (v) => setState(() => _selectedLocationId = v),
+                onChanged: (v) {
+                  setState(() => _selectedLocationId = v);
+                  _animateMapToAdminLocation();
+                },
               )),
             ),
             const SizedBox(height: 12),
@@ -922,7 +952,10 @@ class EmpHomePageState extends State<EmpHomePage> {
                 initialCameraPosition: CameraPosition(target: LatLng(centerLat, centerLng), zoom: 15),
                 markers: markers,
                 circles: circles,
-                onMapCreated: (c) => _liveMapController = c,
+                onMapCreated: (c) {
+                  _liveMapController = c;
+                  _animateMapToAdminLocation();
+                },
                 myLocationEnabled: false,
                 zoomControlsEnabled: true,
                 mapToolbarEnabled: false,
