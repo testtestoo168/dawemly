@@ -300,8 +300,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: hasOut && !isCheckedIn ? const Color(0xFFDCFCE7) : const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(6)),
-                  child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: hasOut && !isCheckedIn ? const Color(0xFF166534) : const Color(0xFF1E40AF))),
+                  decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(6)),
+                  child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: W.green)),
                 ),
               ]),
             );

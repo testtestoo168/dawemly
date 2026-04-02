@@ -152,7 +152,7 @@ class _AdminReportsState extends State<AdminReports> {
       final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
       downloadFile(bytes, 'dawemli_${empLabel}_$_selYear-$_selMonth.csv', 'text/csv');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: C.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: W.red));
     }
     if (mounted) setState(() => _exporting = false);
   }
@@ -221,12 +221,12 @@ class _AdminReportsState extends State<AdminReports> {
       if (!hasArabic && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('⚠ لتصدير PDF بالعربي، ضع ملف Tajawal-Regular.ttf في assets/fonts/', style: GoogleFonts.tajawal()),
-          backgroundColor: C.orange, behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: W.orange, behavior: SnackBarBehavior.floating, duration: Duration(seconds: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في التصدير: $e'), backgroundColor: C.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في التصدير: $e'), backgroundColor: W.red));
     }
     if (mounted) setState(() => _exporting = false);
   }
@@ -245,30 +245,30 @@ class _AdminReportsState extends State<AdminReports> {
           Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.spaceBetween, children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
               ElevatedButton.icon(onPressed: _exporting ? null : _exportCSV, icon: const Icon(Icons.download, size: 15), label: Text('Excel/CSV', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: C.white, foregroundColor: C.text, side: const BorderSide(color: C.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
+                style: ElevatedButton.styleFrom(backgroundColor: W.white, foregroundColor: W.text, side: BorderSide(color: W.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
               const SizedBox(width: 8),
               ElevatedButton.icon(onPressed: _exporting ? null : _exportPDF, icon: const Icon(Icons.picture_as_pdf, size: 15), label: Text('PDF', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)))),
+                style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
             ]),
-            Text('التقارير', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: C.text)),
+            Text('التقارير', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
           ]),
           const SizedBox(height: 16),
 
           // Filters row
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Column(children: [
               // Month selector
               Row(children: [
-                InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_right, size: 18, color: C.sub))),
+                InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
                 const Spacer(),
-                Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
+                Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
                 const Spacer(),
-                InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_left, size: 18, color: C.sub))),
+                InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
               ]),
               const SizedBox(height: 10),
-              Container(height: 1, color: C.div),
+              Container(height: 1, color: W.div),
               const SizedBox(height: 10),
               // Employee selector
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -276,9 +276,9 @@ class _AdminReportsState extends State<AdminReports> {
                   value: _selectedUid,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    filled: true, fillColor: C.bg, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
+                    filled: true, fillColor: W.bg, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
                   ),
                   items: [
                     DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
@@ -287,9 +287,9 @@ class _AdminReportsState extends State<AdminReports> {
                   onChanged: (v) => setState(() => _selectedUid = v ?? 'الكل'),
                 )),
                 const SizedBox(width: 10),
-                Text('الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.sub)),
+                Text('الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub)),
                 const SizedBox(width: 6),
-                const Icon(Icons.person, size: 16, color: C.pri),
+                Icon(Icons.person, size: 16, color: W.pri),
               ]),
             ]),
           ),
@@ -297,10 +297,10 @@ class _AdminReportsState extends State<AdminReports> {
 
           // Stats
           Wrap(spacing: 10, runSpacing: 10, children: [
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '${data.length}', C.pri)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', C.green)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', C.orange)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', C.pri)),
+            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
+            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
+            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
+            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
           ]),
           const SizedBox(height: 20),
 
@@ -308,23 +308,23 @@ class _AdminReportsState extends State<AdminReports> {
           if (_loading || snap.connectionState == ConnectionState.waiting)
             const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(strokeWidth: 2)))
           else if (data.isEmpty)
-            Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-              child: Center(child: Column(children: [const Icon(Icons.bar_chart, size: 48, color: C.hint), const SizedBox(height: 12), Text('لا توجد بيانات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))])))
-          else Container(width: double.infinity, decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              child: Center(child: Column(children: [Icon(Icons.bar_chart, size: 48, color: W.hint), SizedBox(height: 12), Text('لا توجد بيانات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
+          else Container(width: double.infinity, decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
-              headingRowColor: WidgetStateProperty.all(C.bg), headingRowHeight: 42, columnSpacing: 14,
+              headingRowColor: WidgetStateProperty.all(W.bg), headingRowHeight: 42, columnSpacing: 14,
               columns: ['الأوفرتايم', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
-                DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
+                DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
               rows: data.map((r) => DataRow(cells: [
-                DataCell(Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['overtime'] != '—' ? C.orange : C.muted))),
-                DataCell(Text(r['late'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['late'] != '—' ? C.red : C.muted))),
-                DataCell(Text('${r['hours']}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: C.text))),
-                DataCell(Text(r['checkOut'] ?? '—', style: _mono(fontSize: 12, color: C.text))),
-                DataCell(Text(r['checkIn'] ?? '—', style: _mono(fontSize: 12, color: C.text))),
-                DataCell(Text(r['day'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
-                DataCell(Text(r['date'] ?? '', style: _mono(fontSize: 12, color: C.text))),
-                DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text))),
-                DataCell(Text(r['empId'] ?? '', style: _mono(fontSize: 11, color: C.muted))),
+                DataCell(Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['overtime'] != '—' ? W.orange : W.muted))),
+                DataCell(Text(r['late'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['late'] != '—' ? W.red : W.muted))),
+                DataCell(Text('${r['hours']}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
+                DataCell(Text(r['checkOut'] ?? '—', style: _mono(fontSize: 12, color: W.text))),
+                DataCell(Text(r['checkIn'] ?? '—', style: _mono(fontSize: 12, color: W.text))),
+                DataCell(Text(r['day'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+                DataCell(Text(r['date'] ?? '', style: _mono(fontSize: 12, color: W.text))),
+                DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
+                DataCell(Text(r['empId'] ?? '', style: _mono(fontSize: 11, color: W.muted))),
               ])).toList(),
             ))),
         ]));
@@ -334,10 +334,10 @@ class _AdminReportsState extends State<AdminReports> {
 
   Widget _stat(String label, String val, Color color) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+    decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Text(val, style: _mono(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-      Text(label, style: GoogleFonts.tajawal(fontSize: 12, color: C.sub)),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
     ]),
   );
 }

@@ -69,12 +69,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
               // Header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(colors: [C.priDark, C.pri]),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [W.priDark, W.pri]),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  InkWell(onTap: () => Navigator.pop(ctx), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.close, size: 16, color: Colors.white))),
+                  InkWell(onTap: () => Navigator.pop(ctx), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.close, size: 16, color: Colors.white))),
                   Text(existing == null ? 'إضافة مستخدم جديد' : 'تعديل بيانات المستخدم', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
                 ]),
               ),
@@ -97,7 +97,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+                        Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                         const SizedBox(height: 4),
                         DropdownButtonFormField<String>(
                           value: dept,
@@ -112,7 +112,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+                        Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                         const SizedBox(height: 4),
                         DropdownButtonFormField<int>(
                           value: shift,
@@ -123,7 +123,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       ])),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+                        Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                         const SizedBox(height: 4),
                         DropdownButtonFormField<String>(
                           value: userRole,
@@ -141,14 +141,14 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     // ─── Custom Work Schedule ───
                     Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+                      decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                         Row(children: [
-                          Switch(value: customSchedule, activeColor: C.green, onChanged: (v) => setDState(() => customSchedule = v)),
+                          Switch(value: customSchedule, activeColor: W.green, onChanged: (v) => setDState(() => customSchedule = v)),
                           const Spacer(),
-                          Text('دوام مخصص لهذا الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.text)),
+                          Text('دوام مخصص لهذا الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
                           const SizedBox(width: 6),
-                          const Icon(Icons.schedule, size: 16, color: C.orange),
+                          Icon(Icons.schedule, size: 16, color: W.orange),
                         ]),
                         if (customSchedule) ...[
                           const SizedBox(height: 12),
@@ -160,13 +160,13 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           const SizedBox(height: 10),
                           Row(children: [
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                              Text('نوع الدوام', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+                              Text('نوع الدوام', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                               const SizedBox(height: 4),
                               Row(children: ['دائم', 'مؤقت'].map((t) => Expanded(child: Padding(
                                 padding: EdgeInsets.only(left: t == 'مؤقت' ? 0 : 8),
                                 child: InkWell(onTap: () => setDState(() => scheduleType = t),
-                                  child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: scheduleType == t ? C.orange.withOpacity(0.1) : C.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: scheduleType == t ? C.orange : C.border)),
-                                    child: Center(child: Text(t, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: scheduleType == t ? C.orange : C.sub))))),
+                                  child: Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: scheduleType == t ? W.orange.withOpacity(0.1) : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: scheduleType == t ? W.orange : W.border)),
+                                    child: Center(child: Text(t, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: scheduleType == t ? W.orange : W.sub))))),
                               ))).toList()),
                             ])),
                           ]),
@@ -179,7 +179,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     ),
                     const SizedBox(height: 20),
                     Row(children: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.sub))),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.sub))),
                       const SizedBox(width: 10),
                       Expanded(child: ElevatedButton(
                         onPressed: loading ? null : () async {
@@ -212,7 +212,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                             setDState(() => loading = false);
                           }
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                        style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
                         child: loading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : Text(existing == null ? '✓ إضافة المستخدم' : '✓ حفظ التعديلات', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
@@ -229,30 +229,30 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   }
 
   InputDecoration _dropDecor() => InputDecoration(
-    filled: true, fillColor: C.bg,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
+    filled: true, fillColor: W.bg,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
   );
 
   Widget _formField(String label, TextEditingController ctrl, {String? hint, bool isLtr = false, bool isPass = false, Function(String)? onChanged}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
       const SizedBox(height: 4),
       TextField(
         controller: ctrl,
         obscureText: isPass,
         textAlign: isLtr ? TextAlign.left : TextAlign.right,
         textDirection: isLtr ? TextDirection.ltr : TextDirection.rtl,
-        style: GoogleFonts.tajawal(fontSize: 13, color: C.text),
+        style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.tajawal(color: C.hint),
-          filled: true, fillColor: C.bg,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: C.pri, width: 2)),
+          hintStyle: GoogleFonts.tajawal(color: W.hint),
+          filled: true, fillColor: W.bg,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.pri, width: 2)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         ),
       ),
@@ -272,9 +272,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             onPressed: () => _showAddEditDialog(),
             icon: const Icon(Icons.person_add, size: 16),
             label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: C.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
           ),
-          Text('إدارة المستخدمين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
+          Text('إدارة المستخدمين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: W.text)),
         ]),
         const SizedBox(height: 20),
 
@@ -285,20 +285,20 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           final isWide = MediaQuery.of(context).size.width > 700;
           if (isWide) {
             return Row(children: [
-              _stat(Icons.people, 'إجمالي', '${_users.length}', C.pri, C.priLight),
+              _stat(Icons.people, 'إجمالي', '${_users.length}', W.pri, W.priLight),
               const SizedBox(width: 14),
-              _stat(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3)),
+              _stat(Icons.check_circle, 'نشط', '$active', W.green, Color(0xFFECFDF3)),
               const SizedBox(width: 14),
-              _stat(Icons.block, 'معطّل', '${_users.length - active}', C.red, const Color(0xFFFEF3F2)),
+              _stat(Icons.block, 'معطّل', '${_users.length - active}', W.red, Color(0xFFFEF3F2)),
               const SizedBox(width: 14),
               _stat(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
             ]);
           } else {
             final halfW = (MediaQuery.of(context).size.width - 36) / 2;
             return Wrap(spacing: 8, runSpacing: 8, children: [
-              SizedBox(width: halfW, child: _statBox(Icons.people, 'إجمالي', '${_users.length}', C.pri, C.priLight)),
-              SizedBox(width: halfW, child: _statBox(Icons.check_circle, 'نشط', '$active', C.green, const Color(0xFFECFDF3))),
-              SizedBox(width: halfW, child: _statBox(Icons.block, 'معطّل', '${_users.length - active}', C.red, const Color(0xFFFEF3F2))),
+              SizedBox(width: halfW, child: _statBox(Icons.people, 'إجمالي', '${_users.length}', W.pri, W.priLight)),
+              SizedBox(width: halfW, child: _statBox(Icons.check_circle, 'نشط', '$active', W.green, Color(0xFFECFDF3))),
+              SizedBox(width: halfW, child: _statBox(Icons.block, 'معطّل', '${_users.length - active}', W.red, Color(0xFFFEF3F2))),
               SizedBox(width: halfW, child: _statBox(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF))),
             ]);
           }
@@ -327,11 +327,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
               style: GoogleFonts.tajawal(fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'بحث بالاسم أو الإيميل...',
-                hintStyle: GoogleFonts.tajawal(color: C.hint),
-                prefixIcon: const Icon(Icons.search, size: 18, color: C.muted),
-                filled: true, fillColor: C.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
+                hintStyle: GoogleFonts.tajawal(color: W.hint),
+                prefixIcon: Icon(Icons.search, size: 18, color: W.muted),
+                filled: true, fillColor: W.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
@@ -342,7 +342,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
         // Table / Cards
         Container(
           width: double.infinity,
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
           child: Builder(builder: (context) {
             if (_loading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
             final filtered = _users.where((r) {
@@ -359,68 +359,68 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(C.bg),
-                  columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.sub)))).toList(),
+                  headingRowColor: WidgetStateProperty.all(W.bg),
+                  columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
                   rows: filtered.map((r) {
                     final uid = r['uid'] ?? r['_id'] ?? '';
                     final active = r['active'] ?? true;
                     final role = r['role'] ?? 'employee';
                     final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
-                    final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
+                    final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
 
                     return DataRow(cells: [
                       DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                        _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
+                        _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
                         const SizedBox(width: 4),
                         _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
                         }),
                         const SizedBox(width: 4),
-                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () async {
+                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
                           await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
                           _load();
                         }),
                         const SizedBox(width: 4),
-                        _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
+                        _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                             title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
                             content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
                             ],
                           ));
                           if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
                         }),
                       ])),
-                      DataCell(_badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2))),
-                      DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight)),
-                      DataCell(_badge('فترة ${r['shift'] ?? 1}', r['shift'] == 2 ? const Color(0xFF7F56D9) : r['shift'] == 3 ? const Color(0xFF0BA5EC) : C.pri, r['shift'] == 2 ? const Color(0xFFF4F3FF) : r['shift'] == 3 ? const Color(0xFFE8F8FD) : C.priLight)),
-                      DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
-                      DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.sub))),
-                      DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub))),
+                      DataCell(_badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
+                      DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
+                      DataCell(_badge('فترة ${r['shift'] ?? 1}', r['shift'] == 2 ? Color(0xFF7F56D9) : r['shift'] == 3 ? Color(0xFF0BA5EC) : W.pri, r['shift'] == 2 ? Color(0xFFF4F3FF) : r['shift'] == 3 ? Color(0xFFE8F8FD) : W.priLight)),
+                      DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+                      DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.sub))),
+                      DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
                       DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
                         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
-                          Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+                          Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                          Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
                         ]),
                         const SizedBox(width: 8),
-                        CircleAvatar(radius: 17, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
+                        CircleAvatar(radius: 17, backgroundColor: active ? W.priLight : Color(0xFFFEF3F2),
                           backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                          child: (r['facePhotoUrl'] as String?) == null ? Text((r['name'] ?? 'م').toString().substring(0, 2), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
+                          child: (r['facePhotoUrl'] as String?) == null ? Text((r['name'] ?? 'م').toString().substring(0, 2), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: active ? W.pri : W.red)) : null),
                       ])),
                     ]);
                   }).toList(),
                 ),
               );
             } else {
-              if (filtered.isEmpty) return Padding(padding: const EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))));
+              if (filtered.isEmpty) return Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))));
               return Column(children: filtered.map((r) {
                 final uid = r['uid'] ?? r['_id'] ?? '';
                 final active = r['active'] ?? true;
                 final role = r['role'] ?? 'employee';
                 final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
-                final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
+                final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
                 final name = r['name'] ?? '—';
                 final av = name.length >= 2 ? name.substring(0, 2) : 'م';
 
@@ -428,27 +428,27 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   onTap: () => _showUserDetailSheet(context, r, uid),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.border.withOpacity(0.5)))),
+                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.border.withOpacity(0.5)))),
                     child: Row(children: [
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        _actionBtn(Icons.edit, C.pri, C.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
+                        _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
                         const SizedBox(width: 4),
                         _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
                         }),
                         const SizedBox(width: 4),
-                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? C.orange : C.green, active ? const Color(0xFFFFFAEB) : const Color(0xFFECFDF3), () async {
+                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
                           await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
                           _load();
                         }),
                         const SizedBox(width: 4),
-                        _actionBtn(Icons.delete_outline, C.red, const Color(0xFFFEF3F2), () async {
+                        _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                             title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
                             content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: C.red, fontWeight: FontWeight.w700))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
                             ],
                           ));
                           if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
@@ -456,20 +456,20 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       ]),
                       const Spacer(),
                       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+                        Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
                         const SizedBox(height: 3),
                         Row(mainAxisSize: MainAxisSize.min, children: [
-                          _badge(active ? 'نشط' : 'معطّل', active ? C.green : C.red, active ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2)),
+                          _badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
                           const SizedBox(width: 4),
-                          _badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? C.pri, role == 'admin' ? const Color(0xFFFEF3F2) : role == 'moderator' ? const Color(0xFFF4F3FF) : C.priLight),
+                          _badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
                           const SizedBox(width: 4),
-                          _badge('فترة ${r['shift'] ?? 1}', C.pri, C.priLight),
+                          _badge('فترة ${r['shift'] ?? 1}', W.pri, W.priLight),
                         ]),
                       ]),
                       const SizedBox(width: 10),
-                      CircleAvatar(radius: 20, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
+                      CircleAvatar(radius: 20, backgroundColor: active ? W.priLight : Color(0xFFFEF3F2),
                         backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                        child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
+                        child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: active ? W.pri : W.red)) : null),
                     ]),
                   ),
                 );
@@ -485,7 +485,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     final active = r['active'] ?? true;
     final role = r['role'] ?? 'employee';
     final roleLabel = {'admin': 'مدير النظام', 'moderator': 'مشرف', 'employee': 'موظف'};
-    final roleColor = {'admin': C.red, 'moderator': const Color(0xFF7F56D9), 'employee': C.pri};
+    final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
     final name = r['name'] ?? '—';
     final av = name.length >= 2 ? name.substring(0, 2) : 'م';
 
@@ -495,27 +495,27 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-        decoration: const BoxDecoration(color: C.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           // Handle
-          Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 10), decoration: BoxDecoration(color: C.border, borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, margin: EdgeInsets.only(top: 10), decoration: BoxDecoration(color: W.border, borderRadius: BorderRadius.circular(2))),
           // Header
           Padding(
             padding: const EdgeInsets.all(20),
             child: Row(children: [
-              InkWell(onTap: () => Navigator.pop(ctx), child: const Icon(Icons.close, size: 20, color: C.muted)),
+              InkWell(onTap: () => Navigator.pop(ctx), child: Icon(Icons.close, size: 20, color: W.muted)),
               const Spacer(),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(name, style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text)),
-                Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)),
+                Text(name, style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: W.text)),
+                Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
               ]),
               const SizedBox(width: 12),
-              CircleAvatar(radius: 24, backgroundColor: active ? C.priLight : const Color(0xFFFEF3F2),
+              CircleAvatar(radius: 24, backgroundColor: active ? W.priLight : Color(0xFFFEF3F2),
                 backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: active ? C.pri : C.red)) : null),
+                child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: active ? W.pri : W.red)) : null),
             ]),
           ),
-          Container(height: 1, color: C.border),
+          Container(height: 1, color: W.border),
           // Details
           Flexible(child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -541,7 +541,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   },
                   icon: const Icon(Icons.edit, size: 16),
                   label: Text('تعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(foregroundColor: C.pri, side: const BorderSide(color: C.pri), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  style: OutlinedButton.styleFrom(foregroundColor: W.pri, side: BorderSide(color: W.pri), padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: OutlinedButton.icon(
@@ -553,7 +553,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   },
                   icon: const Icon(Icons.face, size: 16),
                   label: Text('بصمة الوجه', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
                 )),
               ]),
             ]),
@@ -566,14 +566,14 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   Widget _detailRow(IconData icon, String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: C.border.withOpacity(0.3)))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.border.withOpacity(0.3)))),
       child: Row(children: [
-        Expanded(child: Text(value, style: GoogleFonts.tajawal(fontSize: 13, color: C.text), textAlign: TextAlign.left, textDirection: TextDirection.ltr)),
+        Expanded(child: Text(value, style: GoogleFonts.tajawal(fontSize: 13, color: W.text), textAlign: TextAlign.left, textDirection: TextDirection.ltr)),
         const SizedBox(width: 10),
         Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+          Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
           const SizedBox(width: 6),
-          Icon(icon, size: 16, color: C.muted),
+          Icon(icon, size: 16, color: W.muted),
         ])),
       ]),
     );
@@ -586,13 +586,13 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   Widget _statBox(IconData icon, String label, String value, Color color, Color bg) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Container(width: 32, height: 32, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)), child: Icon(icon, size: 16, color: color)),
+        Container(width: 32, height: 32, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)),
         const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: C.text)),
+        Text(value, style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: W.text)),
         const SizedBox(height: 2),
-        Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: C.sub)),
+        Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
       ]),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
@@ -14,7 +15,6 @@ import 'admin_overtime.dart';
 import 'admin_schedules.dart';
 import 'admin_requests.dart';
 import 'admin_reports.dart';
-import 'admin_devices.dart';
 import 'admin_notifications.dart';
 import 'admin_audit.dart';
 import 'admin_settings.dart';
@@ -60,7 +60,6 @@ class _AdminAppState extends State<AdminApp> {
     ]),
     _NavSection('التقارير والمراقبة', [
       _NI('reports', 'التقارير', Icons.bar_chart_outlined),
-      _NI('devices', 'أمان الأجهزة', Icons.security_outlined),
       _NI('notifications', 'الإشعارات', Icons.notifications_outlined),
       _NI('audit', 'سجل التدقيق', Icons.history_outlined),
     ]),
@@ -87,7 +86,6 @@ class _AdminAppState extends State<AdminApp> {
       case 'schedules': return AdminSchedules(user: widget.user);
       case 'requests': return AdminRequests(user: widget.user);
       case 'reports': return const AdminReports();
-      case 'devices': return AdminDevices(user: widget.user);
       case 'notifications': return const AdminNotifications();
       case 'audit': return const AdminAudit();
       case 'settings': return AdminSettings(user: widget.user);
@@ -96,7 +94,7 @@ class _AdminAppState extends State<AdminApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MediaQuery.of(context).size.width > 800 ? _web() : _mobile();
+  Widget build(BuildContext context) => kIsWeb ? _web() : _mobile();
 
   // ════════════════════════════════════════════
   //  📱 MOBILE — Redesigned with المزيد page
@@ -104,18 +102,18 @@ class _AdminAppState extends State<AdminApp> {
   Widget _mobile() {
     final av = _getInitials(widget.user['name'] ?? 'مد');
     return Scaffold(
-      backgroundColor: C.bg,
+      backgroundColor: W.bg,
       appBar: PreferredSize(preferredSize: const Size.fromHeight(56), child: Container(
-        decoration: BoxDecoration(color: C.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        decoration: BoxDecoration(color: W.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: Offset(0, 2))]),
         child: SafeArea(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Row(children: [
           GestureDetector(onTap: () => setState(() => _mTab = 3), child: Stack(children: [
-            Container(width: 38, height: 38, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: C.sub)),
-            Positioned(top: 6, right: 6, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: C.white, width: 1.5)))),
+            Container(width: 38, height: 38, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)), child: Icon(Icons.notifications_none_rounded, size: 20, color: W.sub)),
+            Positioned(top: 6, right: 6, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: W.red, shape: BoxShape.circle, border: Border.all(color: W.white, width: 1.5)))),
           ])),
           const Spacer(),
           Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(_getMobileTitle(), style: _tj(17, weight: FontWeight.w700, color: C.text)),
-            Text(_ts, style: GoogleFonts.ibmPlexMono(fontSize: 11, color: C.muted)),
+            Text(_getMobileTitle(), style: _tj(17, weight: FontWeight.w700, color: W.text)),
+            Text(_ts, style: GoogleFonts.ibmPlexMono(fontSize: 11, color: W.muted)),
           ]),
         ]))),
       )),
@@ -152,18 +150,18 @@ class _AdminAppState extends State<AdminApp> {
         const SizedBox(height: 8),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)),
-                  child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
+                  decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
                 ),
                 const SizedBox(width: 12),
-                Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: C.text)),
+                Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: W.text)),
                 const Spacer(),
               ],
             ),
@@ -176,9 +174,9 @@ class _AdminAppState extends State<AdminApp> {
         _moreSectionTitle('الموظفين'),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.people_outline_rounded, C.pri, C.priLight, 'الموظفين', () => _openMobilePage('employees')),
-          _MoreMenuItem(Icons.person_add_alt_1_outlined, C.green, C.greenL, 'إدارة المستخدمين', () => _openMobilePage('usermgmt')),
-          _MoreMenuItem(Icons.vpn_key_outlined, C.orange, C.orangeL, 'الصلاحيات', () => _openMobilePage('roles')),
+          _MoreMenuItem(Icons.people_outline_rounded, W.pri, W.priLight, 'الموظفين', () => _openMobilePage('employees')),
+          _MoreMenuItem(Icons.person_add_alt_1_outlined, W.green, W.greenL, 'إدارة المستخدمين', () => _openMobilePage('usermgmt')),
+          _MoreMenuItem(Icons.vpn_key_outlined, W.orange, W.orangeL, 'الصلاحيات', () => _openMobilePage('roles')),
         ]),
 
         const SizedBox(height: 24),
@@ -187,10 +185,10 @@ class _AdminAppState extends State<AdminApp> {
         _moreSectionTitle('الحضور والانصراف'),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.wifi_tethering_outlined, C.teal, const Color(0xFFE0F2FE), 'إثبات الحالة', () => _openMobilePage('verify')),
-          _MoreMenuItem(Icons.more_time_outlined, C.purple, C.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
-          _MoreMenuItem(Icons.calendar_month_outlined, C.pri, C.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
-          _MoreMenuItem(Icons.assignment_outlined, C.orange, C.orangeL, 'الطلبات', () => _openMobilePage('requests')),
+          _MoreMenuItem(Icons.wifi_tethering_outlined, W.teal, Color(0xFFE0F2FE), 'إثبات الحالة', () => _openMobilePage('verify')),
+          _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
+          _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
+          _MoreMenuItem(Icons.assignment_outlined, W.orange, W.orangeL, 'الطلبات', () => _openMobilePage('requests')),
         ]),
 
         const SizedBox(height: 24),
@@ -199,10 +197,9 @@ class _AdminAppState extends State<AdminApp> {
         _moreSectionTitle('التقارير والمراقبة'),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.bar_chart_outlined, C.green, C.greenL, 'التقارير', () => _openMobilePage('reports')),
-          _MoreMenuItem(Icons.devices_outlined, C.sub, C.bg, 'مراقبة الأجهزة', () => _openMobilePage('devices')),
-          _MoreMenuItem(Icons.notifications_outlined, C.teal, const Color(0xFFE0F2FE), 'الإشعارات', () => _openMobilePage('notifications')),
-          _MoreMenuItem(Icons.history_outlined, C.purple, C.purpleL, 'سجل التدقيق', () => _openMobilePage('audit')),
+          _MoreMenuItem(Icons.bar_chart_outlined, W.green, W.greenL, 'التقارير', () => _openMobilePage('reports')),
+          _MoreMenuItem(Icons.notifications_outlined, W.teal, Color(0xFFE0F2FE), 'الإشعارات', () => _openMobilePage('notifications')),
+          _MoreMenuItem(Icons.history_outlined, W.purple, W.purpleL, 'سجل التدقيق', () => _openMobilePage('audit')),
         ]),
 
         const SizedBox(height: 24),
@@ -211,7 +208,7 @@ class _AdminAppState extends State<AdminApp> {
         _moreSectionTitle('النظام'),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.settings_outlined, C.sub, C.bg, 'الإعدادات', () => _openMobilePage('settings')),
+          _MoreMenuItem(Icons.settings_outlined, W.sub, W.bg, 'الإعدادات', () => _openMobilePage('settings')),
         ]),
 
         const SizedBox(height: 16),
@@ -223,12 +220,12 @@ class _AdminAppState extends State<AdminApp> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () => _showLogoutDialog(),
-              icon: const Icon(Icons.logout_rounded, size: 18, color: C.red),
-              label: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: C.red)),
+              icon: Icon(Icons.logout_rounded, size: 18, color: W.red),
+              label: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: W.red)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: C.redBd),
-                backgroundColor: C.redL,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                side: BorderSide(color: W.redBd),
+                backgroundColor: W.redL,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
@@ -241,21 +238,21 @@ class _AdminAppState extends State<AdminApp> {
 
   void _openMobilePage(String pageKey) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(
-      backgroundColor: C.bg,
+      backgroundColor: W.bg,
       appBar: AppBar(
-        backgroundColor: C.white,
-        surfaceTintColor: C.white,
+        backgroundColor: W.white,
+        surfaceTintColor: W.white,
         elevation: 0,
         centerTitle: true,
         title: Text(
           _allItems.firstWhere((n) => n.key == pageKey, orElse: () => _allItems.first).label,
-          style: _tj(17, weight: FontWeight.w700, color: C.text),
+          style: _tj(17, weight: FontWeight.w700, color: W.text),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: W.text),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
+        bottom: PreferredSize(preferredSize: Size.fromHeight(1), child: Container(color: W.border, height: 1)),
       ),
       body: _getPage(pageKey),
     )));
@@ -266,22 +263,21 @@ class _AdminAppState extends State<AdminApp> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Align(
         alignment: Alignment.centerRight,
-        child: Text(title, style: _tj(14, weight: FontWeight.w700, color: C.sub)),
+        child: Text(title, style: _tj(14, weight: FontWeight.w700, color: W.sub)),
       ),
     );
   }
 
-  // رصد style
   static const _iconBg = Color(0xFFEDF1F7);
-  static const _iconClr = C.pri;
+  static Color get _iconClr => W.pri;
 
   Widget _moreMenuGroup(List<_MoreMenuItem> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: C.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: C.border),
+        color: W.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: W.border),
       ),
       child: Column(
         children: items.asMap().entries.map((e) {
@@ -291,14 +287,14 @@ class _AdminAppState extends State<AdminApp> {
             children: [
               if (i > 0) Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(height: 1, color: C.div),
+                child: Container(height: 1, color: W.div),
               ),
               InkWell(
                 onTap: item.onTap,
                 borderRadius: i == 0
-                    ? const BorderRadius.vertical(top: Radius.circular(14))
+                    ? const BorderRadius.vertical(top: Radius.circular(6))
                     : i == items.length - 1
-                        ? const BorderRadius.vertical(bottom: Radius.circular(14))
+                        ? const BorderRadius.vertical(bottom: Radius.circular(6))
                         : BorderRadius.zero,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -310,9 +306,9 @@ class _AdminAppState extends State<AdminApp> {
                         child: Icon(item.icon, size: 22, color: _iconClr),
                       ),
                       const SizedBox(width: 14),
-                      Text(item.label, style: _tj(15, weight: FontWeight.w600, color: C.text)),
+                      Text(item.label, style: _tj(15, weight: FontWeight.w600, color: W.text)),
                       const Spacer(),
-                      Directionality(textDirection: TextDirection.ltr, child: Icon(Icons.chevron_left_rounded, size: 22, color: C.muted)),
+                      Directionality(textDirection: TextDirection.ltr, child: Icon(Icons.chevron_left_rounded, size: 22, color: W.muted)),
                     ],
                   ),
                 ),
@@ -328,14 +324,14 @@ class _AdminAppState extends State<AdminApp> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         title: Text('تسجيل الخروج', style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
         content: Text('هل تريد تسجيل الخروج من حسابك؟', style: _tj(14), textAlign: TextAlign.right),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: _tj(14, color: C.sub))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: _tj(14, color: W.sub))),
           TextButton(
             onPressed: () async { Navigator.pop(ctx); await AuthService().logout(); widget.onLogout(); },
-            child: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: C.red)),
+            child: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: W.red)),
           ),
         ],
       ),
@@ -353,7 +349,7 @@ class _AdminAppState extends State<AdminApp> {
     ];
     return Container(
       decoration: BoxDecoration(
-        color: C.white,
+        color: W.white,
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, -4))],
       ),
       child: SafeArea(
@@ -374,19 +370,19 @@ class _AdminAppState extends State<AdminApp> {
                         width: on ? 48 : 40,
                         height: on ? 30 : 26,
                         decoration: BoxDecoration(
-                          color: on ? C.pri.withOpacity(0.1) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
+                          color: on ? W.pri.withOpacity(0.1) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
                           on ? items[i]['active'] as IconData : items[i]['icon'] as IconData,
                           size: on ? 22 : 20,
-                          color: on ? C.pri : C.muted,
+                          color: on ? W.pri : W.muted,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         items[i]['l'] as String,
-                        style: _tj(10, weight: on ? FontWeight.w700 : FontWeight.w500, color: on ? C.pri : C.muted),
+                        style: _tj(10, weight: on ? FontWeight.w700 : FontWeight.w500, color: on ? W.pri : W.muted),
                       ),
                     ],
                   ),
@@ -446,7 +442,7 @@ class _AdminAppState extends State<AdminApp> {
         // ═══ HEADER — Gradient with stats ═══
         Container(
           width: double.infinity,
-          decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0F4199), C.pri]), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
+          decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0F4199), W.pri]), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text('مدارس المروج النموذجية', style: _tj(13, weight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
@@ -466,7 +462,7 @@ class _AdminAppState extends State<AdminApp> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Row(children: [
               _quickBtn(Icons.wifi_tethering_outlined, 'إثبات\nالحالة', () => _openMobilePage('verify')),
               _quickBtn(Icons.assignment_outlined, 'الطلبات', () => setState(() => _mTab = 2)),
@@ -482,14 +478,14 @@ class _AdminAppState extends State<AdminApp> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: _mHomeLoading
               ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
               : _mHomeRequests.isEmpty
                 ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
-                    Icon(Icons.check_circle_outline_rounded, size: 40, color: C.green.withOpacity(0.5)),
+                    Icon(Icons.check_circle_outline_rounded, size: 40, color: W.green.withOpacity(0.5)),
                     const SizedBox(height: 8),
-                    Text('لا توجد طلبات معلقة', style: _tj(13, color: C.muted)),
+                    Text('لا توجد طلبات معلقة', style: _tj(13, color: W.muted)),
                   ])))
                 : Column(children: _mHomeRequests.take(5).map((r) {
                     final isFirst = r == _mHomeRequests.first;
@@ -501,12 +497,12 @@ class _AdminAppState extends State<AdminApp> {
                           child: Text('معلق', style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                          Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: C.sub), overflow: TextOverflow.ellipsis),
+                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+                          Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
                         ])),
                         const SizedBox(width: 10),
-                        Container(width: 40, height: 40, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
-                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: C.pri)))),
+                        Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
+                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
                       ]),
                     );
                   }).toList()),
@@ -519,14 +515,14 @@ class _AdminAppState extends State<AdminApp> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: _mHomeLoading
               ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
               : _mHomeUsers.isEmpty
                 ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
-                    Icon(Icons.hourglass_empty_rounded, size: 40, color: C.muted.withOpacity(0.5)),
+                    Icon(Icons.hourglass_empty_rounded, size: 40, color: W.muted.withOpacity(0.5)),
                     const SizedBox(height: 8),
-                    Text('لا يوجد موظفون', style: _tj(13, color: C.muted)),
+                    Text('لا يوجد موظفون', style: _tj(13, color: W.muted)),
                   ])))
                 : Column(children: () {
                     // Build merged list: all non-admin employees with their attendance status
@@ -571,12 +567,12 @@ class _AdminAppState extends State<AdminApp> {
                           ),
                           const Spacer(),
                           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                            Text(emp['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-                            Text(emp['empId'] ?? emp['emp_id'] ?? '', style: _tj(11, color: C.muted)),
+                            Text(emp['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+                            Text(emp['empId'] ?? emp['emp_id'] ?? '', style: _tj(11, color: W.muted)),
                           ])),
                           const SizedBox(width: 10),
-                          Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-                            child: Center(child: Text(_getInitials(emp['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: isPresent ? const Color(0xFF166534) : C.muted)))),
+                          Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                            child: Center(child: Text(_getInitials(emp['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
                         ]),
                       );
                     }).toList();
@@ -593,11 +589,11 @@ class _AdminAppState extends State<AdminApp> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
           width: 56, height: 56,
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 1))]),
-          child: Icon(icon, size: 24, color: C.pri),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: Offset(0, 1))]),
+          child: Icon(icon, size: 24, color: W.pri),
         ),
         const SizedBox(height: 8),
-        Text(label, style: _tj(11, weight: FontWeight.w600, color: C.text), textAlign: TextAlign.center),
+        Text(label, style: _tj(11, weight: FontWeight.w600, color: W.text), textAlign: TextAlign.center),
       ]),
     ));
   }
@@ -606,19 +602,19 @@ class _AdminAppState extends State<AdminApp> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(children: [
-        if (onTap != null) GestureDetector(onTap: onTap, child: Text('عرض الكل', style: _tj(13, weight: FontWeight.w700, color: C.pri))),
+        if (onTap != null) GestureDetector(onTap: onTap, child: Text('عرض الكل', style: _tj(13, weight: FontWeight.w700, color: W.pri))),
         const Spacer(),
-        Text(title, style: _tj(16, weight: FontWeight.w700, color: C.text)),
+        Text(title, style: _tj(16, weight: FontWeight.w700, color: W.text)),
       ]),
     );
   }
 
-  Widget _mStat(String v, String l, Color fg) => Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+  Widget _mStat(String v, String l, Color fg) => Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
     child: Column(children: [Text(v, style: GoogleFonts.ibmPlexMono(fontSize: 26, fontWeight: FontWeight.w800, color: fg)), const SizedBox(height: 2), Text(l, style: _tj(12, color: fg.withOpacity(0.85)))]));
 
   Widget _mStatTap(String v, String l, Color fg, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
-    child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+    child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [Text(v, style: GoogleFonts.ibmPlexMono(fontSize: 26, fontWeight: FontWeight.w800, color: fg)), const SizedBox(height: 2), Text(l, style: _tj(12, color: fg.withOpacity(0.85)))])),
   );
 
@@ -648,8 +644,8 @@ class _AdminAppState extends State<AdminApp> {
             child: Row(children: [
               Container(
                 width: _sc ? 32 : 42, height: _sc ? 32 : 42,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4)]),
-                child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4)]),
+                child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
               ),
               if (!_sc) ...[const SizedBox(width: 12), Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text('داوِملي', style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
@@ -677,8 +673,8 @@ class _AdminAppState extends State<AdminApp> {
               if (!_sc) Container(
                 padding: const EdgeInsets.all(12),
                 child: Row(children: [
-                  Container(width: 34, height: 34, decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                    child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
+                  Container(width: 34, height: 34, decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
+                    child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(widget.user['name'] ?? 'المستخدم', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
@@ -717,7 +713,7 @@ class _AdminAppState extends State<AdminApp> {
             const Spacer(),
             Container(
               width: 220, height: 38,
-              decoration: BoxDecoration(color: const Color(0xFFF9FAFB), border: Border.all(color: const Color(0xFFE5E7EB)), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: const Color(0xFFF9FAFB), border: Border.all(color: const Color(0xFFE5E7EB)), borderRadius: BorderRadius.circular(4)),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(children: [
                 const Icon(Icons.search_rounded, size: 16, color: Color(0xFF9CA3AF)),
@@ -727,10 +723,10 @@ class _AdminAppState extends State<AdminApp> {
             ),
             const SizedBox(width: 16),
             InkWell(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
               child: Container(
                 width: 38, height: 38,
-                decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE5E7EB))),
+                decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFE5E7EB))),
                 child: Stack(alignment: Alignment.center, children: [
                   const Icon(Icons.notifications_none_rounded, size: 20, color: Color(0xFF374151)),
                   Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: const Color(0xFFEF4444), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)))),
@@ -740,7 +736,7 @@ class _AdminAppState extends State<AdminApp> {
             const SizedBox(width: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(4)),
               child: Row(children: [
                 const Icon(Icons.store_rounded, size: 14, color: Color(0xFF1D4ED8)),
                 const SizedBox(width: 6),

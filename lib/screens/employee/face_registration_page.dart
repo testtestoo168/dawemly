@@ -272,7 +272,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
           child: Row(children: [
             InkWell(onTap: () => Navigator.pop(context), child: Container(
               width: 36, height: 36,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
               child: const Icon(Icons.close, size: 18, color: Colors.white),
             )),
             const Spacer(),
@@ -281,7 +281,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
               Text(widget.userName, style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
             ]),
             const SizedBox(width: 12),
-            Container(width: 40, height: 40, decoration: BoxDecoration(color: C.pri.withOpacity(0.3), borderRadius: BorderRadius.circular(12)),
+            Container(width: 40, height: 40, decoration: BoxDecoration(color: C.pri.withOpacity(0.3), borderRadius: BorderRadius.circular(6)),
               child: const Icon(Icons.face, size: 22, color: Colors.white)),
           ]),
         ),
@@ -343,7 +343,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: _statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: _statusColor.withOpacity(0.3)),
               ),
               child: Row(children: [

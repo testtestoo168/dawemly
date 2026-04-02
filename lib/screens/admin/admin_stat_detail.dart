@@ -79,20 +79,20 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: C.bg,
+      backgroundColor: W.bg,
       appBar: AppBar(
-        backgroundColor: C.white, surfaceTintColor: C.white, elevation: 0, centerTitle: true,
-        title: Text(widget.title, style: _tj(17, weight: FontWeight.w700, color: C.text)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text), onPressed: () => Navigator.pop(context)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
+        backgroundColor: W.white, surfaceTintColor: W.white, elevation: 0, centerTitle: true,
+        title: Text(widget.title, style: _tj(17, weight: FontWeight.w700, color: W.text)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: W.text), onPressed: () => Navigator.pop(context)),
+        bottom: PreferredSize(preferredSize: Size.fromHeight(1), child: Container(color: W.border, height: 1)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
           : _filtered.isEmpty
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.people_outline_rounded, size: 60, color: C.muted.withOpacity(0.4)),
+                  Icon(Icons.people_outline_rounded, size: 60, color: W.muted.withOpacity(0.4)),
                   const SizedBox(height: 12),
-                  Text('لا يوجد موظفين', style: _tj(16, weight: FontWeight.w600, color: C.muted)),
+                  Text('لا يوجد موظفين', style: _tj(16, weight: FontWeight.w600, color: W.muted)),
                 ]))
               : RefreshIndicator(
                   onRefresh: _load,
@@ -110,9 +110,9 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
 
                       String status; Color statusColor; Color statusBg; String timeInfo = '';
                       if (att == null) {
-                        status = 'غائب'; statusColor = C.red; statusBg = C.redL;
+                        status = 'غائب'; statusColor = W.red; statusBg = W.redL;
                       } else if ((att['checkOut'] ?? att['last_check_out']) != null) {
-                        status = 'مكتمل'; statusColor = C.green; statusBg = C.greenL;
+                        status = 'مكتمل'; statusColor = W.green; statusBg = W.greenL;
                         final ci = att['checkIn'] ?? att['first_check_in'];
                         final co = att['checkOut'] ?? att['last_check_out'];
                         final ciDt = _parseTs(ci); final coDt = _parseTs(co);
@@ -122,25 +122,25 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
                           timeInfo += '  (${mins ~/ 60}س ${mins % 60}د)';
                         }
                       } else {
-                        status = 'حاضر'; statusColor = C.pri; statusBg = C.priLight;
+                        status = 'حاضر'; statusColor = W.green; statusBg = W.greenL;
                         final ci = att['checkIn'] ?? att['first_check_in'];
                         if (ci != null) timeInfo = 'دخول: ${_fmtTime(ci)}';
                       }
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+                        decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
                         padding: const EdgeInsets.all(14),
                         child: Row(children: [
                           Container(width: 44, height: 44,
-                            decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
                             child: Center(child: Text(initials, style: _tj(15, weight: FontWeight.w700, color: widget.color)))),
                           const SizedBox(width: 12),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(name, style: _tj(14, weight: FontWeight.w700, color: C.text)),
+                            Text(name, style: _tj(14, weight: FontWeight.w700, color: W.text)),
                             const SizedBox(height: 2),
-                            Text('$empId • $dept', style: _tj(11, color: C.muted)),
-                            if (timeInfo.isNotEmpty) ...[const SizedBox(height: 4), Text(timeInfo, style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.sub))],
+                            Text('$empId • $dept', style: _tj(11, color: W.muted)),
+                            if (timeInfo.isNotEmpty) ...[SizedBox(height: 4), Text(timeInfo, style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.sub))],
                           ])),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

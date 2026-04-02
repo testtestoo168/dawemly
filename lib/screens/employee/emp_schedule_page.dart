@@ -92,7 +92,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: C.priLight,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(
                   child: Text(
@@ -140,7 +140,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           decoration: BoxDecoration(
                             color: C.white,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: C.border),
                           ),
                           child: Column(
@@ -181,7 +181,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           decoration: BoxDecoration(
                             color: C.white.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: C.border.withOpacity(0.5)),
                           ),
                           child: Center(

@@ -56,7 +56,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         title: Text(action == 'تم الموافقة' ? 'موافقة على الطلب' : 'رفض الطلب', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text('هل أنت متأكد؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
@@ -68,16 +68,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             style: GoogleFonts.tajawal(fontSize: 13),
             decoration: InputDecoration(
               hintText: 'ملاحظة (اختياري)...',
-              hintStyle: GoogleFonts.tajawal(color: C.hint),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              hintStyle: GoogleFonts.tajawal(color: W.hint),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
             ),
           ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal(color: C.sub))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('تأكيد', style: GoogleFonts.tajawal(color: action == 'تم الموافقة' ? C.green : C.red, fontWeight: FontWeight.w700)),
+            child: Text('تأكيد', style: GoogleFonts.tajawal(color: action == 'تم الموافقة' ? W.green : W.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -94,9 +94,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(action == 'تم الموافقة' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب', style: GoogleFonts.tajawal()),
-          backgroundColor: action == 'تم الموافقة' ? C.green : C.red,
+          backgroundColor: action == 'تم الموافقة' ? W.green : W.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ));
         _loadRequests();
       }
@@ -111,15 +111,15 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       // Tabs
       Container(
         margin: EdgeInsets.fromLTRB(isWide ? 28 : 14, isWide ? 20 : 10, isWide ? 28 : 14, 0),
-        decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.border)),
+        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
         padding: const EdgeInsets.all(3),
         child: TabBar(
           controller: _tabCtrl,
-          indicator: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
+          indicator: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelColor: C.pri,
-          unselectedLabelColor: C.sub,
+          labelColor: W.pri,
+          unselectedLabelColor: W.sub,
           labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600),
           tabs: const [Tab(text: 'معلقة', height: 36), Tab(text: 'تمت الموافقة', height: 36), Tab(text: 'مرفوضة', height: 36)],
         ),
@@ -151,9 +151,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
 
     if (docs.isEmpty) {
       return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.description_outlined, size: 48, color: C.hint),
+        Icon(Icons.description_outlined, size: 48, color: W.hint),
         const SizedBox(height: 12),
-        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
       ]));
     }
 
@@ -170,7 +170,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
 
   Widget _requestCard(Map<String, dynamic> r, String docId, bool showActions) {
     final isLeave = r['requestType'] == 'إجازة';
-    final typeColor = isLeave ? const Color(0xFF2E90FA) : C.orange;
+    final typeColor = isLeave ? Color(0xFF2E90FA) : W.orange;
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
 
     String desc = '';
@@ -183,7 +183,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
@@ -192,8 +192,8 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
               onTap: () => _handleRequest(docId, 'مرفوض'),
               child: Container(
                 width: 34, height: 34,
-                decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFECDCA))),
-                child: const Icon(Icons.close, size: 16, color: C.red),
+                decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFFECDCA))),
+                child: Icon(Icons.close, size: 16, color: W.red),
               ),
             ),
             const SizedBox(width: 6),
@@ -201,8 +201,8 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
               onTap: () => _handleRequest(docId, 'تم الموافقة'),
               child: Container(
                 width: 34, height: 34,
-                decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFABEFC6))),
-                child: const Icon(Icons.check, size: 16, color: C.green),
+                decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFABEFC6))),
+                child: Icon(Icons.check, size: 16, color: W.green),
               ),
             ),
           ],
@@ -210,42 +210,42 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: r['status'] == 'تم الموافقة' ? C.greenL : C.redL,
+                color: r['status'] == 'تم الموافقة' ? W.greenL : W.redL,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: r['status'] == 'تم الموافقة' ? C.greenBd : C.redBd),
+                border: Border.all(color: r['status'] == 'تم الموافقة' ? W.greenBd : W.redBd),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: r['status'] == 'تم الموافقة' ? C.green : C.red)),
+                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: r['status'] == 'تم الموافقة' ? W.green : W.red)),
                 const SizedBox(width: 4),
-                Icon(r['status'] == 'تم الموافقة' ? Icons.check_circle : Icons.cancel, size: 14, color: r['status'] == 'تم الموافقة' ? C.green : C.red),
+                Icon(r['status'] == 'تم الموافقة' ? Icons.check_circle : Icons.cancel, size: 14, color: r['status'] == 'تم الموافقة' ? W.green : W.red),
               ]),
             ),
           ],
           const Spacer(),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
-            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
           ]),
           const SizedBox(width: 10),
           Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
             child: Icon(typeIcon, size: 20, color: typeColor),
           ),
         ]),
         const SizedBox(height: 10),
-        Container(width: double.infinity, height: 1, color: C.div),
+        Container(width: double.infinity, height: 1, color: W.div),
         const SizedBox(height: 10),
-        Text('${r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
+        Text('${r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
         const SizedBox(height: 4),
-        Text(desc, style: GoogleFonts.tajawal(fontSize: 12, color: C.sub, height: 1.5)),
+        Text(desc, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub, height: 1.5)),
         if ((r['reason'] ?? '').isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)),
-            child: Text('السبب: ${r['reason']}', style: GoogleFonts.tajawal(fontSize: 12, color: C.sub), textAlign: TextAlign.right),
+            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)),
+            child: Text('السبب: ${r['reason']}', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub), textAlign: TextAlign.right),
           ),
         ],
       ]),

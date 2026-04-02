@@ -104,20 +104,20 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('سجل الموظفين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
+          Text('سجل الموظفين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: W.text)),
           const SizedBox(height: 20),
           Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
             _searchBox(),
             _drop(_fSt, ['الكل','حاضر','مكتمل','غير حاضر'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
             _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)),
-              child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
+            Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4)),
+              child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted))),
           ]),
           const SizedBox(height: 18),
 
           if (filtered.isEmpty)
-            Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-              child: Center(child: Column(children: [const Icon(Icons.people_outline, size: 48, color: C.hint), const SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))])))
+            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              child: Center(child: Column(children: [Icon(Icons.people_outline, size: 48, color: W.hint), SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
           else
             ...filtered.map((e) => _empCard(e)),
         ]),
@@ -134,49 +134,49 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final co = _fmtTs(att?['lastCheckOut'] ?? att?['last_check_out'] ?? att?['checkOut'] ?? att?['check_out']);
     final totalMin = (att?['totalWorkedMinutes'] ?? att?['total_worked_minutes'] as int?) ?? 0;
     final isCheckedIn = e['_isCheckedIn'] == true;
-    final stColor = status == 'مكتمل' ? C.green : status == 'حاضر' ? C.pri : C.red;
+    final stColor = status == 'مكتمل' ? W.green : status == 'حاضر' ? W.green : W.red;
     final byAdmin = att?['punchedByAdmin'] == true || att?['punched_by_admin'] == 1 || att?['punched_by_admin'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       padding: const EdgeInsets.all(18),
       child: Column(children: [
         Row(children: [
           // Action buttons
-          InkWell(onTap: () => _openEmployeeHistory(e), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(8)), child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.history, size: 14, color: C.pri), const SizedBox(width: 4), Text('السجل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.pri))]))),
+          InkWell(onTap: () => _openEmployeeHistory(e), child: Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.history, size: 14, color: W.pri), SizedBox(width: 4), Text('السجل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.pri))]))),
           const SizedBox(width: 6),
-          InkWell(onTap: () => _adminPunchDialog(e), child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(8)), child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.fingerprint, size: 14, color: C.orange), const SizedBox(width: 4), Text('بصمة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.orange))]))),
+          InkWell(onTap: () => _adminPunchDialog(e), child: Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.fingerprint, size: 14, color: W.orange), SizedBox(width: 4), Text('بصمة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.orange))]))),
           const SizedBox(width: 6),
           Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (isCheckedIn) Container(width: 8, height: 8, margin: const EdgeInsets.only(left: 4), decoration: const BoxDecoration(color: C.green, shape: BoxShape.circle)),
+              Container(width: 8, height: 8, margin: EdgeInsets.only(left: 4), decoration: BoxDecoration(color: status == 'حاضر' ? W.green : status == 'مكتمل' ? W.pri : Color(0xFFD0D5DD), shape: BoxShape.circle)),
               Text(status, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
             ])),
           const Spacer(),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Row(children: [
-              if (byAdmin) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(4)), child: Text('بصمة إدارية', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: C.orange))),
-              Text(n, style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
+              if (byAdmin) Container(margin: EdgeInsets.only(left: 6), padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)), child: Text('بصمة إدارية', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: W.orange))),
+              Text(n, style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
             ]),
-            Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+            Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
           ]),
           const SizedBox(width: 10),
           Stack(children: [
-            Container(width: 42, height: 42, decoration: BoxDecoration(color: C.pri.withOpacity(0.08), shape: BoxShape.circle),
-              child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.pri)))),
-            if (isCheckedIn) Positioned(bottom: 0, right: 0, child: Container(width: 12, height: 12, decoration: BoxDecoration(shape: BoxShape.circle, color: C.green, border: Border.all(color: C.white, width: 2)))),
+            Container(width: 42, height: 42, decoration: BoxDecoration(color: W.pri.withOpacity(0.08), shape: BoxShape.circle),
+              child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.pri)))),
+            Positioned(bottom: 0, right: 0, child: Container(width: 12, height: 12, decoration: BoxDecoration(shape: BoxShape.circle, color: status == 'حاضر' ? W.green : status == 'مكتمل' ? W.pri : Color(0xFFD0D5DD), border: Border.all(color: W.white, width: 2)))),
           ]),
         ]),
         const SizedBox(height: 12),
-        Container(height: 1, color: C.div),
+        Container(height: 1, color: W.div),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: _infoChip(Icons.timer, 'إجمالي', _fmtWorkedTime(totalMin), totalMin > 0 ? C.pri : C.muted)),
+          Expanded(child: _infoChip(Icons.timer, 'إجمالي', _fmtWorkedTime(totalMin), totalMin > 0 ? W.pri : W.muted)),
           const SizedBox(width: 8),
-          Expanded(child: _infoChip(Icons.logout, 'آخر خروج', co, co == '—' ? C.muted : C.red)),
+          Expanded(child: _infoChip(Icons.logout, 'آخر خروج', co, co == '—' ? W.muted : W.red)),
           const SizedBox(width: 8),
-          Expanded(child: _infoChip(Icons.login, 'أول حضور', ci, ci == '—' ? C.muted : C.green)),
+          Expanded(child: _infoChip(Icons.login, 'أول حضور', ci, ci == '—' ? W.muted : W.green)),
         ]),
       ]),
     );
@@ -197,11 +197,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
       child: Container(
       width: 380, padding: const EdgeInsets.all(24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 56, height: 56, decoration: BoxDecoration(color: C.orangeL, shape: BoxShape.circle), child: const Icon(Icons.fingerprint, size: 28, color: C.orange)),
+        Container(width: 56, height: 56, decoration: BoxDecoration(color: W.orangeL, shape: BoxShape.circle), child: Icon(Icons.fingerprint, size: 28, color: W.orange)),
         const SizedBox(height: 14),
-        Text('بصمة إدارية', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text)),
+        Text('بصمة إدارية', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: W.text)),
         const SizedBox(height: 4),
-        Text('تسجيل بصمة لـ $empName بواسطة الأدمن', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub), textAlign: TextAlign.center),
+        Text('تسجيل بصمة لـ $empName بواسطة الأدمن', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub), textAlign: TextAlign.center),
         const SizedBox(height: 16),
 
         // Time picker
@@ -212,17 +212,17 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           child: Container(
             width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('${selectedTime.hour > 12 ? selectedTime.hour - 12 : (selectedTime.hour == 0 ? 12 : selectedTime.hour)}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.hour >= 12 ? 'م' : 'ص'}',
-                style: _mono(fontSize: 20, fontWeight: FontWeight.w700, color: C.pri)),
+                style: _mono(fontSize: 20, fontWeight: FontWeight.w700, color: W.pri)),
               const SizedBox(width: 10),
-              const Icon(Icons.access_time, size: 20, color: C.pri),
+              Icon(Icons.access_time, size: 20, color: W.pri),
             ]),
           ),
         ),
         const SizedBox(height: 6),
-        Text('اضغط لاختيار الوقت', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+        Text('اضغط لاختيار الوقت', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
         const SizedBox(height: 16),
 
         // Check-in button
@@ -233,7 +233,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           icon: const Icon(Icons.login, size: 18),
           label: Text('تسجيل دخول', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
         )),
         const SizedBox(height: 10),
 
@@ -245,17 +245,17 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           icon: const Icon(Icons.logout, size: 18),
           label: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
         )),
 
         const SizedBox(height: 14),
-        Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(8)),
+        Container(width: double.infinity, padding: EdgeInsets.all(10), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('سيتم تسجيل البصمة باسم الأدمن', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.orange)),
-            const SizedBox(width: 6), const Icon(Icons.info_outline, size: 14, color: C.orange),
+            Text('سيتم تسجيل البصمة باسم الأدمن', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.orange)),
+            SizedBox(width: 6), Icon(Icons.info_outline, size: 14, color: W.orange),
           ])),
         const SizedBox(height: 10),
-        TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
       ]),
     ))));
 
@@ -272,7 +272,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     });
     await _audit('بصمة دخول إدارية', empName, 'تسجيل دخول بواسطة $adminName');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
       _load();
     }
   }
@@ -288,7 +288,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     });
     await _audit('بصمة خروج إدارية', empName, 'تسجيل خروج بواسطة $adminName');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: C.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
       _load();
     }
   }
@@ -313,14 +313,14 @@ class _AdminEmployeesState extends State<AdminEmployees> {
       child: StatefulBuilder(builder: (ctx, ss) {
         return Container(
           constraints: const BoxConstraints(maxWidth: 560, maxHeight: 700),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(18)),
           child: Column(children: [
             // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0F4199), C.pri]), borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+              decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0F4199), W.pri]), borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
               child: Row(children: [
-                InkWell(onTap: () => Navigator.pop(ctx), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.close, size: 16, color: Colors.white))),
+                InkWell(onTap: () => Navigator.pop(ctx), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.close, size: 16, color: Colors.white))),
                 const Spacer(),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Text('سجل حضور: $empName', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
@@ -335,14 +335,14 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             // Month selector
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.border))),
+              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.border))),
               child: Row(children: [
-                InkWell(onTap: () => ss(() { selMonth--; if (selMonth < 1) { selMonth = 12; selYear--; } expandedDateKey = null; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_right, size: 18, color: C.sub))),
+                InkWell(onTap: () => ss(() { selMonth--; if (selMonth < 1) { selMonth = 12; selYear--; } expandedDateKey = null; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
                 const Spacer(),
-                Text('${_months[selMonth - 1]} $selYear', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
+                Text('${_months[selMonth - 1]} $selYear', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
                 const Spacer(),
                 InkWell(onTap: () { final now = DateTime.now(); if (selYear == now.year && selMonth >= now.month) return; ss(() { selMonth++; if (selMonth > 12) { selMonth = 1; selYear++; } expandedDateKey = null; }); },
-                  child: Container(width: 32, height: 32, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_left, size: 18, color: C.sub))),
+                  child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
               ]),
             ),
 
@@ -361,20 +361,20 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 return ListView(padding: const EdgeInsets.all(14), children: [
                   // Stats
                   Container(
-                    decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+                    decoration: BoxDecoration(color: W.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
                     padding: const EdgeInsets.all(10),
                     child: Row(children: [
-                      _stat('إجمالي ساعات', _fmtWorkedTime(totalMonthMin), C.orange),
+                      _stat('إجمالي ساعات', _fmtWorkedTime(totalMonthMin), W.orange),
                       const SizedBox(width: 8),
-                      _stat('أيام حضور', '$present', C.pri),
+                      _stat('أيام حضور', '$present', W.pri),
                       const SizedBox(width: 8),
-                      _stat('أيام مسجلة', '${records.length}', C.green),
+                      _stat('أيام مسجلة', '${records.length}', W.green),
                     ]),
                   ),
                   const SizedBox(height: 12),
 
                   if (records.isEmpty)
-                    Padding(padding: const EdgeInsets.all(30), child: Center(child: Text('لا توجد بيانات في ${_months[selMonth - 1]}', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))))
+                    Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا توجد بيانات في ${_months[selMonth - 1]}', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))))
                   else
                     ...records.map((r) {
                       final dateKey = r['dateKey'] ?? r['date_key'] ?? '';
@@ -389,7 +389,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                       final hasOut = lastOut != null;
                       final totalMin = ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as int?) ?? 0;
                       final sessions = ((r['sessions'] ?? 0) as int?) ?? 1;
-                      final stColor = hasOut ? C.green : C.pri;
+                      final stColor = hasOut ? W.green : W.pri;
                       final isExpanded = expandedDateKey == dateKey;
                       final wasByAdmin = r['punchedByAdmin'] == true || r['punched_by_admin'] == 1 || r['punched_by_admin'] == true;
 
@@ -403,32 +403,32 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: isExpanded ? C.pri.withOpacity(0.4) : C.border)),
+                          decoration: BoxDecoration(color: W.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: isExpanded ? W.pri.withOpacity(0.4) : W.border)),
                           child: Column(children: [
                             Padding(padding: const EdgeInsets.all(12), child: Row(children: [
                               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
                                   child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: stColor))),
                                 const SizedBox(height: 3),
-                                Text('خروج: ${_fmtTs(lastOut)}', style: _mono(fontSize: 9, color: C.muted)),
-                                if (totalMin > 0) Text(_fmtWorkedTime(totalMin), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.green)),
+                                Text('خروج: ${_fmtTs(lastOut)}', style: _mono(fontSize: 9, color: W.muted)),
+                                if (totalMin > 0) Text(_fmtWorkedTime(totalMin), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: W.green)),
                               ]),
                               const Spacer(),
                               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                                 Row(children: [
-                                  if (wasByAdmin) Container(margin: const EdgeInsets.only(left: 4), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(4)), child: Text('إدارية', style: GoogleFonts.tajawal(fontSize: 7, fontWeight: FontWeight.w600, color: C.orange))),
-                                  Text('$dayName $day ${_months[month - 1]}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text)),
+                                  if (wasByAdmin) Container(margin: EdgeInsets.only(left: 4), padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)), child: Text('إدارية', style: GoogleFonts.tajawal(fontSize: 7, fontWeight: FontWeight.w600, color: W.orange))),
+                                  Text('$dayName $day ${_months[month - 1]}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text)),
                                 ]),
-                                Text('حضور: ${_fmtTs(firstIn)}', style: _mono(fontSize: 10, color: C.sub)),
-                                if (sessions > 1) Text('$sessions فترات', style: GoogleFonts.tajawal(fontSize: 8, color: C.pri)),
+                                Text('حضور: ${_fmtTs(firstIn)}', style: _mono(fontSize: 10, color: W.sub)),
+                                if (sessions > 1) Text('$sessions فترات', style: GoogleFonts.tajawal(fontSize: 8, color: W.pri)),
                               ]),
                               const SizedBox(width: 8),
-                              Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: C.sub),
+                              Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 16, color: W.sub),
                             ])),
 
                             // Expanded punches + edit
                             if (isExpanded) ...[
-                              Container(height: 1, color: C.border),
+                              Container(height: 1, color: W.border),
                               if (loadingPunches)
                                 const Padding(padding: EdgeInsets.all(16), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
                               else if (expandedPunches != null) ...[
@@ -438,10 +438,10 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                                   onTap: () => _editDayDialog(uid, empName, dateKey, r),
                                   child: Container(
                                     width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 8),
-                                    decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(8)),
+                                    decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)),
                                     child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                      Text('تعديل أوقات هذا اليوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.orange)),
-                                      const SizedBox(width: 6), const Icon(Icons.edit, size: 14, color: C.orange),
+                                      Text('تعديل أوقات هذا اليوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.orange)),
+                                      SizedBox(width: 6), Icon(Icons.edit, size: 14, color: W.orange),
                                     ]),
                                   ),
                                 )),
@@ -461,7 +461,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   }
 
   Widget _buildPunchTimeline(List<Map<String, dynamic>> punches, String uid, String empName) {
-    if (punches.isEmpty) return Padding(padding: const EdgeInsets.all(14), child: Center(child: Text('لا توجد تفاصيل', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted))));
+    if (punches.isEmpty) return Padding(padding: EdgeInsets.all(14), child: Center(child: Text('لا توجد تفاصيل', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted))));
 
     final allLocs = _locations;
     return Builder(builder: (ctx) {
@@ -470,7 +470,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           child: Column(children: List.generate(punches.length, (i) {
             final punch = punches[i];
             final isCheckIn = punch['type'] == 'checkIn';
-            final color = isCheckIn ? C.pri : C.red;
+            final color = isCheckIn ? W.pri : W.red;
             final label = isCheckIn ? 'دخول' : 'خروج';
             final time = punch['localTime'] ?? punch['local_time'] ?? punch['timestamp'];
             final byAdmin = punch['punchedByAdmin'] == true || punch['punched_by_admin'] == 1 || punch['punched_by_admin'] == true;
@@ -499,10 +499,10 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             }
 
             return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(width: 60, child: Text(_fmtTs(time), style: _mono(fontSize: 10, fontWeight: FontWeight.w600, color: C.text))),
+              SizedBox(width: 60, child: Text(_fmtTs(time), style: _mono(fontSize: 10, fontWeight: FontWeight.w600, color: W.text))),
               SizedBox(width: 24, child: Column(children: [
                 Container(width: 10, height: 10, decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle, border: Border.all(color: color, width: 1.5))),
-                if (!isLast) Expanded(child: Container(width: 1.5, color: C.border)),
+                if (!isLast) Expanded(child: Container(width: 1.5, color: W.border)),
               ])),
               Expanded(child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -515,8 +515,8 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                       onTap: () => _editSinglePunchDialog(punchId, uid, empName, punch),
                       child: Container(
                         padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(4)),
-                        child: const Icon(Icons.edit, size: 10, color: C.orange),
+                        decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)),
+                        child: Icon(Icons.edit, size: 10, color: W.orange),
                       ),
                     ),
                     const Spacer(),
@@ -526,33 +526,33 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                       child: Container(
                         margin: const EdgeInsets.only(left: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(4), border: Border.all(color: C.pri.withOpacity(0.3))),
+                        decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.pri.withOpacity(0.3))),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.face, size: 10, color: C.pri),
+                          Icon(Icons.face, size: 10, color: W.pri),
                           const SizedBox(width: 2),
-                          Text('وجه', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: C.pri)),
-                          if (facePhotoUrl != null) Icon(Icons.photo_camera, size: 8, color: C.pri),
+                          Text('وجه', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: W.pri)),
+                          if (facePhotoUrl != null) Icon(Icons.photo_camera, size: 8, color: W.pri),
                         ]),
                       ),
                     )
                     else if (isFingerprint) Container(
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(color: C.greenL, borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(4)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.fingerprint, size: 10, color: C.green),
+                        Icon(Icons.fingerprint, size: 10, color: W.green),
                         const SizedBox(width: 2),
-                        Text('بصمة', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: C.green)),
+                        Text('بصمة', style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: W.green)),
                       ]),
                     ),
-                    if (byAdmin) Container(margin: const EdgeInsets.only(left: 4), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(4)),
-                      child: Text(adminName.isNotEmpty ? adminName : 'أدمن', style: GoogleFonts.tajawal(fontSize: 7, fontWeight: FontWeight.w600, color: C.orange))),
+                    if (byAdmin) Container(margin: EdgeInsets.only(left: 4), padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)),
+                      child: Text(adminName.isNotEmpty ? adminName : 'أدمن', style: GoogleFonts.tajawal(fontSize: 7, fontWeight: FontWeight.w600, color: W.orange))),
                     Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
                   ]),
                   if (hasLoc) Padding(padding: const EdgeInsets.only(top: 2), child: Row(children: [
-                    Icon(Icons.location_on, size: 10, color: C.green),
+                    Icon(Icons.location_on, size: 10, color: W.green),
                     const SizedBox(width: 2),
-                    Flexible(child: Text(locName, style: GoogleFonts.tajawal(fontSize: 9, color: C.muted), overflow: TextOverflow.ellipsis)),
+                    Flexible(child: Text(locName, style: GoogleFonts.tajawal(fontSize: 9, color: W.muted), overflow: TextOverflow.ellipsis)),
                   ])),
                 ]),
               )),
@@ -567,25 +567,25 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   void _editSinglePunchDialog(String punchId, String uid, String empName, Map<String, dynamic> punch) {
     final isCheckIn = punch['type'] == 'checkIn';
     final label = isCheckIn ? 'دخول' : 'خروج';
-    final color = isCheckIn ? C.pri : C.red;
+    final color = isCheckIn ? W.pri : W.red;
     final time = punch['localTime'] ?? punch['timestamp'];
     final currentTime = _parseTs(time) ?? DateTime.now();
     
     TimeOfDay selectedTime = TimeOfDay(hour: currentTime.hour, minute: currentTime.minute);
 
     showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, ss) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       child: Container(
         width: 340, padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            Text('تعديل وقت $label', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
+            Text('تعديل وقت $label', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
             const SizedBox(width: 8),
             Icon(isCheckIn ? Icons.login : Icons.logout, size: 18, color: color),
           ]),
           const SizedBox(height: 4),
-          Text(empName, style: GoogleFonts.tajawal(fontSize: 12, color: C.sub)),
-          Text('الوقت الحالي: ${_fmtTs(time)}', style: _mono(fontSize: 11, color: C.muted)),
+          Text(empName, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+          Text('الوقت الحالي: ${_fmtTs(time)}', style: _mono(fontSize: 11, color: W.muted)),
           const SizedBox(height: 16),
 
           // Time picker
@@ -596,7 +596,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             },
             child: Container(
               width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.border)),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text('${selectedTime.hour > 12 ? selectedTime.hour - 12 : (selectedTime.hour == 0 ? 12 : selectedTime.hour)}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.hour >= 12 ? 'م' : 'ص'}',
                   style: _mono(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
@@ -606,11 +606,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             ),
           ),
           const SizedBox(height: 6),
-          Text('اضغط لاختيار الوقت الجديد', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+          Text('اضغط لاختيار الوقت الجديد', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
           const SizedBox(height: 16),
 
           Row(children: [
-            Expanded(child: TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted)))),
+            Expanded(child: TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)))),
             const SizedBox(width: 8),
             Expanded(child: ElevatedButton.icon(
               onPressed: () async {
@@ -628,11 +628,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 await _audit('تعديل بصمة فردية', empName, 'تعديل وقت $label من ${_fmtTs(time)} إلى ${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}');
                 
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل وقت $label لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل وقت $label لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
               },
               icon: const Icon(Icons.save, size: 14),
               label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
             )),
           ]),
         ]),
@@ -649,16 +649,16 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: C.pri.withOpacity(0.05)),
+            decoration: BoxDecoration(color: W.pri.withOpacity(0.05)),
             child: Row(children: [
-              InkWell(onTap: () => Navigator.pop(ctx), child: const Icon(Icons.close, size: 18, color: C.sub)),
+              InkWell(onTap: () => Navigator.pop(ctx), child: Icon(Icons.close, size: 18, color: W.sub)),
               const Spacer(),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('صورة بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
-                Text('$type — $time', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+                Text('صورة بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+                Text('$type — $time', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               ]),
               const SizedBox(width: 8),
-              Icon(Icons.face, size: 20, color: C.pri),
+              Icon(Icons.face, size: 20, color: W.pri),
             ]),
           ),
           Container(
@@ -701,19 +701,19 @@ class _AdminEmployeesState extends State<AdminEmployees> {
       width: 400, padding: const EdgeInsets.all(24),
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          Text('تعديل بيانات يوم $dateKey', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
-          const SizedBox(width: 8), const Icon(Icons.edit_calendar, size: 20, color: C.orange),
+          Text('تعديل بيانات يوم $dateKey', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+          SizedBox(width: 8), Icon(Icons.edit_calendar, size: 20, color: W.orange),
         ]),
         const SizedBox(height: 4),
-        Text('$empName', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+        Text('$empName', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: _timeField(coCtrl, 'وقت الخروج الجديد', '03:00 م', Icons.logout, C.red)),
+          Expanded(child: _timeField(coCtrl, 'وقت الخروج الجديد', '03:00 م', Icons.logout, W.red)),
           const SizedBox(width: 10),
-          Expanded(child: _timeField(ciCtrl, 'وقت الحضور الجديد', '08:00 ص', Icons.login, C.green)),
+          Expanded(child: _timeField(ciCtrl, 'وقت الحضور الجديد', '08:00 ص', Icons.login, W.green)),
         ]),
         const SizedBox(height: 10),
-        _timeField(minCtrl, 'إجمالي الدقائق المحسوبة', '480', Icons.timer, C.pri),
+        _timeField(minCtrl, 'إجمالي الدقائق المحسوبة', '480', Icons.timer, W.pri),
         const SizedBox(height: 14),
         SizedBox(width: double.infinity, child: ElevatedButton.icon(
           onPressed: () async {
@@ -727,16 +727,16 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             await _audit('تعديل بصمة يدوي', empName, 'تعديل يوم $dateKey — حضور: ${ciCtrl.text} خروج: ${coCtrl.text} دقائق: ${minCtrl.text}');
 
             if (ctx.mounted) Navigator.pop(ctx);
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل بيانات $empName', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل بيانات $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
           },
           icon: const Icon(Icons.save, size: 16),
           label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
         )),
         const SizedBox(height: 6),
-        Text('التعديل اليدوي يُسجّل في سجل التدقيق', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+        Text('التعديل اليدوي يُسجّل في سجل التدقيق', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
         const SizedBox(height: 8),
-        TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted))),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
       ])),
     )));
   }
@@ -744,44 +744,44 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   // ═══ Helpers ═══
   Widget _stat(String label, String val, Color color) => Expanded(child: Container(
     padding: const EdgeInsets.symmetric(vertical: 8),
-    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(8)),
+    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(4)),
     child: Column(children: [
       Text(val, style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
       const SizedBox(height: 2),
-      Text(label, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.muted)),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: W.muted)),
     ]),
   ));
 
   Widget _infoChip(IconData icon, String label, String value, Color color) => Container(
     padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(10)),
+    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(6)),
     child: Column(children: [
       Icon(icon, size: 16, color: color),
       const SizedBox(height: 4),
       Text(value, style: _mono(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-      Text(label, style: GoogleFonts.tajawal(fontSize: 9, color: C.muted)),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
     ]),
   );
 
-  Widget _searchBox() => SizedBox(width: 260, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث...', hintStyle: GoogleFonts.tajawal(color: C.hint, fontSize: 13), filled: true, fillColor: C.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.border)), prefixIcon: const Icon(Icons.search, size: 16, color: C.muted))));
-  Widget _drop(String v, List<String> items, ValueChanged<String> cb, String all) => Container(padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.border)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: v, isDense: true, style: GoogleFonts.tajawal(fontSize: 13, color: C.text), items: items.map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? all : s))).toList(), onChanged: (x) { if (x != null) cb(x); })));
+  Widget _searchBox() => SizedBox(width: 260, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), prefixIcon: Icon(Icons.search, size: 16, color: W.muted))));
+  Widget _drop(String v, List<String> items, ValueChanged<String> cb, String all) => Container(padding: EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: v, isDense: true, style: GoogleFonts.tajawal(fontSize: 13, color: W.text), items: items.map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? all : s))).toList(), onChanged: (x) { if (x != null) cb(x); })));
 
   Widget _timeField(TextEditingController ctrl, String label, String hint, IconData icon, Color color) => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.sub)),
+        Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
         const SizedBox(width: 4), Icon(icon, size: 14, color: color),
       ]),
       const SizedBox(height: 4),
       TextField(
         controller: ctrl, textAlign: TextAlign.center, textDirection: TextDirection.ltr,
         style: _mono(fontSize: 14),
-        decoration: InputDecoration(hintText: hint, hintStyle: _mono(fontSize: 14, color: C.hint),
-          filled: true, fillColor: C.bg, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: C.border)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: color, width: 2)),
+        decoration: InputDecoration(hintText: hint, hintStyle: _mono(fontSize: 14, color: W.hint),
+          filled: true, fillColor: W.bg, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: color, width: 2)),
         ),
       ),
     ],

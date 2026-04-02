@@ -33,7 +33,7 @@ class EmpNewRequestPage extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               color: C.card,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: C.border),
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
             ),
@@ -45,7 +45,7 @@ class EmpNewRequestPage extends StatelessWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => PermissionRequestPage(user: user)));
                 }
               },
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(6),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                 child: Row(children: [
@@ -59,7 +59,7 @@ class EmpNewRequestPage extends StatelessWidget {
                   const SizedBox(width: 14),
                   Container(
                     width: 44, height: 44,
-                    decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(6)),
                     child: Icon(item['icon'] as IconData, size: 22, color: item['color'] as Color),
                   ),
                 ]),

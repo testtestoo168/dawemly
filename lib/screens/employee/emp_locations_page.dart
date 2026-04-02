@@ -80,7 +80,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: C.white,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: C.border),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -91,7 +91,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: C.greenL,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text('${radius.toInt()}م', style: _tj(12, weight: FontWeight.w600, color: C.green)),
                     ),
@@ -120,7 +120,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                       width: 44, height: 44,
                       decoration: BoxDecoration(
                         color: C.greenL,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.location_on_rounded, size: 22, color: C.green),
                     ),

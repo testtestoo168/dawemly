@@ -102,22 +102,22 @@ class _AdminVerifyState extends State<AdminVerify> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('إثبات الحالة', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.text)),
+          Text('إثبات الحالة', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: W.text)),
           const SizedBox(height: 4),
-          Text('أرسل طلب إثبات تواجد للتأكد من وجودهم في نطاق العمل', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+          Text('أرسل طلب إثبات تواجد للتأكد من وجودهم في نطاق العمل', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
           const SizedBox(height: 24),
 
           // ═══ Send Card — Grouped by Locations ═══
           Container(
             width: double.infinity, padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Column(children: [
               Row(children: [
                 InkWell(
                   onTap: _sel.isEmpty || _sending ? null : () => _sendVerification(all),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    decoration: BoxDecoration(color: _sending ? C.muted : _sel.isEmpty ? C.hint : C.pri, borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: _sending ? W.muted : _sel.isEmpty ? W.hint : W.pri, borderRadius: BorderRadius.circular(6)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       if (_sending) ...[const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)), const SizedBox(width: 8), Text('جارٍ الإرسال...', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white))]
                       else ...[const Icon(Icons.send, size: 16, color: Colors.white), const SizedBox(width: 8), Text('إرسال طلب إثبات (${_sel.length})', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white))],
@@ -125,9 +125,9 @@ class _AdminVerifyState extends State<AdminVerify> {
                   ),
                 ),
                 const Spacer(),
-                Text('إرسال طلب جديد', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
+                Text('إرسال طلب جديد', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
                 const SizedBox(width: 8),
-                Container(width: 36, height: 36, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.cell_tower, size: 18, color: C.pri)),
+                Container(width: 36, height: 36, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)), child: Icon(Icons.cell_tower, size: 18, color: W.pri)),
               ]),
               const SizedBox(height: 16),
 
@@ -150,7 +150,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+                  decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     // Location header
                     Row(children: [
@@ -164,17 +164,17 @@ class _AdminVerifyState extends State<AdminVerify> {
                         }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: allLocSelected ? C.pri.withOpacity(0.1) : C.div, borderRadius: BorderRadius.circular(6)),
-                          child: Text(allLocSelected ? 'إلغاء الكل' : 'تحديد الكل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: allLocSelected ? C.pri : C.sub)),
+                          decoration: BoxDecoration(color: allLocSelected ? W.pri.withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(6)),
+                          child: Text(allLocSelected ? 'إلغاء الكل' : 'تحديد الكل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: allLocSelected ? W.pri : W.sub)),
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: C.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                        child: Text('${locEmployees.length} موظف', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: C.green))),
+                      Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: W.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                        child: Text('${locEmployees.length} موظف', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.green))),
                       const Spacer(),
-                      Text(locName, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+                      Text(locName, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
                       const SizedBox(width: 8),
-                      const Icon(Icons.location_on, size: 18, color: C.pri),
+                      Icon(Icons.location_on, size: 18, color: W.pri),
                     ]),
                     const SizedBox(height: 10),
                     // Employees in this location
@@ -187,12 +187,12 @@ class _AdminVerifyState extends State<AdminVerify> {
                         onTap: () => setState(() { sel ? _sel.remove(selKey) : _sel.add(selKey); }),
                         child: Container(
                           width: 200, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(color: sel ? C.priLight : C.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: sel ? C.pri : C.border)),
+                          decoration: BoxDecoration(color: sel ? W.priLight : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: sel ? W.pri : W.border)),
                           child: Row(children: [
-                            Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? C.pri : C.muted),
+                            Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? W.pri : W.muted),
                             const SizedBox(width: 6),
-                            Expanded(child: Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? C.pri : C.text), overflow: TextOverflow.ellipsis)),
-                            Container(width: 24, height: 24, decoration: BoxDecoration(color: C.pri.withOpacity(0.08), shape: BoxShape.circle), child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: C.pri)))),
+                            Expanded(child: Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text), overflow: TextOverflow.ellipsis)),
+                            Container(width: 24, height: 24, decoration: BoxDecoration(color: W.pri.withOpacity(0.08), shape: BoxShape.circle), child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: W.pri)))),
                           ]),
                         ),
                       );
@@ -205,19 +205,19 @@ class _AdminVerifyState extends State<AdminVerify> {
           const SizedBox(height: 20),
 
           // ═══ Date/Month Filter ═══
-          Text('نتائج الإثبات', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text)),
+          Text('نتائج الإثبات', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Row(children: [
               // Day picker
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
                 child: DropdownButtonHideUnderline(child: DropdownButton<int>(
                   value: _filterDay,
-                  style: GoogleFonts.tajawal(fontSize: 13, color: C.text),
+                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
                   items: [
                     DropdownMenuItem(value: 0, child: Text('كل الأيام', style: GoogleFonts.tajawal(fontSize: 12))),
                     ...List.generate(_daysInMonth, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
@@ -229,10 +229,10 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Month picker
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
                 child: DropdownButtonHideUnderline(child: DropdownButton<int>(
                   value: _filterMonth,
-                  style: GoogleFonts.tajawal(fontSize: 13, color: C.text),
+                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
                   items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_months[i], style: GoogleFonts.tajawal(fontSize: 12)))),
                   onChanged: (v) => setState(() { _filterMonth = v ?? now.month; _updateDaysInMonth(); }),
                 )),
@@ -241,18 +241,18 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Year picker
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
                 child: DropdownButtonHideUnderline(child: DropdownButton<int>(
                   value: _filterYear,
-                  style: GoogleFonts.ibmPlexMono(fontSize: 13, color: C.text),
+                  style: GoogleFonts.ibmPlexMono(fontSize: 13, color: W.text),
                   items: List.generate(3, (i) => DropdownMenuItem(value: now.year - i, child: Text('${now.year - i}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
                   onChanged: (v) => setState(() { _filterYear = v ?? now.year; _updateDaysInMonth(); }),
                 )),
               ),
               const Spacer(),
-              const Icon(Icons.filter_list, size: 18, color: C.pri),
+              Icon(Icons.filter_list, size: 18, color: W.pri),
               const SizedBox(width: 6),
-              Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
+              Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
             ]),
           ),
           const SizedBox(height: 10),
@@ -276,8 +276,8 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     if (requests.isEmpty) return Container(
       width: double.infinity, padding: const EdgeInsets.all(50),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
-      child: Column(children: [const Icon(Icons.cell_tower, size: 40, color: C.hint), const SizedBox(height: 12), Text('لا توجد طلبات إثبات في هذا التاريخ', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted))]),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      child: Column(children: [Icon(Icons.cell_tower, size: 40, color: W.hint), SizedBox(height: 12), Text('لا توجد طلبات إثبات في هذا التاريخ', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))]),
     );
 
     final responded = requests.where((r) => r['status'] == 'responded').length;
@@ -287,19 +287,19 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     return Column(children: [
       Row(children: [
-        _rBadge('$outRange خارج النطاق', C.red, C.redL),
+        _rBadge('$outRange خارج النطاق', W.red, W.redL),
         const SizedBox(width: 8),
-        _rBadge('$inRange داخل النطاق', C.green, C.greenL),
+        _rBadge('$inRange داخل النطاق', W.green, W.greenL),
         const SizedBox(width: 8),
-        _rBadge('$pending بانتظار', C.orange, C.orangeL),
+        _rBadge('$pending بانتظار', W.orange, W.orangeL),
         const SizedBox(width: 8),
-        _rBadge('$responded استجاب', C.pri, C.priLight),
+        _rBadge('$responded استجاب', W.pri, W.priLight),
       ]),
       const SizedBox(height: 14),
       ...requests.map((r) {
         final isPending = r['status'] == 'pending';
         final isInRange = r['inRange'] == true || r['in_range'] == 1 || r['in_range'] == true;
-        final stColor = isPending ? C.orange : (isInRange ? C.green : C.red);
+        final stColor = isPending ? W.orange : (isInRange ? W.green : W.red);
         final stText = isPending ? 'بانتظار الاستجابة' : (isInRange ? 'داخل النطاق ✓' : 'خارج النطاق ⚠');
         final dist = r['distance'];
         final av = (r['empName'] ?? 'م').toString().length >= 2 ? r['empName'].toString().substring(0, 2) : 'م';
@@ -309,24 +309,24 @@ class _AdminVerifyState extends State<AdminVerify> {
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isPending ? C.orangeBd : (isInRange ? C.greenBd : C.redBd))),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isPending ? W.orangeBd : (isInRange ? W.greenBd : W.redBd))),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
                 child: Text(stText, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor))),
               if (dist != null) ...[
                 const SizedBox(height: 4),
-                Text('المسافة: ${(dist as num).toInt()} متر', style: _mono(fontSize: 11, color: C.sub)),
+                Text('المسافة: ${(dist as num).toInt()} متر', style: _mono(fontSize: 11, color: W.sub)),
               ],
               if (sentTime.isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(sentTime, style: _mono(fontSize: 10, color: C.hint)),
+                Text(sentTime, style: _mono(fontSize: 10, color: W.hint)),
               ],
             ]),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.text)),
-              Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+              Text(r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.text)),
+              Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
             ]),
             const SizedBox(width: 10),
             Container(width: 36, height: 36, decoration: BoxDecoration(color: stColor.withOpacity(0.08), shape: BoxShape.circle),

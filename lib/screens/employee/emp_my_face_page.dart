@@ -64,7 +64,7 @@ class EmpMyFacePage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: C.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: registered ? C.greenBd : C.border),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -100,7 +100,7 @@ class EmpMyFacePage extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(6)),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: Text(
                     'بصمة الوجه تُستخدم للتحقق من هويتك عند تسجيل الحضور والانصراف. لا يمكنك تعديل أو حذف البصمة — تواصل مع المدير لإعادة التسجيل.',

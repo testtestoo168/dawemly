@@ -62,11 +62,11 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
             Container(color: C.border, height: 1),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.border)),
+              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
               padding: const EdgeInsets.all(3),
               child: TabBar(
                 controller: _tabCtrl,
-                indicator: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
+                indicator: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 labelColor: C.pri,
@@ -162,7 +162,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -180,7 +180,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
             const SizedBox(width: 8),
             Container(
               width: 30, height: 30,
-              decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
               child: Icon(typeIcon, size: 16, color: typeColor),
             ),
           ]),

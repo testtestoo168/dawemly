@@ -124,7 +124,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: const BoxDecoration(color: C.white, border: Border(bottom: BorderSide(color: C.border))),
           child: Row(children: [
-            InkWell(onTap: _prevMonth, child: Container(width: 36, height: 36, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.chevron_right, size: 20, color: C.sub))),
+            InkWell(onTap: _prevMonth, child: Container(width: 36, height: 36, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.chevron_right, size: 20, color: C.sub))),
             const Spacer(),
             GestureDetector(
               onTap: () async {
@@ -143,7 +143,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               ]),
             ),
             const Spacer(),
-            InkWell(onTap: isCurrentMonth ? null : _nextMonth, child: Container(width: 36, height: 36, decoration: BoxDecoration(color: isCurrentMonth ? C.div : C.bg, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.chevron_left, size: 20, color: isCurrentMonth ? C.hint : C.sub))),
+            InkWell(onTap: isCurrentMonth ? null : _nextMonth, child: Container(width: 36, height: 36, decoration: BoxDecoration(color: isCurrentMonth ? C.div : C.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 20, color: isCurrentMonth ? C.hint : C.sub))),
           ]),
         ),
 
@@ -169,7 +169,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
             return ListView(padding: const EdgeInsets.all(14), children: [
               // Stats
               Container(
-                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
                 padding: const EdgeInsets.all(12),
                 child: Row(children: [
                   _stat('مكتمل', '$complete', C.green),
@@ -225,7 +225,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: C.card,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: isExpanded ? C.pri.withOpacity(0.4) : C.border),
           boxShadow: isExpanded ? [BoxShadow(color: C.pri.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : [],
         ),
@@ -238,7 +238,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
                   child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
                 ),
                 const SizedBox(height: 4),
@@ -261,7 +261,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               const SizedBox(width: 10),
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
                 child: Icon(
                   isExpanded ? Icons.expand_less : (hasOut ? Icons.check_circle_outline : Icons.access_time),
                   size: 16, color: stColor,
@@ -353,7 +353,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: C.white,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: color.withOpacity(0.2)),
                   ),
                   child: Row(children: [
@@ -375,7 +375,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
   }
 
   Widget _stat(String label, String val, Color color) {
-    return Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(8)), child: Column(children: [
+    return Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(4)), child: Column(children: [
       Text(val, style: GoogleFonts.ibmPlexMono(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
       const SizedBox(height: 2),
       Text(label, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.muted)),

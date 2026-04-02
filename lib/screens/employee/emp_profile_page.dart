@@ -37,7 +37,7 @@ class EmpProfilePage extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: C.white,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: C.border),
             ),
             padding: const EdgeInsets.all(20),
@@ -95,7 +95,7 @@ class EmpProfilePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: C.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: C.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -114,7 +114,7 @@ class EmpProfilePage extends StatelessWidget {
           const SizedBox(width: 12),
           Container(
             width: 38, height: 38,
-            decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(6)),
             child: Icon(icon, size: 18, color: C.pri),
           ),
         ],

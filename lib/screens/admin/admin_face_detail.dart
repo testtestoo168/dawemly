@@ -29,19 +29,19 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         title: Text('إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Text('سيتم حذف بصمة الوجه المسجلة وسيُطلب من الموظف تسجيلها من جديد.\n\nهل أنت متأكد؟', style: GoogleFonts.tajawal(fontSize: 14, height: 1.6), textAlign: TextAlign.right),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal(color: C.sub))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('إعادة تعيين', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: C.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('إعادة تعيين', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: W.red))),
         ],
       ),
     );
     if (confirm == true) {
       await FaceRecognitionService.resetFaceRegistration(_uid);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal()), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
         setState(() => _loading = true);
         _load();
       }
@@ -64,12 +64,12 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     final registeredAt = _parseTs(registeredAtStr);
 
     return Scaffold(
-      backgroundColor: C.bg,
+      backgroundColor: W.bg,
       appBar: AppBar(
-        backgroundColor: C.white, surfaceTintColor: C.white, elevation: 0, centerTitle: true,
-        title: Text('بصمة الوجه — $name', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text), onPressed: () => Navigator.pop(context)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
+        backgroundColor: W.white, surfaceTintColor: W.white, elevation: 0, centerTitle: true,
+        title: Text('بصمة الوجه — $name', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: W.text), onPressed: () => Navigator.pop(context)),
+        bottom: PreferredSize(preferredSize: Size.fromHeight(1), child: Container(color: W.border, height: 1)),
       ),
       body: _loading
         ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
@@ -77,30 +77,30 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: registered ? C.greenBd : C.border)),
+              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: registered ? W.greenBd : W.border)),
               child: Column(children: [
                 Row(children: [
                   if (registered) InkWell(
                     onTap: _resetFace,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.redBd)),
+                      decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.redBd)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.refresh, size: 14, color: C.red),
+                        Icon(Icons.refresh, size: 14, color: W.red),
                         const SizedBox(width: 4),
-                        Text('إعادة تعيين', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.red)),
+                        Text('إعادة تعيين', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.red)),
                       ]),
                     ),
                   ),
                   const Spacer(),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(name, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
-                    Text(empId, style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.muted)),
+                    Text(name, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+                    Text(empId, style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.muted)),
                   ]),
                   const SizedBox(width: 12),
                   Container(
                     width: 64, height: 64,
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: registered ? C.green : C.border, width: 3)),
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: registered ? W.green : W.border, width: 3)),
                     child: ClipOval(
                       child: registered && photoUrl != null
                         ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _facePlaceholder())
@@ -109,27 +109,27 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                   ),
                 ]),
                 const SizedBox(height: 14),
-                Container(height: 1, color: C.div),
+                Container(height: 1, color: W.div),
                 const SizedBox(height: 14),
                 Row(children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(color: registered ? C.greenL : C.orangeL, borderRadius: BorderRadius.circular(20)),
-                    child: Text(registered ? 'مسجّلة' : 'غير مسجّلة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: registered ? C.green : C.orange)),
+                    decoration: BoxDecoration(color: registered ? W.greenL : W.orangeL, borderRadius: BorderRadius.circular(20)),
+                    child: Text(registered ? 'مسجّلة' : 'غير مسجّلة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: registered ? W.green : W.orange)),
                   ),
                   const Spacer(),
-                  Text('حالة البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+                  Text('حالة البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
                   const SizedBox(width: 6),
-                  Icon(Icons.face, size: 18, color: registered ? C.green : C.orange),
+                  Icon(Icons.face, size: 18, color: registered ? W.green : W.orange),
                 ]),
                 if (registeredAt != null) ...[
                   const SizedBox(height: 8),
                   Row(children: [
-                    Text(_formatDate(registeredAt), style: GoogleFonts.ibmPlexMono(fontSize: 12, color: C.text)),
+                    Text(_formatDate(registeredAt), style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.text)),
                     const Spacer(),
-                    Text('تاريخ التسجيل', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+                    Text('تاريخ التسجيل', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
                     const SizedBox(width: 6),
-                    const Icon(Icons.calendar_today, size: 14, color: C.muted),
+                    Icon(Icons.calendar_today, size: 14, color: W.muted),
                   ]),
                 ],
               ]),
@@ -140,24 +140,24 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
             Row(children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(color: C.div, borderRadius: BorderRadius.circular(8)),
-                child: Text('${_verifications.length} سجل', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+                decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4)),
+                child: Text('${_verifications.length} سجل', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               ),
               const Spacer(),
-              Text('سجل التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
+              Text('سجل التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
               const SizedBox(width: 8),
-              const Icon(Icons.history, size: 20, color: C.pri),
+              Icon(Icons.history, size: 20, color: W.pri),
             ]),
             const SizedBox(height: 12),
 
             if (_verifications.isEmpty)
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
                 child: Column(children: [
-                  const Icon(Icons.face_outlined, size: 40, color: C.hint),
+                  Icon(Icons.face_outlined, size: 40, color: W.hint),
                   const SizedBox(height: 8),
-                  Text('لا يوجد سجلات تحقق بعد', style: GoogleFonts.tajawal(fontSize: 13, color: C.muted)),
+                  Text('لا يوجد سجلات تحقق بعد', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
                 ]),
               )
             else
@@ -172,27 +172,27 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: C.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: matched ? C.greenBd : C.redBd),
+                    color: W.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: matched ? W.greenBd : W.redBd),
                   ),
                   child: Row(children: [
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: matched ? C.greenL : C.redL, borderRadius: BorderRadius.circular(20)),
-                        child: Text(matched ? 'مطابق ✓' : 'غير مطابق ✗', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: matched ? C.green : C.red)),
+                        decoration: BoxDecoration(color: matched ? W.greenL : W.redL, borderRadius: BorderRadius.circular(20)),
+                        child: Text(matched ? 'مطابق ✓' : 'غير مطابق ✗', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: matched ? W.green : W.red)),
                       ),
                       const SizedBox(height: 4),
-                      Text('التطابق: $pct%', style: GoogleFonts.ibmPlexMono(fontSize: 11, fontWeight: FontWeight.w700, color: matched ? C.green : C.red)),
-                      if (ts != null) Text(_formatDateTime(ts), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.muted)),
+                      Text('التطابق: $pct%', style: GoogleFonts.ibmPlexMono(fontSize: 11, fontWeight: FontWeight.w700, color: matched ? W.green : W.red)),
+                      if (ts != null) Text(_formatDateTime(ts), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted)),
                     ]),
                     const Spacer(),
                     Container(
                       width: 56, height: 56,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: matched ? C.greenBd : C.redBd, width: 2),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: matched ? W.greenBd : W.redBd, width: 2),
                       ),
                       clipBehavior: Clip.hardEdge,
                       child: vPhotoUrl != null
@@ -206,7 +206,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     );
   }
 
-  Widget _facePlaceholder() => Container(color: C.bg, child: const Icon(Icons.face_outlined, size: 24, color: C.hint));
+  Widget _facePlaceholder() => Container(color: W.bg, child: Icon(Icons.face_outlined, size: 24, color: W.hint));
 
   String _formatDate(DateTime d) {
     final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];

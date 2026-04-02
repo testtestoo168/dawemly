@@ -110,14 +110,14 @@ class _AdminDevicesState extends State<AdminDevices> {
               onTap: _load,
               child: Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: C.border)),
-                child: const Icon(Icons.refresh_rounded, size: 16, color: C.sub),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
+                child: Icon(Icons.refresh_rounded, size: 16, color: W.sub),
               ),
             ),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('أمان الأجهزة', style: _tj(isWide ? 22 : 18, w: FontWeight.w800, color: C.text)),
-              Text('مراقبة وإدارة أجهزة الموظفين', style: _tj(11, color: C.muted)),
+              Text('أمان الأجهزة', style: _tj(isWide ? 22 : 18, w: FontWeight.w800, color: W.text)),
+              Text('مراقبة وإدارة أجهزة الموظفين', style: _tj(11, color: W.muted)),
             ]),
           ]),
           const SizedBox(height: 20),
@@ -126,11 +126,11 @@ class _AdminDevicesState extends State<AdminDevices> {
           Row(children: [
             _statCard('متصل الآن', '$online', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded),
             const SizedBox(width: 10),
-            _statCard('غير متصل', '$offline', C.red, C.redL, Icons.wifi_off_rounded),
+            _statCard('غير متصل', '$offline', W.red, W.redL, Icons.wifi_off_rounded),
             const SizedBox(width: 10),
-            _statCard('حاضر اليوم', '$present', C.pri, C.priLight, Icons.how_to_reg_rounded),
+            _statCard('حاضر اليوم', '$present', W.pri, W.priLight, Icons.how_to_reg_rounded),
             const SizedBox(width: 10),
-            _statCard('إجمالي', '$total', C.muted, C.bg, Icons.people_rounded),
+            _statCard('إجمالي', '$total', W.muted, W.bg, Icons.people_rounded),
           ]),
           const SizedBox(height: 16),
 
@@ -140,17 +140,17 @@ class _AdminDevicesState extends State<AdminDevices> {
             Expanded(
               child: Container(
                 height: 38,
-                decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(9), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
                   textAlign: TextAlign.right,
-                  style: _tj(12, color: C.text),
+                  style: _tj(12, color: W.text),
                   decoration: InputDecoration(
                     hintText: 'بحث بالاسم أو الجهاز...',
-                    hintStyle: _tj(12, color: C.hint),
+                    hintStyle: _tj(12, color: W.hint),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                    suffixIcon: const Icon(Icons.search_rounded, size: 16, color: C.hint),
+                    suffixIcon: Icon(Icons.search_rounded, size: 16, color: W.hint),
                   ),
                 ),
               ),
@@ -159,7 +159,7 @@ class _AdminDevicesState extends State<AdminDevices> {
             // Filter tabs
             Container(
               padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: C.border)),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 _filterTab('all', 'الكل'),
                 _filterTab('online', 'متصل'),
@@ -171,7 +171,7 @@ class _AdminDevicesState extends State<AdminDevices> {
 
           // ══════ DEVICES LIST ══════
           Container(
-            decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: Column(children: [
               // Table header
               Container(
@@ -179,21 +179,21 @@ class _AdminDevicesState extends State<AdminDevices> {
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-                  border: Border(bottom: BorderSide(color: C.div)),
+                  border: Border(bottom: BorderSide(color: W.div)),
                 ),
                 child: Row(children: [
-                  Expanded(flex: 2, child: Text('الجهاز', style: _tj(11, w: FontWeight.w700, color: C.sub), textAlign: TextAlign.center)),
-                  Expanded(flex: 3, child: Text('معلومات الجهاز', style: _tj(11, w: FontWeight.w700, color: C.sub), textAlign: TextAlign.right)),
-                  Expanded(flex: 3, child: Text('الموظف', style: _tj(11, w: FontWeight.w700, color: C.sub), textAlign: TextAlign.right)),
-                  Expanded(flex: 2, child: Text('الحالة', style: _tj(11, w: FontWeight.w700, color: C.sub), textAlign: TextAlign.center)),
-                  if (isWide) Expanded(flex: 2, child: Text('إجراءات', style: _tj(11, w: FontWeight.w700, color: C.sub), textAlign: TextAlign.center)),
+                  Expanded(flex: 2, child: Text('الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                  Expanded(flex: 3, child: Text('معلومات الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                  Expanded(flex: 3, child: Text('الموظف', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                  Expanded(flex: 2, child: Text('الحالة', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                  if (isWide) Expanded(flex: 2, child: Text('إجراءات', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
                 ]),
               ),
               if (_filtered.isEmpty)
                 Padding(padding: const EdgeInsets.all(40), child: Column(children: [
-                  const Icon(Icons.devices_rounded, size: 40, color: C.hint),
+                  Icon(Icons.devices_rounded, size: 40, color: W.hint),
                   const SizedBox(height: 10),
-                  Text('لا يوجد نتائج', style: _tj(13, color: C.muted)),
+                  Text('لا يوجد نتائج', style: _tj(13, color: W.muted)),
                 ]))
               else
                 ...(_filtered.map((u) => _deviceRow(u, isWide))),
@@ -234,13 +234,13 @@ class _AdminDevicesState extends State<AdminDevices> {
     Color statusColor;
     Color statusBg;
     if (isOnline && isCheckedIn) { statusLabel = 'حاضر'; statusColor = const Color(0xFF059669); statusBg = const Color(0xFFD1FAE5); }
-    else if (isOnline) { statusLabel = 'متصل'; statusColor = C.pri; statusBg = C.priLight; }
-    else if (isPresent && !isCheckedIn) { statusLabel = 'خروج'; statusColor = C.muted; statusBg = C.bg; }
-    else { statusLabel = 'غير متصل'; statusColor = C.red; statusBg = C.redL; }
+    else if (isOnline) { statusLabel = 'متصل'; statusColor = W.pri; statusBg = W.priLight; }
+    else if (isPresent && !isCheckedIn) { statusLabel = 'خروج'; statusColor = W.muted; statusBg = W.bg; }
+    else { statusLabel = 'غير متصل'; statusColor = W.red; statusBg = W.redL; }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: isWide ? 14 : 12),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: C.div))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: W.div))),
       child: isWide ? _wideRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg)
                     : _mobileRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg),
     );
@@ -256,7 +256,7 @@ class _AdminDevicesState extends State<AdminDevices> {
         width: 44, height: 44,
         decoration: BoxDecoration(
           color: pColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: pColor.withValues(alpha: 0.2)),
         ),
         child: Icon(pIcon, size: 22, color: pColor),
@@ -264,26 +264,26 @@ class _AdminDevicesState extends State<AdminDevices> {
 
       // Device info
       Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Text(model.isNotEmpty ? model : pLabel, style: _tj(13, w: FontWeight.w700, color: C.text), overflow: TextOverflow.ellipsis),
-        if (brand.isNotEmpty) Text(brand, style: _tj(10, color: C.sub)),
+        Text(model.isNotEmpty ? model : pLabel, style: _tj(13, w: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+        if (brand.isNotEmpty) Text(brand, style: _tj(10, color: W.sub)),
         const SizedBox(height: 3),
         Wrap(spacing: 4, children: [
           _chip(pLabel, pColor),
-          if (osVer.isNotEmpty) _chip(osVer, C.muted),
-          if (appVer.isNotEmpty) _chip('v$appVer', C.pri),
-          if (multi) _chip('متعدد', C.orange),
+          if (osVer.isNotEmpty) _chip(osVer, W.muted),
+          if (appVer.isNotEmpty) _chip('v$appVer', W.pri),
+          if (multi) _chip('متعدد', W.orange),
         ]),
       ])),
 
       // Employee info
       Expanded(flex: 3, child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(name, style: _tj(13, w: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis),
-          Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: C.muted)),
+          Text(name, style: _tj(13, w: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+          Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted)),
         ]),
         const SizedBox(width: 8),
-        CircleAvatar(radius: 16, backgroundColor: C.priLight,
-          child: Text(initials, style: _tj(11, w: FontWeight.w700, color: C.pri))),
+        CircleAvatar(radius: 16, backgroundColor: W.priLight,
+          child: Text(initials, style: _tj(11, w: FontWeight.w700, color: W.pri))),
       ])),
 
       // Status
@@ -303,17 +303,17 @@ class _AdminDevicesState extends State<AdminDevices> {
         _actionBtn(
           multi ? 'جهاز واحد' : 'متعدد',
           multi ? Icons.phone_android_rounded : Icons.devices_rounded,
-          multi ? C.orange : C.pri,
+          multi ? W.orange : W.pri,
           () async { await ApiService.post('users.php?action=update', {'uid': uid, 'multi_device_allowed': !multi}); _load(); },
         ),
         if (online) ...[
           const SizedBox(width: 6),
-          _actionBtn('فصل', Icons.logout_rounded, C.red, () async {
+          _actionBtn('فصل', Icons.logout_rounded, W.red, () async {
             await ApiService.post('users.php?action=clear_session', {'uid': uid});
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('تم فصل ${u['name']}', style: _tj(13, color: Colors.white)),
-              backgroundColor: C.green, behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              backgroundColor: W.green, behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ));
             _load();
           }),
@@ -339,12 +339,12 @@ class _AdminDevicesState extends State<AdminDevices> {
         ),
         const Spacer(),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(name, style: _tj(13, w: FontWeight.w600, color: C.text)),
-          Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: C.muted)),
+          Text(name, style: _tj(13, w: FontWeight.w600, color: W.text)),
+          Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted)),
         ]),
         const SizedBox(width: 8),
-        CircleAvatar(radius: 16, backgroundColor: C.priLight,
-          child: Text(initials, style: _tj(11, w: FontWeight.w700, color: C.pri))),
+        CircleAvatar(radius: 16, backgroundColor: W.priLight,
+          child: Text(initials, style: _tj(11, w: FontWeight.w700, color: W.pri))),
       ]),
       const SizedBox(height: 8),
       // Device card
@@ -352,12 +352,12 @@ class _AdminDevicesState extends State<AdminDevices> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: pColor.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: pColor.withValues(alpha: 0.2))),
+          decoration: BoxDecoration(color: pColor.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(6), border: Border.all(color: pColor.withValues(alpha: 0.2))),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _actionBtn(multi ? 'جهاز واحد' : 'متعدد', multi ? Icons.phone_android_rounded : Icons.devices_rounded, multi ? C.orange : C.pri,
+              _actionBtn(multi ? 'جهاز واحد' : 'متعدد', multi ? Icons.phone_android_rounded : Icons.devices_rounded, multi ? W.orange : W.pri,
                 () async { await ApiService.post('users.php?action=update', {'uid': uid, 'multi_device_allowed': !multi}); _load(); }),
-              if (online) ...[const SizedBox(height: 4), _actionBtn('فصل الجلسة', Icons.logout_rounded, C.red, () async {
+              if (online) ...[SizedBox(height: 4), _actionBtn('فصل الجلسة', Icons.logout_rounded, W.red, () async {
                 await ApiService.post('users.php?action=clear_session', {'uid': uid});
                 _load();
               })],
@@ -365,16 +365,16 @@ class _AdminDevicesState extends State<AdminDevices> {
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(model.isNotEmpty ? model : pLabel, style: _tj(12, w: FontWeight.w700, color: C.text)),
+                Text(model.isNotEmpty ? model : pLabel, style: _tj(12, w: FontWeight.w700, color: W.text)),
                 const SizedBox(width: 6),
                 Icon(pIcon, size: 16, color: pColor),
               ]),
-              if (brand.isNotEmpty) Text(brand, style: _tj(10, color: C.sub)),
+              if (brand.isNotEmpty) Text(brand, style: _tj(10, color: W.sub)),
               const SizedBox(height: 4),
               Wrap(spacing: 4, alignment: WrapAlignment.end, children: [
                 _chip(pLabel, pColor),
-                if (osVer.isNotEmpty) _chip(osVer, C.muted),
-                if (multi) _chip('متعدد الأجهزة', C.orange),
+                if (osVer.isNotEmpty) _chip(osVer, W.muted),
+                if (multi) _chip('متعدد الأجهزة', W.orange),
               ]),
             ]),
           ]),
@@ -408,8 +408,8 @@ class _AdminDevicesState extends State<AdminDevices> {
       onTap: () => setState(() => _filter = val),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(color: on ? C.pri : Colors.transparent, borderRadius: BorderRadius.circular(6)),
-        child: Text(label, style: _tj(11, w: on ? FontWeight.w700 : FontWeight.w400, color: on ? Colors.white : C.sub)),
+        decoration: BoxDecoration(color: on ? W.pri : Colors.transparent, borderRadius: BorderRadius.circular(6)),
+        child: Text(label, style: _tj(11, w: on ? FontWeight.w700 : FontWeight.w400, color: on ? Colors.white : W.sub)),
       ),
     );
   }
@@ -417,13 +417,13 @@ class _AdminDevicesState extends State<AdminDevices> {
   Widget _statCard(String label, String val, Color color, Color bg, IconData icon) =>
     Expanded(child: Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Container(width: 32, height: 32, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(9)),
           child: Icon(icon, size: 15, color: color)),
         const SizedBox(height: 8),
-        Text(val, style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: C.text)),
-        Text(label, style: _tj(10, color: C.sub)),
+        Text(val, style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: W.text)),
+        Text(label, style: _tj(10, color: W.sub)),
       ]),
     ));
 }

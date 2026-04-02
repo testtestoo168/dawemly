@@ -171,20 +171,20 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _header() => Align(
     alignment: Alignment.centerRight,
     child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Text('إدارة الصلاحيات', style: _tj(20, w: FontWeight.w800, color: C.text)),
-      Text('اضغط على موظف لتحديد صلاحياته', style: _tj(11, color: C.muted)),
+      Text('إدارة الصلاحيات', style: _tj(20, w: FontWeight.w800, color: W.text)),
+      Text('اضغط على موظف لتحديد صلاحياته', style: _tj(11, color: W.muted)),
     ]),
   );
 
   Widget _emptyState() => Container(
-    decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+    decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
     child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Container(width: 64, height: 64, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(18)),
-        child: const Icon(Icons.vpn_key_rounded, size: 30, color: C.pri)),
+      Container(width: 64, height: 64, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(18)),
+        child: Icon(Icons.vpn_key_rounded, size: 30, color: W.pri)),
       const SizedBox(height: 16),
-      Text('اختر موظفاً من القائمة', style: _tj(16, w: FontWeight.w700, color: C.text)),
+      Text('اختر موظفاً من القائمة', style: _tj(16, w: FontWeight.w700, color: W.text)),
       const SizedBox(height: 6),
-      Text('ستظهر هنا صلاحياته للتعديل', style: _tj(12, color: C.muted)),
+      Text('ستظهر هنا صلاحياته للتعديل', style: _tj(12, color: W.muted)),
     ])),
   );
 
@@ -192,28 +192,28 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _employeeList() {
     final list = _filtered;
     return Container(
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         // Header
         Container(
           padding: const EdgeInsets.fromLTRB(10, 11, 14, 11),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           child: Row(children: [
             GestureDetector(
               onTap: () => setState(() => _listVisible = !_listVisible),
               child: Container(
                 width: 28, height: 28,
-                decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(7), border: Border.all(color: C.border)),
-                child: Icon(_listVisible ? Icons.remove_rounded : Icons.add_rounded, size: 14, color: C.sub),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(7), border: Border.all(color: W.border)),
+                child: Icon(_listVisible ? Icons.remove_rounded : Icons.add_rounded, size: 14, color: W.sub),
               ),
             ),
             const SizedBox(width: 6),
-            Text('${_users.length}', style: _tj(11, color: C.muted)),
+            Text('${_users.length}', style: _tj(11, color: W.muted)),
             const Spacer(),
-            Text('الموظفون', style: _tj(14, w: FontWeight.w800, color: C.text)),
+            Text('الموظفون', style: _tj(14, w: FontWeight.w800, color: W.text)),
             const SizedBox(width: 8),
-            Container(width: 30, height: 30, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.people_rounded, size: 15, color: C.pri)),
+            Container(width: 30, height: 30, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)),
+              child: Icon(Icons.people_rounded, size: 15, color: W.pri)),
           ]),
         ),
         // Search
@@ -221,17 +221,17 @@ class _AdminRolesState extends State<AdminRoles> {
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
           child: Container(
             height: 38,
-            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: C.border)),
+            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
             child: TextField(
               onChanged: (v) => setState(() => _search = v),
               textAlign: TextAlign.right,
-              style: _tj(12, color: C.text),
+              style: _tj(12, color: W.text),
               decoration: InputDecoration(
                 hintText: 'بحث...',
-                hintStyle: _tj(12, color: C.hint),
+                hintStyle: _tj(12, color: W.hint),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                suffixIcon: const Icon(Icons.search_rounded, size: 16, color: C.hint),
+                suffixIcon: Icon(Icons.search_rounded, size: 16, color: W.hint),
               ),
             ),
           ),
@@ -241,9 +241,9 @@ class _AdminRolesState extends State<AdminRoles> {
           constraints: const BoxConstraints(maxHeight: 520),
           child: list.isEmpty
             ? Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.search_off_rounded, size: 32, color: C.hint),
+                Icon(Icons.search_off_rounded, size: 32, color: W.hint),
                 const SizedBox(height: 8),
-                Text('لا يوجد نتائج', style: _tj(12, color: C.muted)),
+                Text('لا يوجد نتائج', style: _tj(12, color: W.muted)),
               ]))
             : ListView.builder(shrinkWrap: true, itemCount: list.length,
                 itemBuilder: (_, i) => _empTile(list[i])),
@@ -263,23 +263,23 @@ class _AdminRolesState extends State<AdminRoles> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? C.priLight : Colors.transparent,
-          border: const Border(top: BorderSide(color: C.div)),
+          color: isSelected ? W.priLight : Colors.transparent,
+          border: Border(top: BorderSide(color: W.div)),
         ),
         child: Row(children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: count > 0 ? C.green.withValues(alpha: 0.1) : C.bg, borderRadius: BorderRadius.circular(20)),
-            child: Text(count > 0 ? '$count' : '—', style: _tj(10, w: FontWeight.w700, color: count > 0 ? C.green : C.hint)),
+            decoration: BoxDecoration(color: count > 0 ? W.green.withValues(alpha: 0.1) : W.bg, borderRadius: BorderRadius.circular(20)),
+            child: Text(count > 0 ? '$count' : '—', style: _tj(10, w: FontWeight.w700, color: count > 0 ? W.green : W.hint)),
           ),
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(name, style: _tj(13, w: FontWeight.w600, color: isSelected ? C.pri : C.text), overflow: TextOverflow.ellipsis),
-            Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: C.muted), overflow: TextOverflow.ellipsis),
+            Text(name, style: _tj(13, w: FontWeight.w600, color: isSelected ? W.pri : W.text), overflow: TextOverflow.ellipsis),
+            Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
-          CircleAvatar(radius: 16, backgroundColor: isSelected ? C.pri : C.div,
-            child: Text(initials, style: _tj(11, w: FontWeight.w700, color: isSelected ? Colors.white : C.sub))),
+          CircleAvatar(radius: 16, backgroundColor: isSelected ? W.pri : W.div,
+            child: Text(initials, style: _tj(11, w: FontWeight.w700, color: isSelected ? Colors.white : W.sub))),
         ]),
       ),
     );
@@ -294,12 +294,12 @@ class _AdminRolesState extends State<AdminRoles> {
     final total = _allKeys.length;
 
     return Container(
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       child: Column(children: [
         // ── Header ──
         Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           child: Row(children: [
             // Save
             _saving
@@ -308,7 +308,7 @@ class _AdminRolesState extends State<AdminRoles> {
                   onTap: _savePerms,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: _saved ? C.green : C.pri, borderRadius: BorderRadius.circular(9)),
+                    decoration: BoxDecoration(color: _saved ? W.green : W.pri, borderRadius: BorderRadius.circular(9)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(_saved ? Icons.check_rounded : Icons.save_rounded, size: 14, color: Colors.white),
                       const SizedBox(width: 6),
@@ -318,17 +318,17 @@ class _AdminRolesState extends State<AdminRoles> {
                 ),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(name, style: _tj(14, w: FontWeight.w700, color: C.text)),
-              Text('$enabledCount / $total صلاحية', style: _tj(11, color: C.muted)),
+              Text(name, style: _tj(14, w: FontWeight.w700, color: W.text)),
+              Text('$enabledCount / $total صلاحية', style: _tj(11, color: W.muted)),
             ]),
             const SizedBox(width: 10),
-            CircleAvatar(radius: 19, backgroundColor: C.priLight,
-              child: Text(initials, style: _tj(12, w: FontWeight.w700, color: C.pri))),
+            CircleAvatar(radius: 19, backgroundColor: W.priLight,
+              child: Text(initials, style: _tj(12, w: FontWeight.w700, color: W.pri))),
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () => setState(() { _selectedUser = null; _editPerms = {}; }),
-              child: Container(width: 28, height: 28, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: C.border)),
-                child: const Icon(Icons.close_rounded, size: 14, color: C.muted)),
+              child: Container(width: 28, height: 28, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                child: Icon(Icons.close_rounded, size: 14, color: W.muted)),
             ),
           ]),
         ),
@@ -364,9 +364,9 @@ class _AdminRolesState extends State<AdminRoles> {
         width: cardWidth,
         child: Container(
           decoration: BoxDecoration(
-            color: enabledCount > 0 ? color.withValues(alpha: 0.04) : C.bg,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: enabledCount > 0 ? color.withValues(alpha: 0.25) : C.border),
+            color: enabledCount > 0 ? color.withValues(alpha: 0.04) : W.bg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: enabledCount > 0 ? color.withValues(alpha: 0.25) : W.border),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             // Section header
@@ -378,20 +378,20 @@ class _AdminRolesState extends State<AdminRoles> {
                   onTap: () => setState(() { for (final p in perms) _editPerms[p['key'] as String] = !allOn; }),
                   child: Container(
                     width: 26, height: 26,
-                    decoration: BoxDecoration(color: allOn ? color.withValues(alpha: 0.15) : C.div, borderRadius: BorderRadius.circular(7)),
-                    child: Icon(allOn ? Icons.remove_rounded : Icons.add_rounded, size: 13, color: allOn ? color : C.hint),
+                    decoration: BoxDecoration(color: allOn ? color.withValues(alpha: 0.15) : W.div, borderRadius: BorderRadius.circular(7)),
+                    child: Icon(allOn ? Icons.remove_rounded : Icons.add_rounded, size: 13, color: allOn ? color : W.hint),
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text('$enabledCount/${perms.length}', style: _tj(10, w: FontWeight.w600, color: enabledCount > 0 ? color : C.hint)),
+                Text('$enabledCount/${perms.length}', style: _tj(10, w: FontWeight.w600, color: enabledCount > 0 ? color : W.hint)),
                 const Spacer(),
-                Text(section['title'] as String, style: _tj(12, w: FontWeight.w700, color: C.text)),
+                Text(section['title'] as String, style: _tj(12, w: FontWeight.w700, color: W.text)),
                 const SizedBox(width: 6),
                 Container(width: 26, height: 26, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(7)),
                   child: Icon(section['icon'] as IconData, size: 13, color: color)),
               ]),
             ),
-            Container(height: 1, color: C.div),
+            Container(height: 1, color: W.div),
             // Perm items
             Padding(
               padding: const EdgeInsets.all(8),
@@ -399,7 +399,7 @@ class _AdminRolesState extends State<AdminRoles> {
                 final key = p['key'] as String;
                 final isDanger = key == 'delete';
                 final on = _editPerms[key] ?? false;
-                final activeColor = isDanger ? C.red : color;
+                final activeColor = isDanger ? W.red : color;
                 return GestureDetector(
                   onTap: () => setState(() => _editPerms[key] = !on),
                   child: Container(
@@ -407,25 +407,25 @@ class _AdminRolesState extends State<AdminRoles> {
                     margin: const EdgeInsets.only(bottom: 5),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
-                      color: on ? activeColor.withValues(alpha: 0.08) : C.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: on ? activeColor.withValues(alpha: 0.25) : C.div),
+                      color: on ? activeColor.withValues(alpha: 0.08) : W.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: on ? activeColor.withValues(alpha: 0.25) : W.div),
                     ),
                     child: Row(children: [
                       Container(
           
                         width: 18, height: 18,
                         decoration: BoxDecoration(
-                          color: on ? activeColor : C.div,
+                          color: on ? activeColor : W.div,
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: on ? const Icon(Icons.check_rounded, size: 11, color: Colors.white) : null,
                       ),
                       const Spacer(),
-                      Text(p['label'] as String, style: _tj(12, w: FontWeight.w600, color: on ? C.text : C.muted)),
+                      Text(p['label'] as String, style: _tj(12, w: FontWeight.w600, color: on ? W.text : W.muted)),
                       const SizedBox(width: 8),
-                      Container(width: 28, height: 28, decoration: BoxDecoration(color: on ? activeColor.withValues(alpha: 0.1) : C.div, borderRadius: BorderRadius.circular(7)),
-                        child: Icon(p['icon'] as IconData, size: 13, color: on ? activeColor : C.hint)),
+                      Container(width: 28, height: 28, decoration: BoxDecoration(color: on ? activeColor.withValues(alpha: 0.1) : W.div, borderRadius: BorderRadius.circular(7)),
+                        child: Icon(p['icon'] as IconData, size: 13, color: on ? activeColor : W.hint)),
                     ]),
                   ),
                 );
