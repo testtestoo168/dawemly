@@ -41,6 +41,10 @@ class _EmpHomePageState extends State<EmpHomePage> {
   GoogleMapController? _liveMapController;
   Timer? _locationTimer;
 
+  // Verification polling
+  Timer? _verifyPollTimer;
+  bool _verifyDialogShowing = false;
+
   // Cached auth requirements (loaded once on init)
   bool _cachedRequireBiometric = true;
   bool _cachedRequireLocation = true;
@@ -58,6 +62,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
     _loadAuthRequirements(); // Pre-cache so biometric is instant
     _startClock();
     _checkPendingVerification();
+    _verifyPollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkPendingVerification());
     _startLiveLocation();
   }
 
@@ -77,8 +82,9 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   // Auto-check for pending verification requests and show banner immediately
-  // Uses polling since we no longer have Firestore streams
+  // Uses polling every 30 seconds
   void _checkPendingVerification() async {
+    if (_verifyDialogShowing) return;
     final uid = widget.user['uid'] ?? '';
     if (uid.isEmpty) return;
     try {
@@ -89,7 +95,8 @@ class _EmpHomePageState extends State<EmpHomePage> {
           (v['uid'] == uid) &&
           (v['status'] == 'pending')
         ).toList();
-        if (pending.isNotEmpty && mounted) {
+        if (pending.isNotEmpty && mounted && !_verifyDialogShowing) {
+          _verifyDialogShowing = true;
           final verificationId = pending.first['id'];
           _respondToVerification(uid, verificationId: verificationId);
         }
@@ -120,7 +127,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   @override
-  void dispose() { _timer?.cancel(); _locationTimer?.cancel(); _liveMapController?.dispose(); super.dispose(); }
+  void dispose() { _timer?.cancel(); _locationTimer?.cancel(); _verifyPollTimer?.cancel(); _liveMapController?.dispose(); super.dispose(); }
 
   void _startClock() {
     _updateTime();
@@ -1042,7 +1049,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
           )),
         ]),
       )),
-    ));
+    )).then((_) => _verifyDialogShowing = false);
   }
 
   void _doVerificationResponse(String uid, {dynamic verificationId}) async {

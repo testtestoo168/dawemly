@@ -356,22 +356,25 @@ class _AdminVerifyState extends State<AdminVerify> {
       }
     }
 
-    final uids = <String>[];
+    final employees = <Map<String, dynamic>>[];
     for (var id in uniqueEmpKeys) {
       final emp = all.firstWhere((e) => (e['_id'] ?? e['uid']) == id, orElse: () => {});
       if (emp.isEmpty) continue;
-      final empUid = emp['uid'] ?? id;
-      uids.add(empUid);
+      employees.add({
+        'uid': emp['uid'] ?? id,
+        'emp_id': emp['emp_id'] ?? '',
+        'name': emp['name'] ?? '',
+      });
     }
 
-    await ApiService.post('admin.php?action=send_verification', {'uids': uids});
+    await ApiService.post('admin.php?action=send_verification', {'employees': employees});
 
     // Audit log
     await ApiService.post('admin.php?action=audit_log', {
       'user': widget.user['name'] ?? 'مدير النظام',
       'action': 'إرسال إثبات حالة',
       'target': '${_sel.length} موظفين',
-      'details': 'تم إرسال طلب إثبات لـ ${uids.length} موظف',
+      'details': 'تم إرسال طلب إثبات لـ ${employees.length} موظف',
       'type': 'verify',
     });
 
