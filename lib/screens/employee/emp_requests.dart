@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
+import '../../services/server_time_service.dart';
 
 class EmpRequestsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -16,10 +17,18 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
   List<Map<String, dynamic>>? _requests;
   bool _loading = true;
 
+  final _months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  late int _selMonth;
+  late int _selYear;
+
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    final now = ServerTimeService().now;
+    _selMonth = now.month;
+    _selYear  = now.year;
     _loadRequests();
   }
 
@@ -32,17 +41,29 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
     if (mounted) setState(() { _requests = reqs; _loading = false; });
   }
 
+  List<Map<String, dynamic>> get _filtered {
+    if (_requests == null) return [];
+    return _requests!.where((r) {
+      final raw = r['createdAt'] ?? r['created_at'] ?? r['startDate'] ?? r['start_date'];
+      if (raw == null) return false;
+      try {
+        final dt = DateTime.parse(raw.toString());
+        return dt.month == _selMonth && dt.year == _selYear;
+      } catch (_) { return false; }
+    }).toList();
+  }
+
   String _fmtDate(dynamic v) {
     if (v == null) return '—';
     DateTime? dt;
     if (v is String) { try { dt = DateTime.parse(v); } catch(_) {} }
     if (dt == null) return v.toString();
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    return '${dt.day} ${_months[dt.month - 1]} ${dt.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final now = ServerTimeService().now;
     return Scaffold(
       appBar: AppBar(
         title: Text('الطلبات', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
@@ -50,16 +71,57 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
         backgroundColor: C.white,
         surfaceTintColor: C.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: C.sub),
-            onPressed: _loadRequests,
-          ),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh, color: C.sub), onPressed: _loadRequests)],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
+          preferredSize: const Size.fromHeight(100),
           child: Column(children: [
             Container(color: C.border, height: 1),
+
+            // ─── Month/Year filter ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(children: [
+                // Year picker
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+                  child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                    value: _selYear,
+                    style: GoogleFonts.ibmPlexMono(fontSize: 13, color: C.text),
+                    items: List.generate(3, (i) => now.year - i).map((y) =>
+                      DropdownMenuItem(value: y, child: Text('$y'))).toList(),
+                    onChanged: (v) => setState(() { _selYear = v!; }),
+                  )),
+                ),
+                const SizedBox(width: 8),
+                // Month picker
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+                    child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                      value: _selMonth,
+                      isExpanded: true,
+                      style: GoogleFonts.tajawal(fontSize: 13, color: C.text),
+                      items: List.generate(12, (i) => DropdownMenuItem(
+                        value: i + 1,
+                        child: Text(_months[i]),
+                      )).toList(),
+                      onChanged: (v) => setState(() { _selMonth = v!; }),
+                    )),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Results count badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(6)),
+                  child: Text('${_filtered.length}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.pri)),
+                ),
+              ]),
+            ),
+
+            // ─── Tabs ───
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
@@ -86,23 +148,25 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
             onRefresh: _loadRequests,
             child: _loading
               ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-              : (_requests == null || _requests!.isEmpty)
+              : _filtered.isEmpty
                 ? ListView(children: [
                     SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.5,
+                      height: MediaQuery.of(context).size.height * 0.45,
                       child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Icon(Icons.description_outlined, size: 48, color: C.hint),
                         const SizedBox(height: 12),
-                        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+                        Text('لا توجد طلبات في ${_months[_selMonth - 1]} $_selYear',
+                          style: GoogleFonts.tajawal(fontSize: 14, color: C.muted), textAlign: TextAlign.center),
                         const SizedBox(height: 4),
-                        Text('أنشئ طلب جديد من زر "طلب جديد"', style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
+                        Text('أنشئ طلب جديد من زر "طلب جديد"',
+                          style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
                       ])),
                     ),
                   ])
                 : ListView.builder(
                     padding: const EdgeInsets.all(14),
-                    itemCount: _requests!.length,
-                    itemBuilder: (context, i) => _requestCard(_requests![i]),
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, i) => _requestCard(_filtered[i]),
                   ),
           ),
 
@@ -120,9 +184,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
   Widget _requestCard(Map<String, dynamic> r) {
     final status = r['status'] ?? '';
     final isLeave = r['requestType'] == 'إجازة' || r['request_type'] == 'إجازة';
-    Color stColor;
-    Color stBg;
-    Color stBd;
+    Color stColor, stBg, stBd;
 
     if (status == 'تم الموافقة') {
       stColor = C.green; stBg = const Color(0xFFECFDF3); stBd = const Color(0xFFABEFC6);
@@ -132,32 +194,23 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
       stColor = C.orange; stBg = const Color(0xFFFFFAEB); stBd = const Color(0xFFFEDF89);
     }
 
-    final statusIcon = status == 'تم الموافقة' ? Icons.check_circle : status == 'مرفوض' ? Icons.cancel : Icons.hourglass_bottom;
-
-    final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
-    final typeColor = isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009);
-
     final requestType = r['requestType'] ?? r['request_type'] ?? '';
-    final leaveType = r['leaveType'] ?? r['leave_type'] ?? '';
-    final permType = r['permType'] ?? r['perm_type'] ?? '';
-    final fromTime = r['fromTime'] ?? r['from_time'] ?? '';
-    final toTime = r['toTime'] ?? r['to_time'] ?? '';
-    final startDate = r['startDate'] ?? r['start_date'];
-    final endDate = r['endDate'] ?? r['end_date'];
-    final days = r['days'] ?? 0;
-    final hours = (r['hours'] as num?)?.toStringAsFixed(1);
-    final adminNote = r['adminNote'] ?? r['admin_note'] ?? '';
+    final leaveType   = r['leaveType']   ?? r['leave_type']   ?? '';
+    final permType    = r['permType']    ?? r['perm_type']    ?? '';
+    final fromTime    = r['fromTime']    ?? r['from_time']    ?? '';
+    final toTime      = r['toTime']      ?? r['to_time']      ?? '';
+    final startDate   = r['startDate']   ?? r['start_date'];
+    final endDate     = r['endDate']     ?? r['end_date'];
+    final days        = r['days'] ?? 0;
+    final hours       = (r['hours'] as num?)?.toStringAsFixed(1);
+    final adminNote   = r['adminNote']   ?? r['admin_note']   ?? '';
+    final createdAt   = r['createdAt']   ?? r['created_at'];
 
     String desc = '';
     if (isLeave) {
-      desc = '$leaveType — $days يوم';
-      final start = _fmtDate(startDate);
-      final end = _fmtDate(endDate);
-      desc += '\nمن $start إلى $end';
+      desc = '$leaveType — $days يوم\nمن ${_fmtDate(startDate)} إلى ${_fmtDate(endDate)}';
     } else {
-      desc = '$permType';
-      desc += '${hours != null ? ' — $hours ساعة' : ''}';
-      desc += '\nمن $fromTime إلى $toTime';
+      desc = '$permType${hours != null ? ' — $hours ساعة' : ''}\nمن $fromTime إلى $toTime';
     }
 
     return Container(
@@ -172,16 +225,16 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Text(status, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
               const SizedBox(width: 4),
-              Icon(statusIcon, size: 14, color: stColor),
+              Icon(status == 'تم الموافقة' ? Icons.check_circle : status == 'مرفوض' ? Icons.cancel : Icons.hourglass_bottom, size: 14, color: stColor),
             ]),
           ),
           Row(children: [
-            Text('$requestType', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+            Text(requestType, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
             const SizedBox(width: 8),
             Container(
               width: 30, height: 30,
-              decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Icon(typeIcon, size: 16, color: typeColor),
+              decoration: BoxDecoration(color: (isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009)).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: Icon(isLeave ? Icons.beach_access : Icons.access_time, size: 16, color: isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009)),
             ),
           ]),
         ]),
@@ -194,10 +247,16 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
         if (adminNote.isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(8),
+            width: double.infinity, padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6)),
             child: Text('ملاحظة الإدارة: $adminNote', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
+          ),
+        ],
+        if (createdAt != null) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(_fmtDate(createdAt), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.hint)),
           ),
         ],
       ]),
