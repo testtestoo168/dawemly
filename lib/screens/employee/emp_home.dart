@@ -296,6 +296,18 @@ class _EmpHomePageState extends State<EmpHomePage> {
         return;
       }
       if (mounted) Navigator.pop(context);
+      // Warn if GPS accuracy is poor (allowed but unreliable)
+      if (pos.accuracy > 80) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('دقة GPS منخفضة (${pos.accuracy.round()}م) — قد يُرفض الطلب',
+              style: GoogleFonts.tajawal()),
+            backgroundColor: C.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ));
+        }
+      }
     }
 
     // ─── Step 4: Send check-in to API ───
@@ -416,6 +428,18 @@ class _EmpHomePageState extends State<EmpHomePage> {
         return;
       }
       if (mounted) Navigator.pop(context);
+      // Warn if GPS accuracy is poor (allowed but unreliable)
+      if (pos.accuracy > 80) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('دقة GPS منخفضة (${pos.accuracy.round()}م) — قد يُرفض الطلب',
+              style: GoogleFonts.tajawal()),
+            backgroundColor: C.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ));
+        }
+      }
     }
 
     // ─── Step 4: Send check-out to API ───

@@ -34,6 +34,11 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   int _attempts = 0;
   static const _maxAttempts = 3;
 
+  // Blink detection state
+  bool _blinkDetected = false;
+  bool _waitingForBlink = true;
+  bool _eyesWereClosed = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +55,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
       await _camCtrl!.initialize();
       if (mounted) {
-        setState(() { _initialized = true; _status = 'انظر للكاميرا للتحقق من وجهك'; _statusColor = C.pri; });
+        setState(() { _initialized = true; _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
         _startDetection();
       }
     } catch (e) {
@@ -94,7 +99,26 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       final rightEye = face.rightEyeOpenProbability ?? 1;
       final bbox = face.boundingBox;
 
-      if (bbox.width < 80 || bbox.height < 80) {
+      // ─── Blink detection challenge ───
+      if (_waitingForBlink) {
+        final eyesClosed = leftEye < 0.2 && rightEye < 0.2;
+        final eyesOpen = leftEye > 0.7 && rightEye > 0.7;
+
+        if (!_eyesWereClosed && eyesClosed) {
+          _eyesWereClosed = true; // eyes just closed
+        } else if (_eyesWereClosed && eyesOpen) {
+          _blinkDetected = true; // eyes opened again after closing = blink!
+          _waitingForBlink = false;
+        }
+
+        if (!_blinkDetected) {
+          setState(() { _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
+          _processing = false;
+          return;
+        }
+      }
+
+      if (bbox.width < 120 || bbox.height < 120) {
         setState(() { _status = 'قرّب وجهك'; _statusColor = C.orange; });
         _processing = false;
         return;
@@ -156,7 +180,13 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
           // Restart stream for another attempt
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
-            setState(() { _status = 'انظر للكاميرا مرة أخرى'; _statusColor = C.pri; });
+            setState(() {
+              _status = 'ارمش مرة واحدة';
+              _statusColor = C.orange;
+              _blinkDetected = false;
+              _waitingForBlink = true;
+              _eyesWereClosed = false;
+            });
             try { _startDetection(); } catch (_) {}
           }
         }

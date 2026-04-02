@@ -54,6 +54,17 @@ class AttendanceService {
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
+    // If accuracy is poor, wait and try once more with best accuracy
+    if (pos.accuracy > 100) {
+      try {
+        final betterPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+        ).timeout(const Duration(seconds: 8));
+        if (betterPos.accuracy < pos.accuracy) {
+          return (position: betterPos, isMocked: betterPos.isMocked);
+        }
+      } catch (_) {}
+    }
     return (position: pos, isMocked: pos.isMocked);
   }
 
@@ -114,6 +125,7 @@ class AttendanceService {
       'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
+      'client_time': DateTime.now().toIso8601String().substring(0, 19).replaceAll('T', ' '),
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;
     if (locationId != null) body['location_id'] = locationId;
@@ -154,6 +166,7 @@ class AttendanceService {
       'biometric': requireBiometric,
       'auth_method': authMethod,
       'is_mocked': false,
+      'client_time': DateTime.now().toIso8601String().substring(0, 19).replaceAll('T', ' '),
     };
     if (facePhotoUrl != null) body['face_photo_url'] = facePhotoUrl;
     if (locationId != null) body['location_id'] = locationId;
