@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../services/server_time_service.dart';
 import 'emp_locations_page.dart';
 import 'emp_schedule_page.dart';
 import 'emp_profile_page.dart';
@@ -300,7 +301,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
   }
 
   String _getCurrentTime() {
-    final now = DateTime.now();
+    final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     return '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
   }

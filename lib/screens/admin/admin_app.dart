@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/attendance_service.dart';
 import '../../services/api_service.dart';
+import '../../services/server_time_service.dart';
 import 'admin_dashboard.dart';
 import 'admin_employees.dart';
 import 'admin_user_mgmt.dart';
@@ -73,7 +74,7 @@ class _AdminAppState extends State<AdminApp> {
   @override
   void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) { _tick(); if (_mTab == 0) _loadMobileHome(); }); }
   @override void dispose() { _timer?.cancel(); super.dispose(); }
-  void _tick() { final n = DateTime.now(); final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
+  void _tick() { final n = ServerTimeService().now; final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
 
   Widget _getPage(String k) {
     switch (k) {

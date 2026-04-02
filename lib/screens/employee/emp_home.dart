@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../services/attendance_service.dart';
 import '../../services/face_recognition_service.dart';
 import '../../services/api_service.dart';
+import '../../services/server_time_service.dart';
 import 'face_registration_page.dart';
 import 'face_verify_dialog.dart';
 
@@ -130,7 +131,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
   }
 
   void _updateTime() {
-    final now = DateTime.now();
+    final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     if (mounted) {
       setState(() => _currentTime = '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}');
@@ -151,7 +152,7 @@ class _EmpHomePageState extends State<EmpHomePage> {
       final sessionStartRaw = _todayRecord!['currentSessionStart'] ?? _todayRecord!['current_session_start'];
       final sessionStart = _parseTs(sessionStartRaw);
       if (sessionStart != null) {
-        final liveSeconds = DateTime.now().difference(sessionStart).inSeconds;
+        final liveSeconds = ServerTimeService().now.difference(sessionStart).inSeconds;
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveSeconds));
       } else {
         if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));

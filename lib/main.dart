@@ -13,6 +13,7 @@ import 'screens/employee/employee_app.dart';
 import 'screens/admin/admin_app.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
+import 'services/server_time_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -28,6 +29,9 @@ void main() async {
 
   // Load saved token
   await ApiService.loadToken();
+
+  // Sync server time (non-blocking, runs in background)
+  ServerTimeService().startPeriodicSync();
 
   // Setup FCM notifications
   if (!kIsWeb) {
