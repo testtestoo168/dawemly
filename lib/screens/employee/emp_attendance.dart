@@ -213,7 +213,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     final lastOut = r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out'];
     final hasOut = lastOut != null;
     final stColor = hasOut ? C.green : C.pri;
-    final totalMinutes = (r['totalWorkedMinutes'] as int?) ?? 0;
+    final totalMinutes = (r['totalWorkedMinutes'] as int?) ?? (r['total_worked_minutes'] as int?) ?? 0;
     final sessions = (r['sessions'] as int?) ?? 1;
     final isExpanded = _expandedDateKey == dateKey;
 

@@ -132,7 +132,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final att = e['_att'] as Map<String, dynamic>?;
     final ci = _fmtTs(att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in']);
     final co = _fmtTs(att?['lastCheckOut'] ?? att?['last_check_out'] ?? att?['checkOut'] ?? att?['check_out']);
-    final totalMin = (att?['totalWorkedMinutes'] ?? att?['total_worked_minutes'] as int?) ?? 0;
+    final totalMin = (att?['totalWorkedMinutes'] as int?) ?? (att?['total_worked_minutes'] as int?) ?? 0;
     final isCheckedIn = e['_isCheckedIn'] == true;
     final stColor = status == 'مكتمل' ? W.green : status == 'حاضر' ? W.green : W.red;
     final byAdmin = att?['punchedByAdmin'] == true || att?['punched_by_admin'] == 1 || att?['punched_by_admin'] == true;
@@ -693,7 +693,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   void _editDayDialog(String uid, String empName, String dateKey, Map<String, dynamic> record) {
     final ciCtrl = TextEditingController();
     final coCtrl = TextEditingController();
-    final minCtrl = TextEditingController(text: '${(record['totalWorkedMinutes'] as int?) ?? 0}');
+    final minCtrl = TextEditingController(text: '${(record['totalWorkedMinutes'] as int?) ?? (record['total_worked_minutes'] as int?) ?? 0}');
 
     showDialog(context: context, builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
