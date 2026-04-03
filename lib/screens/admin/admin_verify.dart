@@ -135,7 +135,7 @@ class _AdminVerifyState extends State<AdminVerify> {
               ...locations.map((loc) {
                 final locId = loc['_locId'] ?? loc['id'] ?? '';
                 final locName = loc['name'] ?? 'موقع';
-                final assignedEmps = (loc['assignedEmployees'] as List?)?.cast<String>() ?? [];
+                final assignedEmps = ((loc['assigned_employees'] ?? loc['assignedEmployees']) as List?)?.cast<String>() ?? [];
                 // Get employees for this location ONLY (strictly assigned, or all if empty)
                 final locEmployees = active.where((emp) {
                   final uid = emp['uid'] ?? emp['_id'] ?? '';
@@ -266,7 +266,7 @@ class _AdminVerifyState extends State<AdminVerify> {
   Widget _buildVerificationResults() {
     // Filter by selected date/month
     final requests = _verifications.where((r) {
-      final sentAt = _parseTs(r['sentAt']);
+      final sentAt = _parseTs(r['sent_at'] ?? r['sentAt']);
       if (sentAt == null) return false;
       if (sentAt.year != _filterYear || sentAt.month != _filterMonth) return false;
       if (_filterDay > 0 && sentAt.day != _filterDay) return false;
@@ -301,8 +301,8 @@ class _AdminVerifyState extends State<AdminVerify> {
         final stColor = isPending ? W.orange : (isInRange ? W.green : W.red);
         final stText = isPending ? 'بانتظار الاستجابة' : (isInRange ? 'داخل النطاق ✓' : 'خارج النطاق ⚠');
         final dist = r['distance'];
-        final av = (r['empName'] ?? 'م').toString().length >= 2 ? r['empName'].toString().substring(0, 2) : 'م';
-        final sentAt = _parseTs(r['sentAt']);
+        final av = (r['emp_name'] ?? r['empName'] ?? 'م').toString().length >= 2 ? (r['emp_name'] ?? r['empName']).toString().substring(0, 2) : 'م';
+        final sentAt = _parseTs(r['sent_at'] ?? r['sentAt']);
         final sentTime = sentAt != null ? _fmtTime(sentAt) : '';
 
         return Container(
@@ -324,8 +324,8 @@ class _AdminVerifyState extends State<AdminVerify> {
             ]),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.text)),
-              Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              Text(r['emp_name'] ?? r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.text)),
+              Text(r['emp_id'] ?? r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
             ]),
             const SizedBox(width: 10),
             Container(width: 36, height: 36, decoration: BoxDecoration(color: stColor.withOpacity(0.08), shape: BoxShape.circle),
