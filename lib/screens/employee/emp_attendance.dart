@@ -160,10 +160,24 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
             final present = records.where((r) => (r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in']) != null).length;
             final complete = records.where((r) => (r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out']) != null).length;
 
-            // Calculate total worked hours for the month
+            // Calculate totals for the month
             int totalMonthMinutes = 0;
+            int totalLateDays = 0;
+            int totalLateMinutes = 0;
+            int totalEarlyDays = 0;
+            int totalEarlyMinutes = 0;
             for (final r in records) {
               totalMonthMinutes += (r['totalWorkedMinutes'] as int?) ?? (r['total_worked_minutes'] as int?) ?? 0;
+              final isL = (r['is_late'] is int ? r['is_late'] : int.tryParse('${r['is_late'] ?? 0}')) ?? 0;
+              final isE = (r['is_early_leave'] is int ? r['is_early_leave'] : int.tryParse('${r['is_early_leave'] ?? 0}')) ?? 0;
+              if (isL == 1) {
+                totalLateDays++;
+                totalLateMinutes += ((r['late_minutes'] is int ? r['late_minutes'] as int : int.tryParse('${r['late_minutes'] ?? 0}'))) ?? 0;
+              }
+              if (isE == 1) {
+                totalEarlyDays++;
+                totalEarlyMinutes += ((r['early_leave_minutes'] is int ? r['early_leave_minutes'] as int : int.tryParse('${r['early_leave_minutes'] ?? 0}'))) ?? 0;
+              }
             }
 
             return ListView(padding: const EdgeInsets.all(14), children: [
@@ -171,12 +185,22 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               Container(
                 decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
                 padding: const EdgeInsets.all(12),
-                child: Row(children: [
-                  _stat('مكتمل', '$complete', C.green),
-                  const SizedBox(width: 8),
-                  _stat('حاضر', '$present', C.pri),
-                  const SizedBox(width: 8),
-                  _stat('إجمالي ساعات', _fmtWorkedTime(totalMonthMinutes), C.orange),
+                child: Column(children: [
+                  Row(children: [
+                    _stat('مكتمل', '$complete', C.green),
+                    const SizedBox(width: 8),
+                    _stat('حاضر', '$present', C.pri),
+                    const SizedBox(width: 8),
+                    _stat('ساعات العمل', _fmtWorkedTime(totalMonthMinutes), C.orange),
+                  ]),
+                  if (totalLateDays > 0 || totalEarlyDays > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      if (totalLateDays > 0) _stat('تأخر ($totalLateDays يوم)', _fmtWorkedTime(totalLateMinutes), C.red),
+                      if (totalLateDays > 0 && totalEarlyDays > 0) const SizedBox(width: 8),
+                      if (totalEarlyDays > 0) _stat('خروج مبكر ($totalEarlyDays يوم)', _fmtWorkedTime(totalEarlyMinutes), C.orange),
+                    ]),
+                  ],
                 ]),
               ),
               const SizedBox(height: 12),
@@ -217,6 +241,12 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     final sessions = (r['sessions'] as int?) ?? 1;
     final isExpanded = _expandedDateKey == dateKey;
 
+    // Late & early leave data
+    final lateMin = (r['late_minutes'] is int ? r['late_minutes'] : int.tryParse('${r['late_minutes'] ?? 0}')) ?? 0;
+    final isLateFlag = (r['is_late'] is int ? r['is_late'] : int.tryParse('${r['is_late'] ?? 0}')) ?? 0;
+    final earlyMin = (r['early_leave_minutes'] is int ? r['early_leave_minutes'] : int.tryParse('${r['early_leave_minutes'] ?? 0}')) ?? 0;
+    final isEarlyFlag = (r['is_early_leave'] is int ? r['is_early_leave'] : int.tryParse('${r['is_early_leave'] ?? 0}')) ?? 0;
+
     return GestureDetector(
       onTap: () => _toggleDay(dateKey),
       child: AnimatedContainer(
@@ -236,11 +266,29 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
             child: Row(children: [
               // Left side: status + checkout
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
-                  child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
-                ),
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                    child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
+                  ),
+                  if (isLateFlag == 1) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: C.red.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                      child: Text('متأخر $lateMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.red)),
+                    ),
+                  ],
+                  if (isEarlyFlag == 1) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: C.orange.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                      child: Text('مبكر $earlyMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.orange)),
+                    ),
+                  ],
+                ]),
                 const SizedBox(height: 4),
                 Text('خروج: ${_fmtTime(lastOut)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.muted)),
                 if (totalMinutes > 0) ...[
