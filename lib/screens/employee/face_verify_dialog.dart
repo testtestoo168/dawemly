@@ -53,7 +53,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
+      _camCtrl = CameraController(frontCam, ResolutionPreset.low, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
       await _camCtrl!.initialize();
       if (mounted) {
         setState(() { _initialized = true; _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
@@ -67,7 +67,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
   void _startBlinkTimeout() {
     _blinkTimeout?.cancel();
-    _blinkTimeout = Timer(const Duration(seconds: 15), () {
+    _blinkTimeout = Timer(const Duration(seconds: 8), () {
       if (!mounted || _blinkDetected) return;
       // Skip blink if user can't blink in time — proceed to face check
       setState(() {
@@ -134,7 +134,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         }
       }
 
-      if (bbox.width < 120 || bbox.height < 120) {
+      if (bbox.width < 80 || bbox.height < 80) {
         setState(() { _status = 'قرّب وجهك'; _statusColor = C.orange; });
         _processing = false;
         return;
@@ -179,13 +179,13 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
       if (result['success'] == true) {
         setState(() { _status = '✓ تم التحقق بنجاح'; _statusColor = C.green; });
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 300));
         if (mounted) Navigator.pop(context, result);
       } else {
         _attempts++;
         if (_attempts >= _maxAttempts) {
           setState(() { _status = 'فشل التحقق — تجاوزت الحد المسموح'; _statusColor = C.red; });
-          await Future.delayed(const Duration(seconds: 1));
+          await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) Navigator.pop(context, {'success': false, 'error': 'فشل التحقق من الوجه بعد $_maxAttempts محاولات'});
         } else {
           setState(() {
@@ -194,7 +194,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
             _verifying = false;
           });
           // Restart stream for another attempt
-          await Future.delayed(const Duration(seconds: 1));
+          await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
             setState(() {
               _status = 'ارمش مرة واحدة';

@@ -152,7 +152,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
         }
 
         // Wait a moment then move to next step
-        _captureDelay = Timer(const Duration(milliseconds: 800), () {
+        _captureDelay = Timer(const Duration(milliseconds: 400), () {
           if (!mounted) return;
           if (_currentStep < _steps.length - 1) {
             setState(() {
