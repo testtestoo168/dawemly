@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
-import '../../services/attendance_service.dart';
 
 class AdminDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -27,6 +27,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   static const _card = Colors.white;
   static const _secondary = Color(0xFFE8EDF2);
   static const _primary = Color(0xFF0F3460);
+
+  // Chart colors
+  static const _chartBlue = Color(0xFF1D4ED8);
+  static const _chartGreen = Color(0xFF17B26A);
+  static const _chartRed = Color(0xFFF04438);
+  // ignore: unused_field
+  static const _chartOrange = Color(0xFFF79009);
 
   @override
   void initState() {
@@ -122,20 +129,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           const SizedBox(height: 24),
 
-          // ═══ CHARTS + TOP LIST — URS grid 2fr 1fr ═══
+          // ═══ CHARTS + TOP LIST — fl_chart professional ═══
           if (isWide)
             Row(crossAxisAlignment: CrossAxisAlignment.start, textDirection: TextDirection.rtl, children: [
-              // Chart — 2fr
-              Expanded(flex: 2, child: _chartCard()),
+              // Bar Chart — 2fr
+              Expanded(flex: 2, child: _barChartCard(250)),
               const SizedBox(width: 20),
-              // Top attendance — 1fr
-              Expanded(child: _topAttendanceCard()),
+              // Pie Chart — 1fr
+              Expanded(child: _pieChartCard(present, absent, complete, totalEmps, 250)),
             ])
           else ...[
-            _chartCard(),
+            _barChartCard(200),
             const SizedBox(height: 20),
-            _topAttendanceCard(),
+            _pieChartCard(present, absent, complete, totalEmps, 200),
           ],
+          const SizedBox(height: 20),
+
+          // ═══ LINE CHART — full width ═══
+          _lineChartCard(isWide ? 250 : 200),
+          const SizedBox(height: 20),
+
+          // ═══ TOP ATTENDANCE ═══
+          _topAttendanceCard(),
           const SizedBox(height: 24),
 
           // ═══ WHO'S IN/OUT — Jibble style ═══
@@ -195,59 +210,323 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─── Chart Card — URS "مبيعات آخر 7 أيام" style ───
-  Widget _chartCard() {
+  // ─── Helper: chart card wrapper ───
+  Widget _chartWrapper({required String title, required IconData icon, required double height, required Widget child}) {
     return Container(
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Column(children: [
-        // Card header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
           child: Row(textDirection: TextDirection.rtl, children: [
-            Icon(Icons.bar_chart_rounded, size: 14, color: _muted),
+            Icon(icon, size: 14, color: _muted),
             const SizedBox(width: 8),
-            Text('حضور آخر 7 أيام', style: _tj(15, weight: FontWeight.w600, color: _fg)),
+            Text(title, style: _tj(15, weight: FontWeight.w600, color: _fg)),
           ]),
         ),
-        // Chart body — simple bar chart
-        SizedBox(
-          height: 250,
-          child: FutureBuilder<List<int>>(
-            future: _getLast7Days(),
-            builder: (context, snap) {
-              final counts = snap.data ?? List.filled(7, 0);
-              final maxVal = counts.isEmpty ? 1 : (counts.reduce((a, b) => a > b ? a : b));
-              final maxH = maxVal == 0 ? 1 : maxVal;
-              final now = DateTime.now();
-              final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+        SizedBox(height: height, child: child),
+      ]),
+    );
+  }
 
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  textDirection: TextDirection.rtl,
-                  children: List.generate(7, (i) {
-                    final d = now.subtract(Duration(days: 6 - i));
-                    final h = maxH > 0 ? (counts[i] / maxH) * 160 : 0.0;
-                    return Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      Text('${counts[i]}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: _fg)),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: h < 4 ? 4 : h,
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(color: const Color(0xFF1D4ED8), borderRadius: BorderRadius.circular(4)),
+  // ─── Chart 1: Bar Chart — حضور آخر 7 أيام ───
+  Widget _barChartCard(double chartHeight) {
+    return _chartWrapper(
+      title: 'حضور آخر 7 أيام',
+      icon: Icons.bar_chart_rounded,
+      height: chartHeight,
+      child: FutureBuilder<List<int>>(
+        future: _getLast7Days(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          }
+          final counts = snap.data ?? List.filled(7, 0);
+          final now = DateTime.now();
+          final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+          final maxY = counts.isEmpty ? 5.0 : (counts.reduce((a, b) => a > b ? a : b)).toDouble();
+          final topY = maxY < 1 ? 5.0 : (maxY * 1.3).ceilToDouble();
+
+          return Directionality(
+            textDirection: TextDirection.ltr,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: topY,
+                  minY: 0,
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      tooltipRoundedRadius: 8,
+                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      getTooltipColor: (_) => _fg,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final d = now.subtract(Duration(days: 6 - group.x.toInt()));
+                        return BarTooltipItem(
+                          '${dayNames[d.weekday % 7]}\n${rod.toY.toInt()} حاضر',
+                          GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.max || value == meta.min) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text('${value.toInt()}', style: GoogleFonts.tajawal(fontSize: 10, color: _muted)),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 8),
-                      Text(dayNames[d.weekday % 7], style: _tj(11, color: _muted)),
-                    ]));
-                  }),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx > 6) return const SizedBox.shrink();
+                          final d = now.subtract(Duration(days: 6 - idx));
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(dayNames[d.weekday % 7], style: GoogleFonts.tajawal(fontSize: 10, color: _muted)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: topY > 10 ? (topY / 5).ceilToDouble() : 1,
+                    getDrawingHorizontalLine: (value) => FlLine(color: _border.withValues(alpha: 0.5), strokeWidth: 0.8),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: List.generate(7, (i) => BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: counts[i].toDouble(),
+                        color: _chartBlue,
+                        width: chartHeight > 220 ? 22 : 16,
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                        backDrawRodData: BackgroundBarChartRodData(show: true, toY: topY, color: _secondary.withValues(alpha: 0.3)),
+                      ),
+                    ],
+                  )),
                 ),
-              );
-            },
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─── Chart 2: Pie/Donut Chart — حالة اليوم ───
+  Widget _pieChartCard(int present, int absent, int complete, int totalEmps, double chartHeight) {
+    return _chartWrapper(
+      title: 'حالة اليوم',
+      icon: Icons.pie_chart_rounded,
+      height: chartHeight + 60, // extra for legend
+      child: Column(children: [
+        Expanded(
+          child: totalEmps == 0
+            ? Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted)))
+            : PieChart(
+                PieChartData(
+                  sectionsSpace: 3,
+                  centerSpaceRadius: chartHeight > 220 ? 44 : 34,
+                  sections: [
+                    if (present > 0)
+                      PieChartSectionData(
+                        value: present.toDouble(),
+                        color: _chartGreen,
+                        radius: chartHeight > 220 ? 40 : 30,
+                        title: '$present',
+                        titleStyle: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    if (absent > 0)
+                      PieChartSectionData(
+                        value: absent.toDouble(),
+                        color: _chartRed,
+                        radius: chartHeight > 220 ? 40 : 30,
+                        title: '$absent',
+                        titleStyle: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    if (complete > 0)
+                      PieChartSectionData(
+                        value: complete.toDouble(),
+                        color: _chartBlue,
+                        radius: chartHeight > 220 ? 40 : 30,
+                        title: '$complete',
+                        titleStyle: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    if (present == 0 && absent == 0 && complete == 0)
+                      PieChartSectionData(
+                        value: 1,
+                        color: _border,
+                        radius: chartHeight > 220 ? 40 : 30,
+                        title: '',
+                      ),
+                  ],
+                  pieTouchData: PieTouchData(
+                    enabled: true,
+                    touchCallback: (event, response) {},
+                  ),
+                ),
+              ),
+        ),
+        // Center overlay text
+        // Legend
+        Padding(
+          padding: const EdgeInsets.only(bottom: 14, left: 16, right: 16),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _legendDot(_chartGreen, 'حاضر ($present)'),
+              const SizedBox(width: 14),
+              _legendDot(_chartRed, 'غائب ($absent)'),
+              const SizedBox(width: 14),
+              _legendDot(_chartBlue, 'مكتمل ($complete)'),
+            ],
           ),
         ),
       ]),
+    );
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(textDirection: TextDirection.rtl, mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+      const SizedBox(width: 5),
+      Text(label, style: _tj(11, color: _muted)),
+    ]);
+  }
+
+  // ─── Chart 3: Line Chart — التأخير الأسبوعي ───
+  Widget _lineChartCard(double chartHeight) {
+    return _chartWrapper(
+      title: 'التأخير الأسبوعي',
+      icon: Icons.show_chart_rounded,
+      height: chartHeight,
+      child: FutureBuilder<List<int>>(
+        future: _getLast7DaysLateMinutes(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          }
+          final minutes = snap.data ?? List.filled(7, 0);
+          final now = DateTime.now();
+          final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+          final maxY = minutes.isEmpty ? 10.0 : (minutes.reduce((a, b) => a > b ? a : b)).toDouble();
+          final topY = maxY < 1 ? 10.0 : (maxY * 1.3).ceilToDouble();
+
+          return Directionality(
+            textDirection: TextDirection.ltr,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  maxY: topY,
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      tooltipRoundedRadius: 8,
+                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      getTooltipColor: (_) => _fg,
+                      getTooltipItems: (spots) => spots.map((spot) {
+                        final d = now.subtract(Duration(days: 6 - spot.x.toInt()));
+                        return LineTooltipItem(
+                          '${dayNames[d.weekday % 7]}\n${spot.y.toInt()} دقيقة',
+                          GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 36,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.max || value == meta.min) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text('${value.toInt()}', style: GoogleFonts.tajawal(fontSize: 10, color: _muted)),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx > 6) return const SizedBox.shrink();
+                          final d = now.subtract(Duration(days: 6 - idx));
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(dayNames[d.weekday % 7], style: GoogleFonts.tajawal(fontSize: 10, color: _muted)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: topY > 10 ? (topY / 5).ceilToDouble() : 2,
+                    getDrawingHorizontalLine: (value) => FlLine(color: _border.withValues(alpha: 0.5), strokeWidth: 0.8),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: List.generate(7, (i) => FlSpot(i.toDouble(), minutes[i].toDouble())),
+                      isCurved: true,
+                      curveSmoothness: 0.3,
+                      color: _chartRed,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                          radius: 4,
+                          color: _card,
+                          strokeWidth: 2.5,
+                          strokeColor: _chartRed,
+                        ),
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [_chartRed.withValues(alpha: 0.25), _chartRed.withValues(alpha: 0.0)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -264,6 +543,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
         counts.add(records.where((r) => (r['date_key'] ?? r['dateKey'] ?? '').toString() == dateStr).length);
       }
       return counts;
+    } catch (_) { return List.filled(7, 0); }
+  }
+
+  Future<List<int>> _getLast7DaysLateMinutes() async {
+    final now = DateTime.now();
+    try {
+      final res = await ApiService.get('attendance.php?action=all_records');
+      final records = (res['records'] as List? ?? []).cast<Map<String, dynamic>>();
+      List<int> minutes = [];
+      for (int i = 6; i >= 0; i--) {
+        final d = now.subtract(Duration(days: i));
+        final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        final dayRecords = records.where((r) => (r['date_key'] ?? r['dateKey'] ?? '').toString() == dateStr);
+        int totalLate = 0;
+        for (final r in dayRecords) {
+          final late = r['late_minutes'] ?? r['lateMinutes'] ?? 0;
+          if (late is int) {
+            totalLate += late;
+          } else if (late is double) {
+            totalLate += late.toInt();
+          } else {
+            totalLate += int.tryParse(late.toString()) ?? 0;
+          }
+        }
+        minutes.add(totalLate);
+      }
+      return minutes;
     } catch (_) { return List.filled(7, 0); }
   }
 
