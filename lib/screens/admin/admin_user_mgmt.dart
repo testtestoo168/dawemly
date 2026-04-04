@@ -276,16 +276,16 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
       child: SingleChildScrollView(
       padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // Header
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          ElevatedButton.icon(
+        // Header - only add button (title already in AppBar)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ElevatedButton.icon(
             onPressed: () => _showAddEditDialog(),
             icon: const Icon(Icons.person_add, size: 16),
             label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
           ),
-          Text('إدارة المستخدمين', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: W.text)),
-        ]),
+        ),
         const SizedBox(height: 20),
 
         // Stats
@@ -595,14 +595,15 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
 
   Widget _statBox(IconData icon, String label, String value, Color color, Color bg) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Container(width: 32, height: 32, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)),
-        const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: W.text)),
-        const SizedBox(height: 2),
-        Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(value, style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
+          Text(label, style: GoogleFonts.tajawal(fontSize: 10, color: W.sub)),
+        ])),
+        const SizedBox(width: 8),
+        Container(width: 28, height: 28, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)), child: Icon(icon, size: 14, color: color)),
       ]),
     );
   }

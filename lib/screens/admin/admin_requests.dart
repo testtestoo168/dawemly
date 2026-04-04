@@ -225,13 +225,13 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           ],
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text)),
             Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
           Container(
             width: isSmall ? 34 : 40, height: isSmall ? 34 : 40,
-            decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: Icon(typeIcon, size: 18, color: typeColor),
           ),
         ]),

@@ -274,7 +274,7 @@ class _AdminRolesState extends State<AdminRoles> {
           ),
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(name, style: _tj(13, w: FontWeight.w600, color: isSelected ? W.pri : W.text), overflow: TextOverflow.ellipsis),
+            Text(name, style: _tj(13, w: FontWeight.w600, color: isSelected ? W.pri : W.text)),
             Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
@@ -381,7 +381,7 @@ class _AdminRolesState extends State<AdminRoles> {
                 ),
             const Spacer(),
             Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(name, style: _tj(13, w: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+              Text(name, style: _tj(13, w: FontWeight.w700, color: W.text)),
               Text('$enabledCount / $total صلاحية', style: _tj(10, color: W.muted)),
             ])),
             const SizedBox(width: 8),

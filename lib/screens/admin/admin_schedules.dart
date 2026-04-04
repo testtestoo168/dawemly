@@ -87,7 +87,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
       Row(children: [
         _saveBtn(),
         const Spacer(),
-        Flexible(child: Text('الجداول والإجازات', style: GoogleFonts.tajawal(fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.w800, color: W.text), overflow: TextOverflow.ellipsis)),
+        Flexible(child: Text('الجداول والإجازات', style: GoogleFonts.tajawal(fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.w800, color: W.text))),
       ]),
       const SizedBox(height: 24),
       Container(padding: EdgeInsets.all(4), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
@@ -121,11 +121,11 @@ class _AdminSchedulesState extends State<AdminSchedules> {
         : Row(children: [
             _addBtnDash(Icons.add, 'جدول جديد', W.pri, W.priLight, () => setState(() => _showAddSch = true)),
             const Spacer(),
-            Flexible(child: Text('كل جدول مربوط بفترة عمل — حدد الأيام والموظفين', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub), overflow: TextOverflow.ellipsis)),
+            Flexible(child: Text('كل جدول مربوط بفترة عمل — حدد الأيام والموظفين', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub))),
           ]),
       const SizedBox(height: 16),
       if (_showAddSch) _addSchForm(isMobile),
-      SizedBox(height: 150, child: ListView.builder(
+      SizedBox(height: 160, child: ListView.builder(
         scrollDirection: Axis.horizontal, reverse: true,
         itemCount: _schedules.length,
         itemBuilder: (ctx, i) {
@@ -135,26 +135,25 @@ class _AdminSchedulesState extends State<AdminSchedules> {
           final isSel = _selSchId == sch['id']?.toString();
           final c = sh['color'] as Color;
           final days = List<String>.from(sch['days'] ?? []);
-          return Padding(padding: const EdgeInsets.only(left: 14), child: InkWell(onTap: () => setState(() => _selSchId = sch['id']?.toString()),
-            child: Container(width: isMobile ? 220 : 260, padding: EdgeInsets.all(isMobile ? 10 : 14), decoration: BoxDecoration(color: isSel ? c.withOpacity(0.04) : W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isSel ? c : W.border, width: isSel ? 2 : 1)),
+          return Padding(padding: const EdgeInsets.only(left: 10), child: InkWell(onTap: () => setState(() => _selSchId = sch['id']?.toString()),
+            child: Container(width: isMobile ? (MediaQuery.of(context).size.width * 0.65).clamp(200.0, 260.0) : 260, padding: EdgeInsets.all(isMobile ? 10 : 14), decoration: BoxDecoration(color: isSel ? c.withOpacity(0.04) : W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isSel ? c : W.border, width: isSel ? 2 : 1)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                // Name and shift - full width for name
                 Row(children: [
                   InkWell(onTap: () async {
                     await ApiService.post('admin.php?action=delete_schedule', {'id': sch['id']});
                     _loadAll();
                   }, child: Container(width: 24, height: 24, decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.redBd)), child: Icon(Icons.delete, size: 11, color: W.red))),
                   const SizedBox(width: 4),
-                  Container(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(6)), child: Text('${(sch['empIds'] as List?)?.length ?? 0} موظف', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted))),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(6)), child: Text('${(sch['empIds'] as List?)?.length ?? 0} موظف', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted))),
                   const Spacer(),
-                  Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
-                    Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: c), overflow: TextOverflow.ellipsis),
-                  ])),
+                  Flexible(child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w700, color: W.text), textAlign: TextAlign.right)),
                 ]),
                 const SizedBox(height: 4),
+                Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: c)),
                 Text('(${sh['start']} — ${sh['end']})', style: _mono(fontSize: 10, color: W.muted)),
                 const Spacer(),
-                Row(children: _allDays.map((d) => Expanded(child: Container(height: 22, margin: EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: days.contains(d) ? c.withOpacity(0.12) : W.div, borderRadius: BorderRadius.circular(5)), child: Center(child: Text(d.substring(0,2), style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: days.contains(d) ? c : W.hint)))))).toList()),
+                Row(children: _allDays.map((d) => Expanded(child: Container(height: 22, margin: const EdgeInsets.symmetric(horizontal: 1), decoration: BoxDecoration(color: days.contains(d) ? c.withOpacity(0.12) : W.div, borderRadius: BorderRadius.circular(5)), child: Center(child: Text(d.substring(0,2), style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: days.contains(d) ? c : W.hint)))))).toList()),
               ]))));
         },
       )),
@@ -166,7 +165,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
           Container(decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: schColor.withOpacity(0.4))),
             child: Column(children: [
               Container(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: schColor.withOpacity(0.03), border: Border(bottom: BorderSide(color: W.div))),
-                child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)), Spacer(), Flexible(child: Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis))])),
+                child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)), Spacer(), Flexible(child: Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)))])),
               if (schEmps.isEmpty) Padding(padding: EdgeInsets.all(20), child: Text('لا يوجد موظفين — أضف من القائمة', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted))),
               ...schEmps.map((emp) => _empRow(emp, false, schColor, () async {
                 final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
@@ -215,7 +214,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
           Expanded(child: Container(decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: schColor.withOpacity(0.4))),
             child: Column(children: [
               Container(padding: EdgeInsets.symmetric(horizontal: 22, vertical: 14), decoration: BoxDecoration(color: schColor.withOpacity(0.03), border: Border(bottom: BorderSide(color: W.div))),
-                child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)), Spacer(), Flexible(child: Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis))])),
+                child: Row(children: [Text('${schEmps.length} موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)), Spacer(), Flexible(child: Text('موظفين "${activeSch['name']}"', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))])),
               if (schEmps.isEmpty) Padding(padding: EdgeInsets.all(30), child: Text('لا يوجد موظفين — أضف من القائمة', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted))),
               ...schEmps.map((emp) => _empRow(emp, false, schColor, () async {
                 final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
@@ -292,13 +291,13 @@ class _AdminSchedulesState extends State<AdminSchedules> {
         : Row(children: [
             _addBtnDash(Icons.add, 'إضافة إجازة', W.green, W.greenL, () => setState(() => _showAddHol = true)),
             const Spacer(),
-            Flexible(child: Text('إجازات عامة (للكل) أو مخصصة (لموظفين محددين)', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub), overflow: TextOverflow.ellipsis)),
+            Flexible(child: Text('إجازات عامة (للكل) أو مخصصة (لموظفين محددين)', style: GoogleFonts.tajawal(fontSize: 13, color: W.sub))),
           ]),
       const SizedBox(height: 20),
       Row(children: [
-        _statCard(Icons.check, W.greenL, W.green, 'إجازات عامة', '${gen.length}', '${gen.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم', isMobile),
+        _statCard(Icons.check, W.greenL, W.green, isMobile ? 'عامة' : 'إجازات عامة', '${gen.length}', '${gen.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم', isMobile),
         SizedBox(width: isMobile ? 8 : 14),
-        _statCard(Icons.people, W.purpleL, W.purple, 'إجازات مخصصة', '${cust.length}', '${cust.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم', isMobile),
+        _statCard(Icons.people, W.purpleL, W.purple, isMobile ? 'مخصصة' : 'إجازات مخصصة', '${cust.length}', '${cust.fold<int>(0, (a,h) => a + ((h['days'] is int ? h['days'] : int.tryParse('${h['days']}') ?? 0) as int))} يوم', isMobile),
       ]),
       const SizedBox(height: 20),
       if (_showAddHol) _addHolForm(emps, isMobile),
@@ -306,7 +305,7 @@ class _AdminSchedulesState extends State<AdminSchedules> {
         Row(mainAxisAlignment: MainAxisAlignment.end, children: [
           Flexible(child: Text('إجازات $type', style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: W.text))),
           SizedBox(width: 8),
-          Container(width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, decoration: BoxDecoration(color: type == 'عامة' ? W.greenL : W.purpleL, borderRadius: BorderRadius.circular(4)), child: Icon(type == 'عامة' ? Icons.check : Icons.people, size: isMobile ? 12 : 14, color: type == 'عامة' ? W.green : W.purple)),
+          Container(width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, decoration: BoxDecoration(color: type == 'عامة' ? W.greenL : W.purpleL, borderRadius: BorderRadius.circular(7)), child: Icon(type == 'عامة' ? Icons.check : Icons.people, size: isMobile ? 12 : 14, color: type == 'عامة' ? W.green : W.purple)),
         ]),
         const SizedBox(height: 12),
         // Holiday cards - use Wrap with responsive width
@@ -355,9 +354,10 @@ class _AdminSchedulesState extends State<AdminSchedules> {
         ConstrainedBox(constraints: const BoxConstraints(maxHeight: 180), child: SingleChildScrollView(child: Wrap(spacing: 6, runSpacing: 6, children: emps.map((emp) {
           final uid = (emp['uid'] ?? emp['id'])?.toString() ?? '';
           final sel = _holSelEmps.contains(uid);
+          final chipW = isMobile ? ((MediaQuery.of(context).size.width - 28 - 6) / 2).clamp(140.0, 200.0) : 200.0;
           return InkWell(onTap: () => setState(() => sel ? _holSelEmps.remove(uid) : _holSelEmps.add(uid)),
-            child: Container(width: isMobile ? 155 : 200, padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12, vertical: 8), decoration: BoxDecoration(color: sel ? W.purpleL : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: sel ? W.purple : W.border)),
-              child: Row(children: [Checkbox(value: sel, activeColor: W.purple, onChanged: (_) => setState(() => sel ? _holSelEmps.remove(uid) : _holSelEmps.add(uid)), visualDensity: VisualDensity.compact), Expanded(child: Text(emp['name'] ?? '', textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis))])));
+            child: Container(width: chipW, padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 12, vertical: 8), decoration: BoxDecoration(color: sel ? W.purpleL : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: sel ? W.purple : W.border)),
+              child: Row(children: [SizedBox(width: 24, height: 24, child: Checkbox(value: sel, activeColor: W.purple, onChanged: (_) => setState(() => sel ? _holSelEmps.remove(uid) : _holSelEmps.add(uid)), visualDensity: VisualDensity.compact, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap)), const SizedBox(width: 4), Expanded(child: Text(emp['name'] ?? '', textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.text)))])));
         }).toList()))),
       ],
       const SizedBox(height: 14),
@@ -375,30 +375,31 @@ class _AdminSchedulesState extends State<AdminSchedules> {
 
   Widget _holCard(Map<String, dynamic> hol, List<Map<String, dynamic>> emps, bool isMobile) {
     final screenW = MediaQuery.of(context).size.width;
-    final cardW = isMobile ? (screenW - 28 - 12) : 340.0; // full width on mobile minus padding/spacing
+    final cardW = isMobile ? (screenW - 28.0) : 340.0; // full width on mobile minus padding
 
     return Container(width: cardW, padding: EdgeInsets.all(isMobile ? 12 : 18),
       decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        // Header row: name + date on right, badges on left
         Row(children: [
           InkWell(onTap: () async {
             await ApiService.post('admin.php?action=delete_holiday', {'id': hol['id']});
             _loadAll();
           }, child: Container(width: 24, height: 24, decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.redBd)), child: Icon(Icons.delete, size: 11, color: W.red))),
           const SizedBox(width: 6),
-          Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: hol['type'] == 'عامة' ? W.greenL : W.purpleL, borderRadius: BorderRadius.circular(20)), child: Text('${hol['days']} يوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: hol['type'] == 'عامة' ? W.green : W.purple))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: hol['type'] == 'عامة' ? W.greenL : W.purpleL, borderRadius: BorderRadius.circular(20)), child: Text('${hol['days']} يوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: hol['type'] == 'عامة' ? W.green : W.purple))),
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(hol['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+            Text(hol['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w700, color: W.text)),
             Text(hol['date'] ?? '', style: _mono(fontSize: 11, color: W.sub)),
           ])),
         ]),
         const SizedBox(height: 8),
-        if (hol['type'] == 'عامة') Text('✓ تُطبق على جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
+        if (hol['type'] == 'عامة') Text('تُطبق على جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
         if (hol['type'] == 'مخصصة') Wrap(spacing: 4, runSpacing: 4, alignment: WrapAlignment.end, children: ((hol['empIds'] as List?) ?? []).map((eid) {
           final emp = emps.firstWhere((e) => (e['uid'] ?? e['id'])?.toString() == eid?.toString(), orElse: () => {'name': '—'});
-          return Container(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: W.purpleL, borderRadius: BorderRadius.circular(6)),
-            child: Text((emp['name'] ?? '—').toString().split(' ').take(2).join(' '), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.purple), overflow: TextOverflow.ellipsis));
+          return Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: W.purpleL, borderRadius: BorderRadius.circular(6)),
+            child: Text((emp['name'] ?? '—').toString().split(' ').take(2).join(' '), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.purple)));
         }).toList()),
       ]));
   }
@@ -406,23 +407,24 @@ class _AdminSchedulesState extends State<AdminSchedules> {
   // ═══ Shared widgets ═══
   Widget _empRow(Map<String, dynamic> emp, bool isAdd, Color c, VoidCallback onTap) {
     final av = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0,2) : 'م';
-    return Container(padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
       child: Row(children: [
         InkWell(onTap: onTap, child: Container(width: 26, height: 26, decoration: BoxDecoration(color: isAdd ? W.greenL : W.redL, borderRadius: BorderRadius.circular(7), border: Border.all(color: isAdd ? W.greenBd : W.redBd)), child: Icon(isAdd ? Icons.add : Icons.close, size: 12, color: isAdd ? W.green : W.red))),
-        const Spacer(),
-        Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
-          Text(emp['dept'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted), overflow: TextOverflow.ellipsis),
+        const SizedBox(width: 8),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text)),
+          if ((emp['dept'] ?? '').toString().isNotEmpty)
+            Text(emp['dept'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted), overflow: TextOverflow.ellipsis),
         ])),
         const SizedBox(width: 8),
         Container(width: 26, height: 26, decoration: BoxDecoration(color: c.withOpacity(0.08), shape: BoxShape.circle), child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: c)))),
       ]));
   }
 
-  Widget _tabBtn(String l, String k) => InkWell(onTap: () => setState(() => _tab = k), child: Container(padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10), decoration: BoxDecoration(color: _tab == k ? W.white : Colors.transparent, borderRadius: BorderRadius.circular(9)), child: Text(l, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: _tab == k ? W.pri : W.sub))));
+  Widget _tabBtn(String l, String k) => InkWell(onTap: () => setState(() => _tab = k), child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), decoration: BoxDecoration(color: _tab == k ? W.white : Colors.transparent, borderRadius: BorderRadius.circular(9)), child: Text(l, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: _tab == k ? W.pri : W.sub))));
   Widget _saveBtn() => InkWell(onTap: () { setState(() => _saved = true); Future.delayed(Duration(seconds: 2), () { if (mounted) setState(() => _saved = false); }); }, child: Container(padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10), decoration: BoxDecoration(color: _saved ? W.green : W.pri, borderRadius: BorderRadius.circular(6)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(_saved ? Icons.check : Icons.save, size: 16, color: Colors.white), SizedBox(width: 6), Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white))])));
   Widget _addBtnDash(IconData i, String l, Color c, Color bg, VoidCallback onTap) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: c)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(i, size: 14, color: c), const SizedBox(width: 6), Text(l, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: c))])));
   Widget _actBtn(String l, Color bg, Color fg, VoidCallback onTap, {Color? bd}) => InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4), border: bd != null ? Border.all(color: bd) : null), child: Text(l, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: fg))));
-  Widget _statCard(IconData i, Color bg, Color c, String l, String v, String sub, bool isMobile) => Expanded(child: Container(padding: EdgeInsets.all(isMobile ? 14 : 20), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Container(width: isMobile ? 32 : 44, height: isMobile ? 32 : 44, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(i, size: isMobile ? 16 : 22, color: c)), SizedBox(height: isMobile ? 8 : 14), Text(v, style: GoogleFonts.tajawal(fontSize: isMobile ? 22 : 28, fontWeight: FontWeight.w800, color: W.text)), Text(l, style: GoogleFonts.tajawal(fontSize: isMobile ? 11 : 13, color: W.sub), overflow: TextOverflow.ellipsis), Text(sub, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted))])));
+  Widget _statCard(IconData i, Color bg, Color c, String l, String v, String sub, bool isMobile) => Expanded(child: Container(padding: EdgeInsets.all(isMobile ? 14 : 20), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Container(width: isMobile ? 32 : 44, height: isMobile ? 32 : 44, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)), child: Icon(i, size: isMobile ? 16 : 22, color: c)), SizedBox(height: isMobile ? 8 : 14), Text(v, style: GoogleFonts.tajawal(fontSize: isMobile ? 22 : 28, fontWeight: FontWeight.w800, color: W.text)), Text(l, style: GoogleFonts.tajawal(fontSize: isMobile ? 11 : 13, color: W.sub)), Text(sub, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted))])));
   Widget _field(String label, String hint, ValueChanged<String> cb) => Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)), SizedBox(height: 4), TextField(onChanged: cb, textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border))))]);
 }

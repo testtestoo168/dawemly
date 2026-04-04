@@ -115,9 +115,9 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Title row
               Row(children: [
                 const Spacer(),
-                Flexible(child: Text('إرسال طلب جديد', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)),
+                Flexible(child: Text('إرسال طلب جديد', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16, fontWeight: FontWeight.w700, color: W.text))),
                 const SizedBox(width: 8),
-                Container(width: 32, height: 32, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)), child: Icon(Icons.cell_tower, size: 16, color: W.pri)),
+                Container(width: 32, height: 32, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(10)), child: Icon(Icons.cell_tower, size: 16, color: W.pri)),
               ]),
               const SizedBox(height: 10),
               // Send button - full width on small screens
@@ -175,7 +175,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                       Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: W.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
                         child: Text('${locEmployees.length}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.green))),
                       const Spacer(),
-                      Flexible(child: Text(locName, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)),
+                      Flexible(child: Text(locName, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
                       const SizedBox(width: 6),
                       Icon(Icons.location_on, size: 16, color: W.pri),
                     ]),
@@ -194,7 +194,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                           child: Row(children: [
                             Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? W.pri : W.muted),
                             const SizedBox(width: 6),
-                            Expanded(child: Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text), overflow: TextOverflow.ellipsis)),
+                            Expanded(child: Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text))),
                             Container(width: 24, height: 24, decoration: BoxDecoration(color: W.pri.withOpacity(0.08), shape: BoxShape.circle), child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: W.pri)))),
                           ]),
                         ),
@@ -211,50 +211,72 @@ class _AdminVerifyState extends State<AdminVerify> {
           Text('نتائج الإثبات', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 16 : 18, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-            child: Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.filter_list, size: 18, color: W.pri),
-                const SizedBox(width: 6),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              // Label row on its own line
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                const SizedBox(width: 6),
+                Icon(Icons.filter_list, size: 18, color: W.pri),
               ]),
-              // Year picker
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-                  value: _filterYear,
-                  style: GoogleFonts.ibmPlexMono(fontSize: 13, color: W.text),
-                  items: List.generate(3, (i) => DropdownMenuItem(value: now.year - i, child: Text('${now.year - i}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
-                  onChanged: (v) => setState(() { _filterYear = v ?? now.year; _updateDaysInMonth(); }),
-                )),
-              ),
-              // Month picker
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-                  value: _filterMonth,
-                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-                  items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_months[i], style: GoogleFonts.tajawal(fontSize: 12)))),
-                  onChanged: (v) => setState(() { _filterMonth = v ?? now.month; _updateDaysInMonth(); }),
-                )),
-              ),
-              // Day picker
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-                child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-                  value: _filterDay,
-                  style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-                  items: [
-                    DropdownMenuItem(value: 0, child: Text('كل الأيام', style: GoogleFonts.tajawal(fontSize: 12))),
-                    ...List.generate(_daysInMonth, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
-                  ],
-                  onChanged: (v) => setState(() => _filterDay = v ?? 0),
-                )),
-              ),
+              const SizedBox(height: 10),
+              // 3 dropdowns in a row, equally spaced
+              Row(children: [
+                // Day picker
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('اليوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                    child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                      value: _filterDay, isExpanded: true,
+                      style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+                      items: [
+                        DropdownMenuItem(value: 0, child: Text('الكل', style: GoogleFonts.tajawal(fontSize: 12))),
+                        ...List.generate(_daysInMonth, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
+                      ],
+                      onChanged: (v) => setState(() => _filterDay = v ?? 0),
+                    )),
+                  ),
+                ])),
+                const SizedBox(width: 8),
+                // Month picker
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('الشهر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                    child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                      value: _filterMonth, isExpanded: true,
+                      style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+                      items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_months[i], style: GoogleFonts.tajawal(fontSize: 12)))),
+                      onChanged: (v) => setState(() { _filterMonth = v ?? now.month; _updateDaysInMonth(); }),
+                    )),
+                  ),
+                ])),
+                const SizedBox(width: 8),
+                // Year picker
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('السنة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                    child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+                      value: _filterYear, isExpanded: true,
+                      style: GoogleFonts.ibmPlexMono(fontSize: 13, color: W.text),
+                      items: List.generate(3, (i) => DropdownMenuItem(value: now.year - i, child: Text('${now.year - i}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
+                      onChanged: (v) => setState(() { _filterYear = v ?? now.year; _updateDaysInMonth(); }),
+                    )),
+                  ),
+                ])),
+              ]),
             ]),
           ),
           const SizedBox(height: 10),
@@ -324,7 +346,7 @@ class _AdminVerifyState extends State<AdminVerify> {
             ])),
             const SizedBox(width: 8),
             Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(r['emp_name'] ?? r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+              Text(r['emp_name'] ?? r['empName'] ?? '—', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
               Text(r['emp_id'] ?? r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted), overflow: TextOverflow.ellipsis),
             ])),
             const SizedBox(width: 8),

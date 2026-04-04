@@ -246,12 +246,37 @@ class _AdminSettingsState extends State<AdminSettings> {
       ]),
       const SizedBox(height: 14),
 
-      // Sub-tabs
-      Wrap(spacing: isMobile ? 4 : 6, runSpacing: isMobile ? 4 : 6, alignment: WrapAlignment.end, children: _tabs.map((t) => InkWell(
-        onTap: () => setState(() => _tab = t['k'] as String),
-        borderRadius: BorderRadius.circular(6),
-        child: Container(padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 18, vertical: isMobile ? 7 : 9), decoration: BoxDecoration(color: _tab == t['k'] ? W.pri : W.white, borderRadius: BorderRadius.circular(6), border: _tab == t['k'] ? null : Border.all(color: W.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(t['icon'] as IconData, size: isMobile ? 13 : 15, color: _tab == t['k'] ? Colors.white : W.sub), SizedBox(width: 4), Text(t['l'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w600, color: _tab == t['k'] ? Colors.white : W.sub))])),
-      )).toList()),
+      // Sub-tabs — scrollable horizontally on mobile
+      SizedBox(
+        height: 40,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          reverse: true,
+          children: _tabs.map((t) {
+            final sel = _tab == t['k'];
+            return Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: InkWell(
+                onTap: () => setState(() => _tab = t['k'] as String),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: sel ? W.pri : W.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: sel ? null : Border.all(color: W.border),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(t['icon'] as IconData, size: 15, color: sel ? Colors.white : W.sub),
+                    const SizedBox(width: 6),
+                    Text(t['l'] as String, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : W.sub)),
+                  ]),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
       const SizedBox(height: 16),
 
       // ═══════ فترات العمل ═══════
