@@ -137,6 +137,11 @@ class _AdminReportsState extends State<AdminReports> {
         }
       }
 
+      // Early leave
+      final storedEarly = att['early_leave_minutes'];
+      final storedEarlyMin = storedEarly != null ? (storedEarly is int ? storedEarly : int.tryParse('$storedEarly') ?? 0) : 0;
+      String earlyTime = storedEarlyMin > 0 ? '$storedEarlyMin د' : '—';
+
       rows.add({
         'empId': user['emp_id'] ?? user['empId'] ?? '—',
         'name': user['name'] ?? '—',
@@ -146,6 +151,7 @@ class _AdminReportsState extends State<AdminReports> {
         'checkOut': _fmtTs(co),
         'hours': workedHours.toStringAsFixed(1),
         'late': lateTime,
+        'early': earlyTime,
         'overtime': overtime > 0 ? '${overtime.toStringAsFixed(1)}' : '—',
       });
     }
@@ -157,8 +163,8 @@ class _AdminReportsState extends State<AdminReports> {
     setState(() => _exporting = true);
     try {
       final data = await _buildReportData();
-      final headers = ['كود الموظف', 'الاسم', 'التاريخ', 'اليوم', 'الدخول', 'الخروج', 'ساعات العمل', 'التأخير', 'الأوفرتايم'];
-      final csvRows = [headers, ...data.map((r) => [r['empId'], r['name'], r['date'], r['day'], r['checkIn'], r['checkOut'], r['hours'], r['late'], r['overtime']])];
+      final headers = ['كود الموظف', 'الاسم', 'التاريخ', 'اليوم', 'الدخول', 'الخروج', 'ساعات العمل', 'التأخير', 'خروج مبكر', 'الأوفرتايم'];
+      final csvRows = [headers, ...data.map((r) => [r['empId'], r['name'], r['date'], r['day'], r['checkIn'], r['checkOut'], r['hours'], r['late'], r['early'], r['overtime']])];
       final csv = const ListToCsvConverter().convert(csvRows);
       final bytes = utf8.encode('\uFEFF$csv');
       final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
@@ -204,8 +210,8 @@ class _AdminReportsState extends State<AdminReports> {
 
       final titleAr = hasArabic ? 'تقرير الحضور — ${_months[_selMonth - 1]} $_selYear${_selectedUid != 'الكل' ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
       final headersAr = hasArabic
-        ? ['الأوفرتايم', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود']
-        : ['Overtime', 'Late', 'Hours', 'Check Out', 'Check In', 'Day', 'Date', 'Name', 'EmpID'];
+        ? ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود']
+        : ['Overtime', 'Early Leave', 'Late', 'Hours', 'Check Out', 'Check In', 'Day', 'Date', 'Name', 'EmpID'];
 
       pdf.addPage(pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
@@ -221,7 +227,7 @@ class _AdminReportsState extends State<AdminReports> {
             cellAlignment: pw.Alignment.center,
             headerAlignment: pw.Alignment.center,
             headers: headersAr,
-            data: data.map((r) => [r['overtime'], r['late'], r['hours'], r['checkOut'], r['checkIn'], r['day'], r['date'], r['name'], r['empId']]).toList(),
+            data: data.map((r) => [r['overtime'], r['early'], r['late'], r['hours'], r['checkOut'], r['checkIn'], r['day'], r['date'], r['name'], r['empId']]).toList(),
           ),
         ],
       ));
@@ -325,10 +331,11 @@ class _AdminReportsState extends State<AdminReports> {
           else Container(width: double.infinity, decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
             child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
               headingRowColor: WidgetStateProperty.all(W.bg), headingRowHeight: 42, columnSpacing: 14,
-              columns: ['الأوفرتايم', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
+              columns: ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
                 DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
               rows: data.map((r) => DataRow(cells: [
                 DataCell(Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['overtime'] != '—' ? W.orange : W.muted))),
+                DataCell(Text(r['early'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['early'] != '—' ? W.orange : W.muted))),
                 DataCell(Text(r['late'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['late'] != '—' ? W.red : W.muted))),
                 DataCell(Text('${r['hours']}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
                 DataCell(Text(r['checkOut'] ?? '—', style: _mono(fontSize: 12, color: W.text))),

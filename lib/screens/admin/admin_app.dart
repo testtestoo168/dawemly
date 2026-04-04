@@ -162,8 +162,7 @@ class _AdminAppState extends State<AdminApp> {
                   child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
                 ),
                 const SizedBox(width: 12),
-                Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: W.text)),
-                const Spacer(),
+                Flexible(child: Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)),
               ],
             ),
           ),
@@ -298,18 +297,18 @@ class _AdminAppState extends State<AdminApp> {
                         ? const BorderRadius.vertical(bottom: Radius.circular(6))
                         : BorderRadius.zero,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(
                     children: [
                       Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(color: _iconBg, borderRadius: BorderRadius.circular(12)),
-                        child: Icon(item.icon, size: 22, color: _iconClr),
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(color: _iconBg, borderRadius: BorderRadius.circular(10)),
+                        child: Icon(item.icon, size: 20, color: _iconClr),
                       ),
-                      const SizedBox(width: 14),
-                      Text(item.label, style: _tj(15, weight: FontWeight.w600, color: W.text)),
-                      const Spacer(),
-                      Directionality(textDirection: TextDirection.ltr, child: Icon(Icons.chevron_left_rounded, size: 22, color: W.muted)),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(item.label, style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 8),
+                      Directionality(textDirection: TextDirection.ltr, child: Icon(Icons.chevron_left_rounded, size: 20, color: W.muted)),
                     ],
                   ),
                 ),

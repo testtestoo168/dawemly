@@ -32,18 +32,26 @@ class _EmployeeAppState extends State<EmployeeApp> {
     FirebaseMessaging.onMessage.listen((RemoteMessage msg) {
       if (msg.data['type'] == 'verify_request') {
         _handleVerifyRequest(msg.data);
+      } else if (msg.data['type'] == 'request_update') {
+        _handleRequestUpdate(msg.data);
       }
     });
     // App in background/killed — user taps notification
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
       if (msg.data['type'] == 'verify_request') {
         _handleVerifyRequest(msg.data);
+      } else if (msg.data['type'] == 'request_update') {
+        _handleRequestUpdate(msg.data);
       }
     });
     // App was killed — opened via notification tap
     FirebaseMessaging.instance.getInitialMessage().then((msg) {
-      if (msg != null && msg.data['type'] == 'verify_request') {
-        Future.delayed(const Duration(milliseconds: 800), () => _handleVerifyRequest(msg.data));
+      if (msg != null) {
+        if (msg.data['type'] == 'verify_request') {
+          Future.delayed(const Duration(milliseconds: 800), () => _handleVerifyRequest(msg.data));
+        } else if (msg.data['type'] == 'request_update') {
+          Future.delayed(const Duration(milliseconds: 800), () => _handleRequestUpdate(msg.data));
+        }
       }
     });
   }
@@ -53,6 +61,24 @@ class _EmployeeAppState extends State<EmployeeApp> {
     setState(() => _i = 0); // Switch to home tab
     final verificationId = data['verification_id'];
     _homeKey.currentState?.triggerVerification(verificationId: verificationId);
+  }
+
+  void _handleRequestUpdate(Map<String, dynamic> data) {
+    if (!mounted) return;
+    setState(() => _i = 3); // Switch to requests tab
+    final status = data['status'] ?? '';
+    final isApproved = status == 'تم الموافقة';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        isApproved ? 'تمت الموافقة على طلبك' : 'تم رفض طلبك',
+        style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
+        textDirection: TextDirection.rtl,
+      ),
+      backgroundColor: isApproved ? const Color(0xFF12B76A) : const Color(0xFFF04438),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   void _goToTab(int tab) {

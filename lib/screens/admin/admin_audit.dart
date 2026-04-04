@@ -83,12 +83,12 @@ class _AdminAuditState extends State<AdminAudit> {
           // ── Header ──
           Row(children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
               child: Text('${filtered.length} سجل', style: _tj(12, color: W.muted)),
             ),
             const Spacer(),
-            Text('سجل التدقيق', style: _tj(22, w: FontWeight.w800)),
+            Text('سجل التدقيق', style: _tj(MediaQuery.of(context).size.width < 400 ? 18 : 22, w: FontWeight.w800)),
           ]),
           const SizedBox(height: 20),
 
@@ -205,22 +205,26 @@ class _AdminAuditState extends State<AdminAudit> {
 
   Widget _mobileRow(Map log, Color color, Color bg, IconData icon, Map tm) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_fmtTs(log['timestamp']), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted)),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(_fmtTs(log['timestamp']), style: GoogleFonts.ibmPlexMono(fontSize: 9, color: W.muted)),
           const SizedBox(height: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-            child: Text(tm['l'] as String, style: _tj(10, w: FontWeight.w600, color: color)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 10, color: color),
+              const SizedBox(width: 3),
+              Text(tm['l'] as String, style: _tj(10, w: FontWeight.w600, color: color)),
+            ]),
           ),
         ]),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(log['action'] ?? '—', style: _tj(13, w: FontWeight.w600), overflow: TextOverflow.ellipsis),
+          Text(log['action'] ?? '—', style: _tj(12, w: FontWeight.w600), overflow: TextOverflow.ellipsis, maxLines: 1),
           Text('${log['user'] ?? '—'} — ${log['target'] ?? ''}',
-            style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
+            style: _tj(10, color: W.sub), overflow: TextOverflow.ellipsis, maxLines: 1),
         ])),
       ]),
     );

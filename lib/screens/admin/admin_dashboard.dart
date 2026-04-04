@@ -152,23 +152,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Stat Card — URS exact: icon left + info right ───
   Widget _statCard(IconData icon, String label, String value, String change) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400 ? 12 : 20),
       decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
       child: Row(textDirection: TextDirection.rtl, children: [
         // Info right
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(label, style: _tj(12, color: _muted)),
-          const SizedBox(height: 6),
-          Text(value, style: _tj(26, weight: FontWeight.w600, color: _fg)),
+          Text(label, style: _tj(11, color: _muted), overflow: TextOverflow.ellipsis, maxLines: 1),
+          const SizedBox(height: 4),
+          Text(value, style: _tj(MediaQuery.of(context).size.width < 400 ? 20 : 26, weight: FontWeight.w600, color: _fg)),
           const SizedBox(height: 2),
-          Text(change, style: _tj(11, color: _muted)),
+          Text(change, style: _tj(10, color: _muted)),
         ])),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         // Icon left
         Container(
-          width: 44, height: 44,
+          width: MediaQuery.of(context).size.width < 400 ? 36 : 44, height: MediaQuery.of(context).size.width < 400 ? 36 : 44,
           decoration: BoxDecoration(color: _secondary, borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 20, color: _primary),
+          child: Icon(icon, size: MediaQuery.of(context).size.width < 400 ? 18 : 20, color: _primary),
         ),
       ]),
     );
@@ -183,12 +183,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(6),
         hoverColor: _secondary,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 12 : 20, vertical: MediaQuery.of(context).size.width < 400 ? 10 : 16),
           decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
           child: Row(textDirection: TextDirection.rtl, children: [
-            Icon(icon, size: 20, color: _primary),
-            const SizedBox(width: 12),
-            Expanded(child: Text(label, style: _tj(14, weight: FontWeight.w600, color: _fg))),
+            Icon(icon, size: 18, color: _primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(label, style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
           ]),
         ),
       ),

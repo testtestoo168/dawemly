@@ -11,8 +11,7 @@ class EmpRequestsPage extends StatefulWidget {
   State<EmpRequestsPage> createState() => _EmpRequestsPageState();
 }
 
-class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+class _EmpRequestsPageState extends State<EmpRequestsPage> {
   final _svc = RequestsService();
   List<Map<String, dynamic>>? _requests;
   bool _loading = true;
@@ -25,15 +24,11 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
     final now = ServerTimeService().now;
     _selMonth = now.month;
     _selYear  = now.year;
     _loadRequests();
   }
-
-  @override
-  void dispose() { _tabCtrl.dispose(); super.dispose(); }
 
   Future<void> _loadRequests() async {
     setState(() => _loading = true);
@@ -73,13 +68,13 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
         elevation: 0,
         actions: [IconButton(icon: const Icon(Icons.refresh, color: C.sub), onPressed: _loadRequests)],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
+          preferredSize: const Size.fromHeight(56),
           child: Column(children: [
             Container(color: C.border, height: 1),
 
             // ─── Month/Year filter ───
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               child: Row(children: [
                 // Year picker
                 Container(
@@ -120,63 +115,33 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> with SingleTickerProv
                 ),
               ]),
             ),
-
-            // ─── Tabs ───
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
-              padding: const EdgeInsets.all(3),
-              child: TabBar(
-                controller: _tabCtrl,
-                indicator: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)]),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: C.pri,
-                unselectedLabelColor: C.sub,
-                labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600),
-                tabs: const [Tab(text: 'طلباتي', height: 34), Tab(text: 'الطلبات الواردة', height: 34)],
-              ),
-            ),
           ]),
         ),
       ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          // ─── طلباتي ───
-          RefreshIndicator(
-            onRefresh: _loadRequests,
-            child: _loading
-              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-              : _filtered.isEmpty
-                ? ListView(children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.45,
-                      child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.description_outlined, size: 48, color: C.hint),
-                        const SizedBox(height: 12),
-                        Text('لا توجد طلبات في ${_months[_selMonth - 1]} $_selYear',
-                          style: GoogleFonts.tajawal(fontSize: 14, color: C.muted), textAlign: TextAlign.center),
-                        const SizedBox(height: 4),
-                        Text('أنشئ طلب جديد من زر "طلب جديد"',
-                          style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
-                      ])),
-                    ),
-                  ])
-                : ListView.builder(
-                    padding: const EdgeInsets.all(14),
-                    itemCount: _filtered.length,
-                    itemBuilder: (context, i) => _requestCard(_filtered[i]),
-                  ),
-          ),
-
-          // ─── الطلبات الواردة ───
-          Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.description_outlined, size: 48, color: C.hint),
-            const SizedBox(height: 12),
-            Text('لا توجد طلبات واردة', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
-          ])),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _loadRequests,
+        child: _loading
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          : _filtered.isEmpty
+            ? ListView(children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.45,
+                  child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.description_outlined, size: 48, color: C.hint),
+                    const SizedBox(height: 12),
+                    Text('لا توجد طلبات في ${_months[_selMonth - 1]} $_selYear',
+                      style: GoogleFonts.tajawal(fontSize: 14, color: C.muted), textAlign: TextAlign.center),
+                    const SizedBox(height: 4),
+                    Text('أنشئ طلب جديد من زر "طلب جديد"',
+                      style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
+                  ])),
+                ),
+              ])
+            : ListView.builder(
+                padding: const EdgeInsets.all(14),
+                itemCount: _filtered.length,
+                itemBuilder: (context, i) => _requestCard(_filtered[i]),
+              ),
       ),
     );
   }

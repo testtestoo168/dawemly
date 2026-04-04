@@ -169,8 +169,10 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   }
 
   Widget _requestCard(Map<String, dynamic> r, String docId, bool showActions) {
+    final screenW = MediaQuery.of(context).size.width;
+    final isSmall = screenW < 400;
     final isLeave = r['requestType'] == 'إجازة';
-    final typeColor = isLeave ? Color(0xFF2E90FA) : W.orange;
+    final typeColor = isLeave ? const Color(0xFF2E90FA) : W.orange;
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
 
     String desc = '';
@@ -184,53 +186,53 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(isSmall ? 12 : 18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
           if (showActions) ...[
             InkWell(
               onTap: () => _handleRequest(docId, 'مرفوض'),
               child: Container(
-                width: 34, height: 34,
+                width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFFECDCA))),
-                child: Icon(Icons.close, size: 16, color: W.red),
+                child: Icon(Icons.close, size: 14, color: W.red),
               ),
             ),
             const SizedBox(width: 6),
             InkWell(
               onTap: () => _handleRequest(docId, 'تم الموافقة'),
               child: Container(
-                width: 34, height: 34,
+                width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFABEFC6))),
-                child: Icon(Icons.check, size: 16, color: W.green),
+                child: Icon(Icons.check, size: 14, color: W.green),
               ),
             ),
           ],
           if (!showActions) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: isSmall ? 6 : 10, vertical: 3),
               decoration: BoxDecoration(
                 color: r['status'] == 'تم الموافقة' ? W.greenL : W.redL,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: r['status'] == 'تم الموافقة' ? W.greenBd : W.redBd),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: r['status'] == 'تم الموافقة' ? W.green : W.red)),
-                const SizedBox(width: 4),
-                Icon(r['status'] == 'تم الموافقة' ? Icons.check_circle : Icons.cancel, size: 14, color: r['status'] == 'تم الموافقة' ? W.green : W.red),
+                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 10 : 11, fontWeight: FontWeight.w600, color: r['status'] == 'تم الموافقة' ? W.green : W.red)),
+                const SizedBox(width: 3),
+                Icon(r['status'] == 'تم الموافقة' ? Icons.check_circle : Icons.cancel, size: 13, color: r['status'] == 'تم الموافقة' ? W.green : W.red),
               ]),
             ),
           ],
           const Spacer(),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
-            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
-          ]),
-          const SizedBox(width: 10),
+          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
+          ])),
+          const SizedBox(width: 8),
           Container(
-            width: 40, height: 40,
+            width: isSmall ? 34 : 40, height: isSmall ? 34 : 40,
             decoration: BoxDecoration(color: typeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-            child: Icon(typeIcon, size: 20, color: typeColor),
+            child: Icon(typeIcon, size: 18, color: typeColor),
           ),
         ]),
         const SizedBox(height: 10),

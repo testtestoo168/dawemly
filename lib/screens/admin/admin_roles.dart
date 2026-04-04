@@ -157,12 +157,12 @@ class _AdminRolesState extends State<AdminRoles> {
 
     // Mobile
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400 ? 10 : 16),
       child: Column(children: [
         _header(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _employeeList(),
-        if (_selectedUser != null) ...[const SizedBox(height: 16), _permsPanel()],
+        if (_selectedUser != null) ...[const SizedBox(height: 12), _permsPanelMobile()],
         const SizedBox(height: 24),
       ]),
     );
@@ -342,6 +342,68 @@ class _AdminRolesState extends State<AdminRoles> {
               runSpacing: 12,
               children: _sections.map((section) => _sectionCard(section)).toList(),
             ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  // ══════ PERMISSIONS PANEL (mobile - no Expanded) ══════
+  Widget _permsPanelMobile() {
+    final u = _selectedUser!;
+    final name = (u['name'] ?? '').toString();
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+    final enabledCount = _editPerms.values.where((v) => v).length;
+    final total = _allKeys.length;
+
+    return Container(
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      child: Column(children: [
+        // ── Header ──
+        Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div)), borderRadius: const BorderRadius.vertical(top: Radius.circular(6))),
+          child: Row(children: [
+            // Save
+            _saving
+              ? const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 2))
+              : GestureDetector(
+                  onTap: _savePerms,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(color: _saved ? W.green : W.pri, borderRadius: BorderRadius.circular(6)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(_saved ? Icons.check_rounded : Icons.save_rounded, size: 13, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(_saved ? 'تم' : 'حفظ', style: _tj(11, w: FontWeight.w700, color: Colors.white)),
+                    ]),
+                  ),
+                ),
+            const Spacer(),
+            Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(name, style: _tj(13, w: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis),
+              Text('$enabledCount / $total صلاحية', style: _tj(10, color: W.muted)),
+            ])),
+            const SizedBox(width: 8),
+            CircleAvatar(radius: 16, backgroundColor: W.priLight,
+              child: Text(initials, style: _tj(11, w: FontWeight.w700, color: W.pri))),
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () => setState(() { _selectedUser = null; _editPerms = {}; }),
+              child: Container(width: 26, height: 26, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
+                child: Icon(Icons.close_rounded, size: 13, color: W.muted)),
+            ),
+          ]),
+        ),
+
+        // ── Sections (no Expanded needed, in ScrollView) ──
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: _sections.map((section) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _sectionCard(section),
+            )).toList(),
           ),
         ),
       ]),
