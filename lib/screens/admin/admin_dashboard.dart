@@ -300,7 +300,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     decoration: BoxDecoration(shape: BoxShape.circle, color: isCheckedIn ? const Color(0xFF17B26A) : const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
                 ]),
                 const SizedBox(width: 10),
-                Expanded(child: Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
+                Expanded(child: Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: _fg))),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -459,7 +459,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
           child: Row(textDirection: TextDirection.rtl, children: [
-            Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
+            Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg))),
             Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

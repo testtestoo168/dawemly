@@ -101,10 +101,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     return RefreshIndicator(
       onRefresh: _loadAll,
       child: SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Text('سجل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
         const SizedBox(height: 4),
-        Text('ساعات العمل الإضافية', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
-        const SizedBox(height: 16),
 
         // Month selector
         Container(
@@ -176,7 +173,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
                   DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.orange)) : Text('—', style: GoogleFonts.tajawal(color: W.muted))),
                   DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
                   DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? W.green : W.pri, hasOut ? Color(0xFFECFDF3) : W.priLight)),
-                  DataCell(ConstrainedBox(constraints: BoxConstraints(maxWidth: isMobile ? 100 : 200), child: Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis))),
+                  DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
                 ]);
               }).toList(),
             )),
@@ -224,7 +221,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           const Spacer(),
           // Name + date
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w700, color: otCancelled ? W.muted : W.text), overflow: TextOverflow.ellipsis, maxLines: 1),
+            Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w700, color: otCancelled ? W.muted : W.text)),
             Text('$dateKey  •  ${workH.toStringAsFixed(1)}h عمل', style: _mono(fontSize: 10, color: W.sub)),
           ])),
           const SizedBox(width: 8),

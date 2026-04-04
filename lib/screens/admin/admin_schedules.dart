@@ -84,12 +84,8 @@ class _AdminSchedulesState extends State<AdminSchedules> {
     final isWide = screenW > 800;
 
     return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : 14), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Row(children: [
-        _saveBtn(),
-        const Spacer(),
-        Flexible(child: Text('الجداول والإجازات', style: GoogleFonts.tajawal(fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.w800, color: W.text))),
-      ]),
-      const SizedBox(height: 24),
+      Align(alignment: Alignment.centerLeft, child: _saveBtn()),
+      const SizedBox(height: 14),
       Container(padding: EdgeInsets.all(4), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [_tabBtn('الجداول', 'schedules'), _tabBtn('الإجازات', 'holidays')])),
       const SizedBox(height: 24),

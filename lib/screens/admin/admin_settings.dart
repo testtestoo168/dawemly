@@ -227,6 +227,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     {'k': 'shifts', 'l': 'فترات العمل', 'icon': Icons.layers},
     {'k': 'locations', 'l': 'المواقع', 'icon': Icons.location_on},
     {'k': 'overtime', 'l': 'الأوفرتايم', 'icon': Icons.more_time},
+    {'k': 'late', 'l': 'التأخير', 'icon': Icons.timer_off},
     {'k': 'auth', 'l': 'المصادقة', 'icon': Icons.shield},
     {'k': 'security', 'l': 'الأمان', 'icon': Icons.lock},
     {'k': 'appearance', 'l': 'المظهر', 'icon': Icons.desktop_windows},
@@ -239,11 +240,8 @@ class _AdminSettingsState extends State<AdminSettings> {
     final isWide = MediaQuery.of(context).size.width > 800;
     final isMobile = MediaQuery.of(context).size.width < 500;
     return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : (isMobile ? 10 : 14)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      // Header
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : (isMobile ? 'حفظ' : 'حفظ الإعدادات'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 22, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
-        Flexible(child: Text('الإعدادات', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text))),
-      ]),
+      // Save button only (title is in AppBar)
+      Align(alignment: Alignment.centerLeft, child: ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
       const SizedBox(height: 14),
 
       // Sub-tabs — scrollable horizontally on mobile
@@ -285,6 +283,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       if (_tab == 'locations') _buildLocations(),
       // ═══════ الأوفرتايم ═══════
       if (_tab == 'overtime') _buildOvertime(),
+      // ═══════ التأخير ═══════
+      if (_tab == 'late') _buildLateSettings(),
       // ═══════ المصادقة ═══════
       if (_tab == 'auth') _buildAuth(),
       // ═══════ الأمان ═══════
@@ -967,46 +967,87 @@ class _AdminSettingsState extends State<AdminSettings> {
   Widget _buildOvertime() {
     final isWide = MediaQuery.of(context).size.width > 800;
     final cards = [
-      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [_cardHeader('ساعات العمل الرسمية', Icons.access_time, W.pri), Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${_generalH.toStringAsFixed(1)}h', style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: W.pri)), Text('ساعات/يوم', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))]), SizedBox(height: 8), Slider(value: _generalH, min: 4, max: 12, divisions: 16, activeColor: W.pri, onChanged: (v) => setState(() => _generalH = v))])),
-      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [_cardHeader('معامل الأوفرتايم', Icons.more_time, W.orange), Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('×${_overtimeRate.toStringAsFixed(2)}', style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: W.orange)), Text('من الراتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))]), SizedBox(height: 8), Slider(value: _overtimeRate, min: 1, max: 3, divisions: 8, activeColor: W.orange, onChanged: (v) => setState(() => _overtimeRate = v))])),
-      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [_cardHeader('تفعيل الأوفرتايم', Icons.more_time, W.orange), Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Switch(value: _overtimeActive, activeColor: W.green, onChanged: (v) => setState(() => _overtimeActive = v)), Text(_overtimeActive ? 'مفعّل' : 'معطّل', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: _overtimeActive ? W.green : W.muted))]), SizedBox(height: 6), Text('أي ساعات فوق المحدد = أوفرتايم', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted))])),
-    ];
-    
-    final lateCard = _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('سماحية التأخير', Icons.timer_off, W.red),
-      const SizedBox(height: 4),
-      Text('عدد الدقائق المسموحة قبل احتساب الموظف متأخر', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
-      const SizedBox(height: 10),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('$_lateGraceMinutes دقيقة', style: GoogleFonts.ibmPlexMono(fontSize: 22, fontWeight: FontWeight.w800, color: W.red)),
-        Text('سماحية', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
-      ]),
-      const SizedBox(height: 8),
-      Slider(value: _lateGraceMinutes.toDouble(), min: 0, max: 60, divisions: 12, activeColor: W.red, onChanged: (v) => setState(() => _lateGraceMinutes = v.round())),
-      const SizedBox(height: 4),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('60 دقيقة', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
-        Text('0 دقيقة', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
-      ]),
-    ]));
-    
-    if (isWide) {
-      return Column(children: [
-        Row(children: [
-          Expanded(child: cards[0]), const SizedBox(width: 14),
-          Expanded(child: cards[1]), const SizedBox(width: 14),
-          Expanded(child: cards[2]),
+      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        _cardHeader('ساعات العمل الرسمية', Icons.access_time, W.pri),
+        const SizedBox(height: 10),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          SizedBox(width: 80, child: TextField(
+            controller: TextEditingController(text: _generalH.toStringAsFixed(1)),
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.pri),
+            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), suffixText: 'h'),
+            onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 24) setState(() => _generalH = val); },
+          )),
+          Text('ساعات/يوم', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
         ]),
-        const SizedBox(height: 14),
-        lateCard,
+      ])),
+      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        _cardHeader('معامل الأوفرتايم', Icons.more_time, W.orange),
+        const SizedBox(height: 10),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          SizedBox(width: 80, child: TextField(
+            controller: TextEditingController(text: _overtimeRate.toStringAsFixed(2)),
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.orange),
+            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), prefixText: '×'),
+            onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 5) setState(() => _overtimeRate = val); },
+          )),
+          Text('من الراتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+        ]),
+      ])),
+      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        _cardHeader('تفعيل الأوفرتايم', Icons.more_time, W.orange),
+        const SizedBox(height: 6),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Switch(value: _overtimeActive, activeColor: W.green, onChanged: (v) => setState(() => _overtimeActive = v)),
+          Text(_overtimeActive ? 'مفعّل' : 'معطّل', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: _overtimeActive ? W.green : W.muted)),
+        ]),
+        const SizedBox(height: 4),
+        Text('أي ساعات فوق المحدد = أوفرتايم', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+      ])),
+    ];
+
+    if (isWide) {
+      return Row(children: [
+        Expanded(child: cards[0]), const SizedBox(width: 14),
+        Expanded(child: cards[1]), const SizedBox(width: 14),
+        Expanded(child: cards[2]),
       ]);
     }
     return Column(children: [
       cards[0], const SizedBox(height: 10),
       cards[1], const SizedBox(height: 10),
-      cards[2], const SizedBox(height: 10),
-      lateCard,
+      cards[2],
     ]);
+  }
+
+  // ─────────────────── التأخير (صفحة منفصلة) ───────────────────
+  Widget _buildLateSettings() {
+    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      _cardHeader('سماحية التأخير', Icons.timer_off, W.red),
+      const SizedBox(height: 8),
+      Text('عدد الدقائق المسموحة قبل احتساب الموظف متأخراً', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted), textAlign: TextAlign.right),
+      const SizedBox(height: 14),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        SizedBox(width: 100, child: TextField(
+          controller: TextEditingController(text: '$_lateGraceMinutes'),
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: W.red),
+          decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), suffixText: 'د'),
+          onChanged: (v) { final val = int.tryParse(v); if (val != null && val >= 0 && val <= 120) setState(() => _lateGraceMinutes = val); },
+        )),
+        Text('سماحية التأخير (بالدقائق)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+      ]),
+      const SizedBox(height: 12),
+      Container(
+        width: double.infinity, padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+        child: Text('مثال: لو السماحية 15 دقيقة والدوام يبدأ 8:00 — الموظف اللي يجي 8:15 أو قبل مش متأخر، بس 8:16 يتحسب متأخر', style: GoogleFonts.tajawal(fontSize: 11, color: W.red, height: 1.6), textAlign: TextAlign.right),
+      ),
+    ]));
   }
 
   // ─────────────────── المصادقة ───────────────────
