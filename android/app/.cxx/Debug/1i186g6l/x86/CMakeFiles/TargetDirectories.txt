@@ -1,0 +1,2 @@
+/var/www/attendance/android/app/.cxx/Debug/1i186g6l/x86/CMakeFiles/edit_cache.dir
+/var/www/attendance/android/app/.cxx/Debug/1i186g6l/x86/CMakeFiles/rebuild_cache.dir

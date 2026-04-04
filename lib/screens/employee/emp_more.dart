@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/server_time_service.dart';
 import 'emp_locations_page.dart';
 import 'emp_schedule_page.dart';
 import 'emp_profile_page.dart';
 import 'emp_my_face_page.dart';
+import 'emp_notifications_page.dart';
 
 class EmpMorePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -233,6 +235,12 @@ class _EmpMorePageState extends State<EmpMorePage> {
               child: Column(
                 children: [
                   _menuItem(
+                    icon: Icons.notifications_outlined,
+                    label: 'إشعاراتي',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpNotificationsPage(user: widget.user))),
+                  ),
+                  _divider(),
+                  _menuItem(
                     icon: Icons.location_on_outlined,
                     label: 'المواقع والفرع',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpLocationsPage(user: widget.user))),
@@ -280,7 +288,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
               child: _menuItem(
                 icon: Icons.settings_outlined,
                 label: 'الإعدادات',
-                onTap: () {},
+                onTap: () => _showChangePasswordDialog(),
               ),
             ),
 
@@ -373,6 +381,163 @@ class _EmpMorePageState extends State<EmpMorePage> {
     final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     return '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
+  }
+
+  void _showChangePasswordDialog() {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool loading = false;
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text('تغيير كلمة المرور', style: _tj(18, weight: FontWeight.w700, color: C.text)),
+              const SizedBox(width: 8),
+              const Icon(Icons.lock_outline_rounded, size: 20, color: C.pri),
+            ],
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: currentCtrl,
+                    obscureText: obscureCurrent,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.right,
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور الحالية',
+                      labelStyle: _tj(13, color: C.sub),
+                      prefixIcon: IconButton(
+                        icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
+                        onPressed: () => setDState(() => obscureCurrent = !obscureCurrent),
+                      ),
+                      suffixIcon: const Icon(Icons.lock, size: 18, color: C.muted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.pri)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    validator: (v) => (v == null || v.isEmpty) ? 'مطلوب' : null,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: newCtrl,
+                    obscureText: obscureNew,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.right,
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور الجديدة',
+                      labelStyle: _tj(13, color: C.sub),
+                      prefixIcon: IconButton(
+                        icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
+                        onPressed: () => setDState(() => obscureNew = !obscureNew),
+                      ),
+                      suffixIcon: const Icon(Icons.lock_open, size: 18, color: C.muted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.pri)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'مطلوب';
+                      if (v.length < 6) return 'يجب أن تكون 6 أحرف على الأقل';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: confirmCtrl,
+                    obscureText: obscureConfirm,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.right,
+                    decoration: InputDecoration(
+                      labelText: 'تأكيد كلمة المرور',
+                      labelStyle: _tj(13, color: C.sub),
+                      prefixIcon: IconButton(
+                        icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
+                        onPressed: () => setDState(() => obscureConfirm = !obscureConfirm),
+                      ),
+                      suffixIcon: const Icon(Icons.lock_open, size: 18, color: C.muted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.pri)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'مطلوب';
+                      if (v != newCtrl.text) return 'كلمة المرور غير متطابقة';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('إلغاء', style: _tj(14, color: C.sub)),
+            ),
+            ElevatedButton(
+              onPressed: loading ? null : () async {
+                if (!formKey.currentState!.validate()) return;
+                setDState(() => loading = true);
+                try {
+                  final success = await AuthService().changePassword(currentCtrl.text, newCtrl.text);
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('تم تغيير كلمة المرور بنجاح', style: _tj(13, color: Colors.white)),
+                      backgroundColor: C.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('كلمة المرور الحالية غير صحيحة', style: _tj(13, color: Colors.white)),
+                      backgroundColor: C.red,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ));
+                  }
+                } catch (_) {
+                  if (!ctx.mounted) return;
+                  setDState(() => loading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('حدث خطأ، حاول مرة أخرى', style: _tj(13, color: Colors.white)),
+                    backgroundColor: C.red,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: C.pri,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              ),
+              child: loading
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text('تغيير', style: _tj(14, weight: FontWeight.w700, color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showLogoutDialog(BuildContext context) {

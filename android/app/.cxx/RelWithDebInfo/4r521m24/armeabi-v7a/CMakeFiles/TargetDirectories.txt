@@ -1,0 +1,2 @@
+/var/www/attendance/android/app/.cxx/RelWithDebInfo/4r521m24/armeabi-v7a/CMakeFiles/edit_cache.dir
+/var/www/attendance/android/app/.cxx/RelWithDebInfo/4r521m24/armeabi-v7a/CMakeFiles/rebuild_cache.dir

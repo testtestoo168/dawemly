@@ -14,6 +14,7 @@ import 'screens/admin/admin_app.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/server_time_service.dart';
+import 'screens/splash_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -141,6 +142,12 @@ class _RasdAppState extends State<RasdApp> {
         textTheme: GoogleFonts.tajawalTextTheme(),
         colorScheme: ColorScheme.fromSeed(seedColor: C.pri),
         useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       builder: (ctx, child) {
         return MediaQuery(
@@ -200,18 +207,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Scaffold(
-        body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset('assets/app_icon_192.png', width: 80, height: 80, fit: BoxFit.cover),
-          ),
-          const SizedBox(height: 16),
-          Text('داوِملي', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: C.pri)),
-          const SizedBox(height: 8),
-          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: C.pri)),
-        ])),
-      );
+      return const SplashScreen();
     }
 
     if (_user == null) return LoginPage(onLogin: _onLogin);

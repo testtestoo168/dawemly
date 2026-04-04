@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/shimmer.dart';
 import '../../services/api_service.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -15,6 +16,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _attRecords = [];
   List<Map<String, dynamic>> _pendingReqs = [];
+  List<Map<String, dynamic>> _schedules = [];
   bool _loading = true;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
@@ -48,12 +50,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ApiService.get('users.php?action=list'),
         ApiService.get('attendance.php?action=all_today'),
         ApiService.get('requests.php?action=pending'),
+        ApiService.get('admin.php?action=get_schedules'),
       ]);
       if (mounted) {
         setState(() {
           _users = (results[0]['users'] as List? ?? []).cast<Map<String, dynamic>>();
           _attRecords = (results[1]['records'] as List? ?? []).cast<Map<String, dynamic>>();
           _pendingReqs = (results[2]['requests'] as List? ?? []).cast<Map<String, dynamic>>();
+          _schedules = (results[3]['schedules'] as List? ?? []).cast<Map<String, dynamic>>();
           _loading = false;
         });
       }
@@ -96,7 +100,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
           // ═══ STATS GRID — URS exact style ═══
           if (_loading)
-            const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+            GridView.count(
+              crossAxisCount: isWide ? 4 : 2,
+              mainAxisSpacing: isSmall ? 12 : 20,
+              crossAxisSpacing: isSmall ? 12 : 20,
+              childAspectRatio: isWide ? 2.6 : (isSmall ? 1.4 : 1.8),
+              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              children: List.generate(4, (_) => const ShimmerStatCard()),
+            )
           else
             GridView.count(
               crossAxisCount: isWide ? 4 : 2,
@@ -149,7 +160,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
           _lineChartCard(isWide ? 250 : 200),
           const SizedBox(height: 20),
 
-          // ═══ TOP ATTENDANCE ═══
+          // ═══ ABSENT TODAY ═══
+          _absentTodayCard(),
+          const SizedBox(height: 20),
+
+          // ═══ TOP ATTENDANCE ��══
           _topAttendanceCard(),
           const SizedBox(height: 24),
 
@@ -571,6 +586,118 @@ class _AdminDashboardState extends State<AdminDashboard> {
       }
       return minutes;
     } catch (_) { return List.filled(7, 0); }
+  }
+
+  // ─── Absent Today — غائبون اليوم ───
+  Widget _absentTodayCard() {
+    // Day name mapping: Dart weekday 1=Mon..7=Sun -> Arabic short names
+    final dayMap = {1: 'إثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت', 7: 'أحد'};
+    final todayName = dayMap[DateTime.now().weekday] ?? '';
+
+    // Get all active employees (not admin/superadmin)
+    final allEmps = _users.where((u) =>
+      (u['name'] ?? '').toString().isNotEmpty &&
+      u['role'] != 'admin' && u['role'] != 'superadmin'
+    ).toList();
+
+    // Build set of UIDs who have checked in today
+    final checkedInUids = <String>{};
+    for (final r in _attRecords) {
+      final uid = (r['uid'] ?? '').toString();
+      if (uid.isNotEmpty) checkedInUids.add(uid);
+    }
+
+    // Find employees who should work today (have a schedule with today's day) but haven't checked in
+    final absentEmps = <Map<String, dynamic>>[];
+
+    for (final emp in allEmps) {
+      final uid = (emp['uid'] ?? emp['_id'] ?? '').toString();
+      if (checkedInUids.contains(uid)) continue; // Already checked in
+
+      // Check if this employee has a schedule for today
+      bool scheduledToday = false;
+      for (final sch in _schedules) {
+        final empIds = (sch['emp_ids'] as List?)?.cast<String>() ??
+            (sch['empIds'] as List?)?.cast<String>() ?? [];
+        final days = (sch['days'] as List?)?.cast<String>() ??
+            (sch['days'] is String ? (sch['days'] as String).split(',') : []);
+
+        if (empIds.contains(uid) && days.contains(todayName)) {
+          scheduledToday = true;
+          break;
+        }
+      }
+
+      // If no schedules exist at all, consider all employees as expected
+      if (_schedules.isEmpty || scheduledToday) {
+        absentEmps.add(emp);
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      child: Column(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          child: Row(textDirection: TextDirection.rtl, children: [
+            Icon(Icons.person_off_rounded, size: 14, color: _chartRed),
+            const SizedBox(width: 8),
+            Text('غائبون اليوم', style: _tj(15, weight: FontWeight.w600, color: _fg)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+              child: Text('${absentEmps.length}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: _chartRed)),
+            ),
+          ]),
+        ),
+        if (absentEmps.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Center(child: Column(children: [
+              Icon(Icons.check_circle_outline, size: 36, color: _chartGreen),
+              const SizedBox(height: 8),
+              Text('جميع الموظفين حاضرون', style: _tj(13, color: _muted)),
+            ])),
+          )
+        else
+          Column(children: absentEmps.take(10).map((emp) {
+            final av = (emp['name'] ?? '').toString().length >= 2
+                ? emp['name'].toString().substring(0, 2) : 'م';
+            final dept = emp['dept'] ?? '';
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
+              child: Row(textDirection: TextDirection.rtl, children: [
+                Stack(children: [
+                  Container(width: 36, height: 36,
+                    decoration: const BoxDecoration(color: Color(0xFFFEF3F2), shape: BoxShape.circle),
+                    child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: _chartRed))),
+                  ),
+                  Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: _chartRed, border: Border.all(color: Colors.white, width: 1.5)))),
+                ]),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(emp['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg)),
+                  if (dept.toString().isNotEmpty) Text(dept.toString(), style: _tj(10, color: _muted)),
+                ])),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                  child: Text('غائب', style: _tj(10, weight: FontWeight.w500, color: _chartRed)),
+                ),
+              ]),
+            );
+          }).toList()),
+        if (absentEmps.length > 10)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text('و ${absentEmps.length - 10} آخرين...', style: _tj(12, color: _muted)),
+          ),
+      ]),
+    );
   }
 
   // ─── Top Attendance — URS "الأكثر مبيعاً" style ───

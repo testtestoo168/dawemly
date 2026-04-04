@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/shimmer.dart';
 import '../../services/attendance_service.dart';
 import '../../services/face_recognition_service.dart';
 import '../../services/api_service.dart';
@@ -35,6 +36,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   String _currentTime = '';
+  int _unreadNotifCount = 0;
 
   // ═══ Location selection ═══
   List<Map<String, dynamic>> _allLocations = [];
@@ -68,10 +70,25 @@ class EmpHomePageState extends State<EmpHomePage> {
     _loadToday();
     _loadLocations();
     _loadAuthRequirements(); // Pre-cache so biometric is instant
+    _loadUnreadNotifCount();
     _startClock();
     _checkPendingVerification();
     _verifyPollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkPendingVerification());
     _startLiveLocation();
+  }
+
+  void _loadUnreadNotifCount() async {
+    final uid = widget.user['uid'] ?? '';
+    if (uid.isEmpty) return;
+    try {
+      final res = await ApiService.get('admin.php?action=get_notifications');
+      if (res['success'] == true && mounted) {
+        final all = (res['notifications'] as List? ?? []).cast<Map<String, dynamic>>();
+        final mine = all.where((n) => n['uid'] == uid);
+        final unread = mine.where((n) => n['read'] != true && n['is_read'] != true).length;
+        setState(() => _unreadNotifCount = unread);
+      }
+    } catch (_) {}
   }
 
   void _loadAuthRequirements() async {
@@ -689,8 +706,15 @@ class EmpHomePageState extends State<EmpHomePage> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             GestureDetector(
               onTap: () => _showNotifications(),
-              child: Stack(children: [
+              child: Stack(clipBehavior: Clip.none, children: [
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
+                if (_unreadNotifCount > 0)
+                  Positioned(top: -4, left: -4, child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: const Color(0xFFF04438), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                    child: Text('$_unreadNotifCount', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white), textAlign: TextAlign.center),
+                  )),
               ]),
             ),
             Row(children: [
@@ -842,7 +866,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             Container(width: 28, height: 28, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.history_rounded, size: 14, color: C.pri)),
           ])),
           Container(height: 1, color: C.div),
-          if (_loadingRecord) const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          if (_loadingRecord) const ShimmerAttendanceCard()
           else if (_todayRecord == null)
             Padding(padding: const EdgeInsets.all(30), child: Column(children: [
               Container(width: 56, height: 56, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.fingerprint_rounded, size: 30, color: C.hint)),

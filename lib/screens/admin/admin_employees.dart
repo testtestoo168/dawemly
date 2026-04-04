@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/shimmer.dart';
 import '../../services/attendance_service.dart';
 import '../../services/api_service.dart';
 
@@ -71,7 +72,10 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    if (_loading) return ListView(
+      padding: const EdgeInsets.all(14),
+      children: List.generate(6, (_) => const ShimmerEmployeeCard()),
+    );
 
     final allUsers = _users.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
     allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));

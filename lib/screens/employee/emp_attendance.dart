@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/shimmer.dart';
 import '../../services/attendance_service.dart';
 
 class EmpAttendancePage extends StatefulWidget {
@@ -21,6 +22,9 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
   String? _expandedDateKey;
   List<Map<String, dynamic>>? _expandedPunches;
   bool _loadingPunches = false;
+
+  // Key to force FutureBuilder rebuild on pull-to-refresh
+  int _refreshKey = 0;
 
   @override
   void initState() {
@@ -56,6 +60,14 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     if (h > 0 && m > 0) return '${h} س ${m} د';
     if (h > 0) return '${h} ساعة';
     return '${m} دقيقة';
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _refreshKey++;
+      _expandedDateKey = null;
+      _expandedPunches = null;
+    });
   }
 
   void _prevMonth() {
@@ -148,7 +160,10 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
         ),
 
         // ─── Records ───
-        Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+        Expanded(child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+          key: ValueKey('$_selYear-$_selMonth-$_refreshKey'),
           future: svc.getMonthlyAttendance(widget.user['uid'] ?? '', _selYear, _selMonth),
           builder: (context, snap) {
             final records = List<Map<String, dynamic>>.from(snap.data ?? []);
@@ -206,7 +221,10 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               const SizedBox(height: 12),
 
               if (snap.connectionState == ConnectionState.waiting && records.isEmpty)
-                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(strokeWidth: 2)))
+                ...List.generate(4, (_) => const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: ShimmerEmployeeCard(),
+                ))
               else if (records.isEmpty)
                 Padding(padding: const EdgeInsets.all(40), child: Column(children: [
                   Icon(Icons.calendar_today_outlined, size: 48, color: C.hint),
@@ -218,7 +236,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                 ...records.map((r) => _buildDayCard(r)),
             ]);
           },
-        )),
+        ))),
       ]),
     );
   }
