@@ -223,9 +223,70 @@ class _AdminSettingsState extends State<AdminSettings> {
     } catch (_) {}
   }
 
+  // ═══ أرصدة الإجازات ═══
+  List<Map<String, dynamic>> _leaveBalances = [];
+  bool _loadingLeaves = false;
+
+  Future<void> _loadLeaveBalances() async {
+    setState(() => _loadingLeaves = true);
+    try {
+      final res = await ApiService.get('leaves.php?action=all_balances&year=${DateTime.now().year}');
+      if (res['success'] == true) {
+        _leaveBalances = (res['balances'] as List? ?? []).cast<Map<String, dynamic>>();
+      }
+      // Ensure every active employee has a balance row
+      for (final u in _settingsUsers) {
+        final uid = u['uid'] ?? '';
+        if (uid.isEmpty) continue;
+        final exists = _leaveBalances.any((b) => b['uid'] == uid);
+        if (!exists) {
+          // Trigger creation by getting individual balance
+          await ApiService.get('leaves.php?action=balance&uid=$uid&year=${DateTime.now().year}');
+        }
+      }
+      // Reload after creating missing ones
+      final res2 = await ApiService.get('leaves.php?action=all_balances&year=${DateTime.now().year}');
+      if (res2['success'] == true) {
+        _leaveBalances = (res2['balances'] as List? ?? []).cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingLeaves = false);
+  }
+
+  Future<void> _saveLeaveBalance(String uid, {int? annual, int? sick, int? emergency}) async {
+    try {
+      await ApiService.post('leaves.php?action=set_balance', {
+        'uid': uid,
+        'year': DateTime.now().year,
+        if (annual != null) 'annual_total': annual,
+        if (sick != null) 'sick_total': sick,
+        if (emergency != null) 'emergency_total': emergency,
+      });
+      await _loadLeaveBalances();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('تم حفظ رصيد الإجازات', style: GoogleFonts.tajawal()),
+          backgroundColor: W.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('خطأ: $e', style: GoogleFonts.tajawal()),
+          backgroundColor: W.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ));
+      }
+    }
+  }
+
   final _tabs = const [
     {'k': 'shifts', 'l': 'فترات العمل', 'icon': Icons.layers},
     {'k': 'locations', 'l': 'المواقع', 'icon': Icons.location_on},
+    {'k': 'leaves', 'l': 'الإجازات', 'icon': Icons.event_busy},
     {'k': 'overtime', 'l': 'الأوفرتايم', 'icon': Icons.more_time},
     {'k': 'late', 'l': 'التأخير', 'icon': Icons.timer_off},
     {'k': 'auth', 'l': 'المصادقة', 'icon': Icons.shield},
@@ -281,6 +342,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       if (_tab == 'shifts') _buildShifts(),
       // ═══════ المواقع ═══════
       if (_tab == 'locations') _buildLocations(),
+      // ═══════ الإجازات ═══════
+      if (_tab == 'leaves') _buildLeaves(),
       // ═══════ الأوفرتايم ═══════
       if (_tab == 'overtime') _buildOvertime(),
       // ═══════ التأخير ═══════
@@ -961,6 +1024,201 @@ class _AdminSettingsState extends State<AdminSettings> {
     if (p.contains('android')) return Icons.phone_android;
     if (p.contains('web')) return Icons.computer;
     return Icons.devices;
+  }
+
+  // ─────────────────── الإجازات ───────────────────
+  Widget _buildLeaves() {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+    // Auto-load leave balances when tab is first shown
+    if (_leaveBalances.isEmpty && !_loadingLeaves) {
+      Future.microtask(() => _loadLeaveBalances());
+    }
+    return Column(children: [
+      // Header
+      isMobile
+        ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('حدد رصيد الإجازات السنوية والمرضية والطارئة لكل موظف', style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+            const SizedBox(height: 8),
+            _addBtn('تحديث الأرصدة', () => _loadLeaveBalances()),
+          ])
+        : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            _addBtn('تحديث الأرصدة', () => _loadLeaveBalances()),
+            Flexible(child: Text('حدد رصيد الإجازات السنوية والمرضية والطارئة لكل موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+          ]),
+      const SizedBox(height: 14),
+
+      if (_loadingLeaves)
+        const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+      else if (_leaveBalances.isEmpty)
+        _card(child: Center(child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text('لا توجد بيانات — تأكد من وجود موظفين نشطين', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+        )))
+      else
+        ..._leaveBalances.map((bal) {
+          final name = bal['name'] ?? '';
+          final empId = bal['emp_id'] ?? '';
+          final dept = bal['dept'] ?? '';
+          final uid = bal['uid'] ?? '';
+          final annualTotal = (bal['annual_total'] as num?)?.toInt() ?? 21;
+          final annualUsed = (bal['annual_used'] as num?)?.toInt() ?? 0;
+          final sickTotal = (bal['sick_total'] as num?)?.toInt() ?? 10;
+          final sickUsed = (bal['sick_used'] as num?)?.toInt() ?? 0;
+          final emergencyTotal = (bal['emergency_total'] as num?)?.toInt() ?? 5;
+          final emergencyUsed = (bal['emergency_used'] as num?)?.toInt() ?? 0;
+          final unpaidUsed = (bal['unpaid_used'] as num?)?.toInt() ?? 0;
+          final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: EdgeInsets.all(isMobile ? 14 : 22),
+            decoration: BoxDecoration(
+              color: W.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: W.border),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              // Employee info row
+              Row(children: [
+                const Spacer(),
+                Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 15, fontWeight: FontWeight.w700, color: W.text)),
+                  if (dept.isNotEmpty || empId.isNotEmpty)
+                    Text('${dept.isNotEmpty ? dept : ''} ${empId.isNotEmpty ? '· $empId' : ''}', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+                ])),
+                const SizedBox(width: 10),
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(color: W.priLight, shape: BoxShape.circle),
+                  child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.pri))),
+                ),
+              ]),
+              const SizedBox(height: 14),
+
+              // Leave type rows
+              _leaveTypeRow(
+                label: 'سنوية',
+                icon: Icons.beach_access,
+                color: W.pri,
+                total: annualTotal,
+                used: annualUsed,
+                onTotalChanged: (v) => _saveLeaveBalance(uid, annual: v),
+              ),
+              const SizedBox(height: 8),
+              _leaveTypeRow(
+                label: 'مرضية',
+                icon: Icons.local_hospital,
+                color: W.red,
+                total: sickTotal,
+                used: sickUsed,
+                onTotalChanged: (v) => _saveLeaveBalance(uid, sick: v),
+              ),
+              const SizedBox(height: 8),
+              _leaveTypeRow(
+                label: 'طارئة',
+                icon: Icons.warning_amber,
+                color: W.orange,
+                total: emergencyTotal,
+                used: emergencyUsed,
+                onTotalChanged: (v) => _saveLeaveBalance(uid, emergency: v),
+              ),
+              if (unpaidUsed > 0) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Text('$unpaidUsed يوم', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
+                  const Spacer(),
+                  Text('بدون راتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+                  const SizedBox(width: 6),
+                  Icon(Icons.money_off, size: 16, color: W.muted),
+                ]),
+              ],
+            ]),
+          );
+        }),
+    ]);
+  }
+
+  Widget _leaveTypeRow({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required int total,
+    required int used,
+    required Function(int) onTotalChanged,
+  }) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+    final remaining = total - used;
+    final progress = total > 0 ? (used / total).clamp(0.0, 1.0) : 0.0;
+    return Row(children: [
+      // Edit button
+      InkWell(
+        onTap: () {
+          final ctrl = TextEditingController(text: '$total');
+          showDialog(context: context, builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: Text('تعديل رصيد $label', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+            content: TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: color),
+              decoration: InputDecoration(
+                hintText: 'عدد الأيام',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                suffixText: 'يوم',
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub))),
+              ElevatedButton(
+                onPressed: () {
+                  final v = int.tryParse(ctrl.text);
+                  if (v != null && v >= 0) {
+                    Navigator.pop(ctx);
+                    onTotalChanged(v);
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white),
+                child: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ));
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+          child: Icon(Icons.edit, size: 14, color: color),
+        ),
+      ),
+      const SizedBox(width: 8),
+      // Progress bar + numbers
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Row(children: [
+          Text('$remaining متبقي من $total', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)),
+          const Spacer(),
+          Text('$used مستخدم', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: color)),
+        ]),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: color.withOpacity(0.1),
+            color: color,
+            minHeight: 6,
+          ),
+        ),
+      ])),
+      const SizedBox(width: 10),
+      // Label + icon
+      Text(label, style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w600, color: W.text)),
+      const SizedBox(width: 6),
+      Container(
+        width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+        child: Icon(icon, size: isMobile ? 14 : 16, color: color),
+      ),
+    ]);
   }
 
   // ─────────────────── الأوفرتايم ───────────────────

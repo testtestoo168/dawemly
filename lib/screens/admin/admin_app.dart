@@ -19,6 +19,7 @@ import 'admin_reports.dart';
 import 'admin_notifications.dart';
 import 'admin_audit.dart';
 import 'admin_settings.dart';
+import 'admin_salary.dart';
 import 'admin_stat_detail.dart';
 
 class AdminApp extends StatefulWidget {
@@ -58,6 +59,7 @@ class _AdminAppState extends State<AdminApp> {
       _NI('overtime', 'الأوفرتايم', Icons.more_time_outlined),
       _NI('schedules', 'الجداول والإجازات', Icons.calendar_month_outlined),
       _NI('requests', 'الطلبات', Icons.assignment_outlined),
+      _NI('salary', 'الرواتب', Icons.payments_outlined),
     ]),
     _NavSection('التقارير والمراقبة', [
       _NI('reports', 'التقارير', Icons.bar_chart_outlined),
@@ -89,6 +91,7 @@ class _AdminAppState extends State<AdminApp> {
       case 'reports': return const AdminReports();
       case 'notifications': return const AdminNotifications();
       case 'audit': return const AdminAudit();
+      case 'salary': return AdminSalary(adminUser: widget.user);
       case 'settings': return AdminSettings(user: widget.user);
       default: return AdminDashboard(user: widget.user, onNav: (p) => setState(() => _page = p));
     }
@@ -189,6 +192,7 @@ class _AdminAppState extends State<AdminApp> {
           _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
           _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
           _MoreMenuItem(Icons.assignment_outlined, W.orange, W.orangeL, 'الطلبات', () => _openMobilePage('requests')),
+          _MoreMenuItem(Icons.payments_outlined, W.green, W.greenL, 'الرواتب', () => _openMobilePage('salary')),
         ]),
 
         const SizedBox(height: 24),

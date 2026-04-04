@@ -19,6 +19,9 @@ class EmpMorePage extends StatefulWidget {
 class _EmpMorePageState extends State<EmpMorePage> {
   String? _locationName;
   bool _loadingLoc = true;
+  int _leaveTotal = 0;
+  int _leaveUsed = 0;
+  bool _loadingLeave = true;
 
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
@@ -27,6 +30,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
   void initState() {
     super.initState();
     _loadLocation();
+    _loadLeaveBalance();
   }
 
   Future<void> _loadLocation() async {
@@ -53,6 +57,26 @@ class _EmpMorePageState extends State<EmpMorePage> {
       }
     } catch (_) {
       if (mounted) setState(() => _loadingLoc = false);
+    }
+  }
+
+  Future<void> _loadLeaveBalance() async {
+    try {
+      final uid = widget.user['uid'] ?? '';
+      final year = DateTime.now().year;
+      final result = await ApiService.get('leaves.php?action=balance', params: {'uid': uid, 'year': '$year'});
+      if (result['success'] == true && mounted) {
+        final bal = result['balance'] as Map<String, dynamic>? ?? {};
+        setState(() {
+          _leaveTotal = (bal['annual_days'] as int?) ?? 21;
+          _leaveUsed = (bal['used_days'] as int?) ?? 0;
+          _loadingLeave = false;
+        });
+      } else {
+        if (mounted) setState(() => _loadingLeave = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingLeave = false);
     }
   }
 
@@ -147,6 +171,51 @@ class _EmpMorePageState extends State<EmpMorePage> {
                       ],
                     ),
                   ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ─── رصيد الإجازات ───
+            _sectionTitle('رصيد الإجازات'),
+            const SizedBox(height: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: C.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: C.border),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: _loadingLeave
+                ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                : Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Row(children: [
+                      Text('${_leaveTotal - _leaveUsed}', style: GoogleFonts.ibmPlexMono(fontSize: 28, fontWeight: FontWeight.w800, color: C.pri)),
+                      const SizedBox(width: 6),
+                      Text('يوم متبقي', style: _tj(13, color: C.sub)),
+                      const Spacer(),
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)),
+                        child: const Icon(Icons.event_available, size: 20, color: C.pri),
+                      ),
+                    ]),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _leaveTotal > 0 ? (_leaveUsed / _leaveTotal).clamp(0.0, 1.0) : 0,
+                        minHeight: 8,
+                        backgroundColor: C.bg,
+                        color: _leaveUsed / (_leaveTotal > 0 ? _leaveTotal : 1) > 0.8 ? C.red : C.pri,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('الإجمالي: $_leaveTotal يوم', style: _tj(11, color: C.muted)),
+                      Text('مستخدم: $_leaveUsed يوم', style: _tj(11, color: C.muted)),
+                    ]),
+                  ]),
             ),
 
             const SizedBox(height: 24),
