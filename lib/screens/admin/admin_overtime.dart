@@ -1,6 +1,7 @@
-import 'dart:math' show min;
+import 'dart:math' show min, max;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
 
@@ -47,21 +48,9 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    final isWide = screenW > 800;
-    final isMobile = screenW < 500;
-    final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
-
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-    }
-
-    final records = _allRecords.where((r) => (r['date_key'] ?? '').toString().startsWith(monthPrefix)).toList();
-
+  /// Compute overtime list for selected month
+  List<Map<String, dynamic>> _computeOvertimeList(List<Map<String, dynamic>> records) {
     final withOT = <Map<String, dynamic>>[];
-    double totalOT = 0;
     for (final r in records) {
       final ci = r['first_check_in'] ?? r['check_in'];
       final co = r['last_check_out'] ?? r['check_out'];
@@ -92,11 +81,28 @@ class _AdminOvertimeState extends State<AdminOvertime> {
 
         if (ot > 0 || otCancelled || otManual != null) {
           withOT.add({...r, 'workH': hours, 'overtime': ot, 'otCancelled': otCancelled, 'otReason': r['overtime_reason'] ?? ''});
-          totalOT += ot;
         }
       }
     }
     withOT.sort((a, b) => (b['overtime'] as double).compareTo(a['overtime'] as double));
+    return withOT;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenW = MediaQuery.of(context).size.width;
+    final isWide = screenW > 800;
+    final isMobile = screenW < 500;
+    final monthPrefix = '$_selYear-${_selMonth.toString().padLeft(2, '0')}';
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+
+    final records = _allRecords.where((r) => (r['date_key'] ?? '').toString().startsWith(monthPrefix)).toList();
+    final withOT = _computeOvertimeList(records);
+    double totalOT = 0;
+    for (final e in withOT) { totalOT += e['overtime'] as double; }
 
     return RefreshIndicator(
       onRefresh: _loadAll,
@@ -117,78 +123,479 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           ]),
         ),
 
+        // Stat cards
         if (isWide)
           Row(children: [
-            Expanded(child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, Color(0xFFFFFAEB), 'ساعات إضافية')),
+            Expanded(child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
             const SizedBox(width: 14),
-            Expanded(child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, 'من ${records.length} موظف')),
+            Expanded(child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, 'من ${records.length} سجل')),
             const SizedBox(width: 14),
-            Expanded(child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            Expanded(child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
           ])
         else
           SizedBox(height: 130, child: ListView(scrollDirection: Axis.horizontal, children: [
-            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, Color(0xFFFFFAEB), 'ساعات إضافية')),
+            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
             const SizedBox(width: 10),
             SizedBox(width: isMobile ? 140 : 160, child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, 'من ${records.length} موظف')),
             const SizedBox(width: 10),
-            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
           ])),
         const SizedBox(height: 20),
 
-        if (withOT.isEmpty)
-          Container(width: double.infinity, padding: EdgeInsets.all(40), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-            child: Center(child: Column(children: [Icon(Icons.more_time, size: 36, color: W.hint), SizedBox(height: 10), Text('لا يوجد أوفرتايم في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))])))
-        else
-          ...withOT.map((emp) => _overtimeCard(emp, isMobile)),
+        // ─── WEB: Two-panel layout ───
+        if (isWide) ...[
+          if (withOT.isEmpty)
+            _emptyState()
+          else
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Left panel (40%) - Summary
+              Expanded(flex: 4, child: _webSummaryPanel(withOT, totalOT)),
+              const SizedBox(width: 20),
+              // Right panel (60%) - Overtime data table
+              Expanded(flex: 6, child: _webOvertimeTable(withOT)),
+            ]),
+          const SizedBox(height: 20),
+          // Full-width bottom table (all employees)
+          _allEmployeesTable(records, isMobile),
+        ]
+
+        // ─── MOBILE: Original card layout ───
+        else ...[
+          if (withOT.isEmpty)
+            _emptyState()
+          else
+            ...withOT.map((emp) => _overtimeCard(emp, isMobile)),
+          const SizedBox(height: 20),
+          _allEmployeesTable(records, isMobile),
+        ],
 
         const SizedBox(height: 20),
-        Container(
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-          child: Column(children: [
-            Container(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-              child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
-            SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
-              columnSpacing: isMobile ? 16 : 56,
-              headingRowColor: WidgetStateProperty.all(W.bg),
-              columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
-              rows: records.where((r) => (r['first_check_in'] ?? r['check_in']) != null).map((r) {
-                final ci = r['first_check_in'] ?? r['check_in'];
-                double workH = 0; double ot = 0;
-                if (ci != null) {
-                  final co = r['last_check_out'] ?? r['check_out'];
-                  final totalMin = (r['total_worked_minutes'] is int)
-                      ? r['total_worked_minutes'] as int
-                      : int.tryParse('${r['total_worked_minutes'] ?? ''}') ?? 0;
-                  if (totalMin > 0) {
-                    workH = totalMin / 60.0;
-                  } else if (co != null) {
-                    final ciDt = _parseTs(ci);
-                    final coDt = _parseTs(co);
-                    if (ciDt != null && coDt != null) workH = coDt.difference(ciDt).inMinutes / 60.0;
-                  }
-                  ot = (workH - 8.0).clamp(0.0, 24.0);
-                }
-                final hasOut = (r['last_check_out'] ?? r['check_out']) != null;
-                return DataRow(cells: [
-                  DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.orange)) : Text('—', style: GoogleFonts.tajawal(color: W.muted))),
-                  DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
-                  DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? W.green : W.pri, hasOut ? Color(0xFFECFDF3) : W.priLight)),
-                  DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
-                ]);
-              }).toList(),
-            )),
-          ]),
-        ),
       ])),
     );
   }
 
+  // ────────────────────────────────────────────────────────
+  //  WEB: Right panel — Overtime data table
+  // ────────────────────────────────────────────────────────
+  Widget _webOvertimeTable(List<Map<String, dynamic>> withOT) {
+    return Container(
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+      child: Column(children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0xFFFFFAEB), borderRadius: BorderRadius.circular(20)),
+              child: Text('${withOT.length}', style: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: W.orange)),
+            ),
+            const SizedBox(width: 10),
+            const Spacer(),
+            Icon(Icons.more_time, size: 18, color: W.orange),
+            const SizedBox(width: 8),
+            Text('سجلات الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+          ]),
+        ),
+        // Table header row
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(color: W.bg),
+          child: Row(children: [
+            SizedBox(width: 140, child: Text('الإجراءات', style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text('الحالة', style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text('الأوفرتايم', style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text('ساعات العمل', style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 3, child: Text('الموظف', style: _tableHeader(), textAlign: TextAlign.right)),
+          ]),
+        ),
+        // Table rows
+        ...withOT.asMap().entries.map((entry) {
+          final i = entry.key;
+          final emp = entry.value;
+          final name = emp['name'] ?? '—';
+          final ot = emp['overtime'] as double;
+          final workH = emp['workH'] as double;
+          final otCancelled = emp['otCancelled'] == true;
+          final otReason = emp['otReason'] ?? '';
+          final docId = emp['id']?.toString() ?? emp['_docId']?.toString() ?? '';
+          final dateKey = emp['dateKey'] ?? '';
+
+          return Column(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: i.isEven ? W.white : W.bg.withValues(alpha: 0.4),
+                border: otCancelled ? Border.all(color: W.red.withValues(alpha: 0.15)) : null,
+              ),
+              child: Row(children: [
+                // Actions
+                SizedBox(width: 140, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  _webActionBtn(Icons.edit, 'تعديل', W.orange, const Color(0xFFFFFAEB), () => _editOvertimeDialog(docId, name, emp)),
+                  const SizedBox(width: 6),
+                  if (!otCancelled)
+                    _webActionBtn(Icons.cancel, 'إلغاء', W.red, const Color(0xFFFEF3F2), () => _cancelOvertimeDialog(docId, name))
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                      child: Text('ملغي', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.red)),
+                    ),
+                ])),
+                // Status
+                Expanded(flex: 2, child: Center(child: _badge(
+                  otCancelled ? 'ملغي' : 'أوفرتايم',
+                  otCancelled ? W.red : W.orange,
+                  otCancelled ? const Color(0xFFFEF3F2) : const Color(0xFFFFFAEB),
+                ))),
+                // Overtime hours
+                Expanded(flex: 2, child: Center(child: Text(
+                  otCancelled ? '0.0h' : '+${ot.toStringAsFixed(1)}h',
+                  style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: otCancelled ? W.muted : W.orange),
+                ))),
+                // Work hours
+                Expanded(flex: 2, child: Center(child: Text(
+                  '${workH.toStringAsFixed(1)}h',
+                  style: _mono(fontSize: 13, color: W.text),
+                ))),
+                // Name + date
+                Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(name, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: otCancelled ? W.muted : W.text), overflow: TextOverflow.ellipsis),
+                  if (dateKey.toString().isNotEmpty)
+                    Text(dateKey.toString(), style: _mono(fontSize: 10, color: W.sub)),
+                ])),
+              ]),
+            ),
+            // Reason row (if exists)
+            if (otReason.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 6),
+                color: W.bg.withValues(alpha: 0.3),
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  Flexible(child: Text(otReason, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub), textAlign: TextAlign.right)),
+                  const SizedBox(width: 6),
+                  Icon(Icons.comment, size: 12, color: W.muted),
+                ]),
+              ),
+            Divider(height: 1, color: W.div),
+          ]);
+        }),
+      ]),
+    );
+  }
+
+  Widget _webActionBtn(IconData icon, String label, Color color, Color bg, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.2))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+        ]),
+      ),
+    );
+  }
+
+  TextStyle _tableHeader() => GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub);
+
+  // ────────────────────────────────────────────────────────
+  //  WEB: Left panel — Summary with chart
+  // ────────────────────────────────────────────────────────
+  Widget _webSummaryPanel(List<Map<String, dynamic>> withOT, double totalOT) {
+    // Aggregate by employee name for top 5
+    final Map<String, double> byEmployee = {};
+    for (final e in withOT) {
+      final name = e['name'] ?? '—';
+      final ot = e['overtime'] as double;
+      byEmployee[name] = (byEmployee[name] ?? 0) + ot;
+    }
+    final sorted = byEmployee.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final top5 = sorted.take(5).toList();
+    final activeCount = withOT.where((e) => (e['overtime'] as double) > 0).length;
+    final cancelledCount = withOT.where((e) => e['otCancelled'] == true).length;
+
+    return Column(children: [
+      // Big total OT card
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: W.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: W.border),
+        ),
+        child: Column(children: [
+          Icon(Icons.more_time, size: 32, color: W.orange),
+          const SizedBox(height: 8),
+          Text(totalOT.toStringAsFixed(1), style: _mono(fontSize: 36, fontWeight: FontWeight.w800, color: W.text)),
+          Text('ساعة أوفرتايم', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.sub)),
+          const SizedBox(height: 16),
+          Divider(color: W.div),
+          const SizedBox(height: 12),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _miniStat('$cancelledCount', 'ملغي', W.red),
+            Container(width: 1, height: 30, color: W.div),
+            _miniStat('$activeCount', 'فعّال', W.green),
+          ]),
+        ]),
+      ),
+      const SizedBox(height: 16),
+
+      // Pie chart: active vs cancelled
+      if (activeCount > 0 || cancelledCount > 0)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          child: Column(children: [
+            Align(alignment: Alignment.centerRight, child: Text('توزيع الحالات', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 140,
+              child: PieChart(PieChartData(
+                sectionsSpace: 2,
+                centerSpaceRadius: 30,
+                sections: [
+                  if (activeCount > 0)
+                    PieChartSectionData(
+                      value: activeCount.toDouble(),
+                      title: '$activeCount',
+                      color: W.orange,
+                      radius: 35,
+                      titleStyle: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                  if (cancelledCount > 0)
+                    PieChartSectionData(
+                      value: cancelledCount.toDouble(),
+                      title: '$cancelledCount',
+                      color: W.red,
+                      radius: 35,
+                      titleStyle: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                ],
+              )),
+            ),
+            const SizedBox(height: 10),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _legendDot(W.red, 'ملغي'),
+              const SizedBox(width: 16),
+              _legendDot(W.orange, 'فعّال'),
+            ]),
+          ]),
+        ),
+      const SizedBox(height: 16),
+
+      // Top 5 bar chart
+      if (top5.isNotEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          child: Column(children: [
+            Align(alignment: Alignment.centerRight, child: Text('أعلى 5 موظفين', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: BarChart(BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: (top5.first.value * 1.2).ceilToDouble(),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIdx, rod, rodIdx) {
+                      final name = top5[group.x.toInt()].key;
+                      return BarTooltipItem(
+                        '$name\n${rod.toY.toStringAsFixed(1)}h',
+                        GoogleFonts.tajawal(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 36,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= top5.length) return const SizedBox.shrink();
+                      final name = top5[idx].key;
+                      final short = name.length > 8 ? '${name.substring(0, 8)}..' : name;
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(short, style: GoogleFonts.tajawal(fontSize: 9, color: W.sub), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+                      );
+                    },
+                  )),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 32,
+                    getTitlesWidget: (value, meta) => Text('${value.toInt()}', style: _mono(fontSize: 9, color: W.muted)),
+                  )),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: max(1, (top5.first.value / 4).ceilToDouble()), getDrawingHorizontalLine: (v) => FlLine(color: W.div, strokeWidth: 1)),
+                borderData: FlBorderData(show: false),
+                barGroups: top5.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final val = entry.value.value;
+                  // gradient from orange to a lighter shade
+                  final colors = [W.orange, W.orange.withValues(alpha: 0.6)];
+                  return BarChartGroupData(x: i, barRods: [
+                    BarChartRodData(
+                      toY: val,
+                      width: 22,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      gradient: LinearGradient(colors: colors, begin: Alignment.bottomCenter, end: Alignment.topCenter),
+                    ),
+                  ]);
+                }).toList(),
+              )),
+            ),
+          ]),
+        ),
+      const SizedBox(height: 16),
+
+      // Top 5 list
+      if (top5.isNotEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          child: Column(children: [
+            Align(alignment: Alignment.centerRight, child: Text('ترتيب الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            const SizedBox(height: 12),
+            ...top5.asMap().entries.map((entry) {
+              final i = entry.key;
+              final name = entry.value.key;
+              final hrs = entry.value.value;
+              final maxH = top5.first.value;
+              final ratio = maxH > 0 ? hrs / maxH : 0.0;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(children: [
+                  SizedBox(width: 40, child: Text('${hrs.toStringAsFixed(1)}h', style: _mono(fontSize: 11, fontWeight: FontWeight.w700, color: W.orange))),
+                  const SizedBox(width: 8),
+                  Expanded(child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: ratio,
+                      minHeight: 18,
+                      backgroundColor: W.bg,
+                      valueColor: AlwaysStoppedAnimation(W.orange.withValues(alpha: 0.7 + 0.3 * (1 - i / 5))),
+                    ),
+                  )),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 80,
+                    child: Text(name, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.text), textAlign: TextAlign.right, overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 22, height: 22,
+                    decoration: BoxDecoration(color: i == 0 ? const Color(0xFFFFFAEB) : W.bg, borderRadius: BorderRadius.circular(4)),
+                    child: Center(child: Text('${i + 1}', style: _mono(fontSize: 10, fontWeight: FontWeight.w700, color: i == 0 ? W.orange : W.sub))),
+                  ),
+                ]),
+              );
+            }),
+          ]),
+        ),
+    ]);
+  }
+
+  Widget _miniStat(String value, String label, Color color) {
+    return Column(children: [
+      Text(value, style: _mono(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+      const SizedBox(height: 2),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+    ]);
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 4),
+      Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+    ]);
+  }
+
+  // ────────────────────────────────────────────────────────
+  //  Empty state
+  // ────────────────────────────────────────────────────────
+  Widget _emptyState() {
+    return Container(
+      width: double.infinity, padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      child: Center(child: Column(children: [
+        Icon(Icons.more_time, size: 36, color: W.hint),
+        const SizedBox(height: 10),
+        Text('لا يوجد أوفرتايم في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+      ])),
+    );
+  }
+
+  // ────────────────────────────────────────────────────────
+  //  Bottom table: All employees
+  // ────────────────────────────────────────────────────────
+  Widget _allEmployeesTable(List<Map<String, dynamic>> records, bool isMobile) {
+    return Container(
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      child: Column(children: [
+        Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
+          child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
+        SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
+          columnSpacing: isMobile ? 16 : 56,
+          headingRowColor: WidgetStateProperty.all(W.bg),
+          columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
+          rows: records.where((r) => (r['first_check_in'] ?? r['check_in']) != null).map((r) {
+            final ci = r['first_check_in'] ?? r['check_in'];
+            double workH = 0; double ot = 0;
+            if (ci != null) {
+              final co = r['last_check_out'] ?? r['check_out'];
+              final totalMin = (r['total_worked_minutes'] is int)
+                  ? r['total_worked_minutes'] as int
+                  : int.tryParse('${r['total_worked_minutes'] ?? ''}') ?? 0;
+              if (totalMin > 0) {
+                workH = totalMin / 60.0;
+              } else if (co != null) {
+                final ciDt = _parseTs(ci);
+                final coDt = _parseTs(co);
+                if (ciDt != null && coDt != null) workH = coDt.difference(ciDt).inMinutes / 60.0;
+              }
+              ot = (workH - 8.0).clamp(0.0, 24.0);
+            }
+            final hasOut = (r['last_check_out'] ?? r['check_out']) != null;
+            return DataRow(cells: [
+              DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.orange)) : Text('—', style: GoogleFonts.tajawal(color: W.muted))),
+              DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
+              DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? W.green : W.pri, hasOut ? const Color(0xFFECFDF3) : W.priLight)),
+              DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
+            ]);
+          }).toList(),
+        )),
+      ]),
+    );
+  }
+
+  // ────────────────────────────────────────────────────────
+  //  Helpers
+  // ────────────────────────────────────────────────────────
   DateTime? _parseTs(dynamic v) {
     if (v == null) return null;
     if (v is String) { try { return DateTime.parse(v); } catch(_) { return null; } }
     return null;
   }
 
+  // ────────────────────────────────────────────────────────
+  //  MOBILE: Original overtime card (unchanged)
+  // ────────────────────────────────────────────────────────
   Widget _overtimeCard(Map<String, dynamic> emp, bool isMobile) {
     final name = emp['name'] ?? '—';
     final ot = emp['overtime'] as double;
@@ -200,7 +607,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 12 : 16),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: otCancelled ? W.red.withOpacity(0.3) : W.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: otCancelled ? W.red.withValues(alpha: 0.3) : W.border)),
       child: Column(children: [
         // Top: OT badge + name on the right
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -209,13 +616,13 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             flex: 0,
             child: Wrap(spacing: 6, runSpacing: 6, children: [
               InkWell(onTap: () => _editOvertimeDialog(docId, name, emp),
-                child: Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.orange), SizedBox(width: 4), Text('تعديل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))]))),
+                child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.orange), const SizedBox(width: 4), Text('تعديل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))]))),
               if (!otCancelled) InkWell(onTap: () => _cancelOvertimeDialog(docId, name),
                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), SizedBox(width: 4), Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])))
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])))
               else Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), SizedBox(width: 4), Text('ملغي', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('ملغي', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])),
             ]),
           ),
           const Spacer(),
@@ -234,30 +641,35 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         ]),
         if (otReason.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Container(width: double.infinity, padding: EdgeInsets.all(8), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
+          Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Flexible(child: Text(otReason, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub), textAlign: TextAlign.right)),
-              SizedBox(width: 6), Icon(Icons.comment, size: 12, color: W.muted),
+              const SizedBox(width: 6), Icon(Icons.comment, size: 12, color: W.muted),
             ])),
         ],
       ]),
     );
   }
 
+  // ────────────────────────────────────────────────────────
+  //  Edit overtime dialog (wider on web)
+  // ────────────────────────────────────────────────────────
   void _editOvertimeDialog(String docId, String empName, Map<String, dynamic> emp) {
+    final screenW = MediaQuery.of(context).size.width;
+    final isWide = screenW > 800;
     final currentOT = emp['overtime'] as double;
     final hoursCtrl = TextEditingController(text: currentOT.toStringAsFixed(1));
     final reasonCtrl = TextEditingController(text: emp['otReason'] ?? '');
     final reasons = ['نسي بصمة الخروج', 'عمل إضافي مطلوب', 'خطأ في النظام', 'تعديل إداري', 'أخرى'];
 
     showDialog(context: context, builder: (ctx) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Container(width: min(380, MediaQuery.of(context).size.width - 40), padding: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      insetPadding: EdgeInsets.symmetric(horizontal: isWide ? 40 : 16, vertical: 24),
+      child: Container(width: min(isWide ? 500 : 380, screenW - 40), padding: EdgeInsets.all(isWide ? 28 : 20),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            Flexible(child: Text('تعديل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text))),
-            SizedBox(width: 8), Icon(Icons.edit, size: 18, color: W.orange),
+            Flexible(child: Text('تعديل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.text))),
+            const SizedBox(width: 8), Icon(Icons.edit, size: 18, color: W.orange),
           ]),
           const SizedBox(height: 4),
           Text(empName, style: GoogleFonts.tajawal(fontSize: 13, color: W.sub), overflow: TextOverflow.ellipsis),
@@ -265,7 +677,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Flexible(child: Text('عدد ساعات الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
-              SizedBox(width: 4), Icon(Icons.access_time, size: 14, color: W.orange),
+              const SizedBox(width: 4), Icon(Icons.access_time, size: 14, color: W.orange),
             ]),
             const SizedBox(height: 4),
             TextField(controller: hoursCtrl, textAlign: TextAlign.center, textDirection: TextDirection.ltr, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: _mono(fontSize: 18, fontWeight: FontWeight.w700),
@@ -278,7 +690,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           Align(alignment: Alignment.centerRight, child: Text('السبب', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
           const SizedBox(height: 6),
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: reasons.map((r) => InkWell(onTap: () => reasonCtrl.text = r,
-            child: Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: W.border)),
+            child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: W.border)),
               child: Text(r, style: GoogleFonts.tajawal(fontSize: 10, color: W.sub))))).toList()),
           const SizedBox(height: 8),
           TextField(controller: reasonCtrl, textAlign: TextAlign.right, maxLines: 2, style: GoogleFonts.tajawal(fontSize: 13),
@@ -303,31 +715,36 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               }
             },
             icon: const Icon(Icons.save, size: 16), label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
     ));
   }
 
+  // ────────────────────────────────────────────────────────
+  //  Cancel overtime dialog (wider on web)
+  // ────────────────────────────────────────────────────────
   void _cancelOvertimeDialog(String docId, String empName) {
+    final screenW = MediaQuery.of(context).size.width;
+    final isWide = screenW > 800;
     final reasonCtrl = TextEditingController();
     final reasons = ['نسي بصمة الخروج', 'خطأ في البيانات', 'لم يعمل فعلياً', 'أخرى'];
 
     showDialog(context: context, builder: (ctx) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Container(width: min(360, MediaQuery.of(context).size.width - 40), padding: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      insetPadding: EdgeInsets.symmetric(horizontal: isWide ? 40 : 16, vertical: 24),
+      child: Container(width: min(isWide ? 450 : 360, screenW - 40), padding: EdgeInsets.all(isWide ? 28 : 20),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            Flexible(child: Text('إلغاء الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.red))),
-            SizedBox(width: 8), Icon(Icons.cancel, size: 18, color: W.red),
+            Flexible(child: Text('إلغاء الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.red))),
+            const SizedBox(width: 8), Icon(Icons.cancel, size: 18, color: W.red),
           ]),
           const SizedBox(height: 4),
           Text(empName, style: GoogleFonts.tajawal(fontSize: 13, color: W.sub), overflow: TextOverflow.ellipsis),
           const SizedBox(height: 16),
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: reasons.map((r) => InkWell(onTap: () => reasonCtrl.text = r,
-            child: Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: W.border)),
+            child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: W.border)),
               child: Text(r, style: GoogleFonts.tajawal(fontSize: 10, color: W.sub))))).toList()),
           const SizedBox(height: 8),
           TextField(controller: reasonCtrl, textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13),
@@ -351,7 +768,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               }
             },
             icon: const Icon(Icons.cancel, size: 16), label: Text('تأكيد الإلغاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('رجوع', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
@@ -359,7 +776,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   }
 
   Widget _stat(IconData icon, String label, String value, Color color, Color bg, String sub) {
-    return Container(padding: EdgeInsets.all(14), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Container(width: 34, height: 34, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)),
       const SizedBox(height: 8),
       Text(value, style: _mono(fontSize: 20, fontWeight: FontWeight.w800, color: W.text)),
