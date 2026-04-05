@@ -84,6 +84,15 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   final _mono = GoogleFonts.ibmPlexMono;
 
+  // Parse bool from API (could be true/false, 1/0, "true"/"false")
+  bool _parseBool(dynamic v, bool fallback) {
+    if (v == null) return fallback;
+    if (v is bool) return v;
+    if (v is int) return v == 1;
+    if (v is String) return v == 'true' || v == '1';
+    return fallback;
+  }
+
   static const _mapsApiKey = 'AIzaSyB-CkusFlHFxJujo_GagT1kSNoQtmCq630';
 
   void _searchLocation() async {
@@ -196,14 +205,14 @@ class _AdminSettingsState extends State<AdminSettings> {
       if (mounted) setState(() {
         _generalH = (d['generalH'] as num?)?.toDouble() ?? _generalH;
         _overtimeRate = (d['overtimeRate'] as num?)?.toDouble() ?? _overtimeRate;
-        _overtimeActive = d['overtimeActive'] ?? _overtimeActive;
-        _authFace = d['authFace'] ?? _authFace;
-        _authFinger = d['authFinger'] ?? _authFinger;
-        _authLoc = d['authLoc'] ?? _authLoc;
-        _twoFA = d['twoFA'] ?? _twoFA;
-        _loginNotify = d['loginNotify'] ?? _loginNotify;
-        _failedNotify = d['failedNotify'] ?? _failedNotify;
-        _ipWhitelist = d['ipWhitelist'] ?? _ipWhitelist;
+        _overtimeActive = _parseBool(d['overtimeActive'], _overtimeActive);
+        _authFace = _parseBool(d['authFace'], _authFace);
+        _authFinger = _parseBool(d['authFinger'], _authFinger);
+        _authLoc = _parseBool(d['authLoc'], _authLoc);
+        _twoFA = _parseBool(d['twoFA'], _twoFA);
+        _loginNotify = _parseBool(d['loginNotify'], _loginNotify);
+        _failedNotify = _parseBool(d['failedNotify'], _failedNotify);
+        _ipWhitelist = _parseBool(d['ipWhitelist'], _ipWhitelist);
         _sessionTimeout = (d['sessionTimeout'] as num?)?.toDouble() ?? _sessionTimeout;
         _maxAttempts = (d['maxAttempts'] as num?)?.toDouble() ?? _maxAttempts;
         _forcePassChange = (d['forcePassChange'] as num?)?.toDouble() ?? _forcePassChange;
@@ -211,9 +220,9 @@ class _AdminSettingsState extends State<AdminSettings> {
         _orgName = d['orgName'] ?? _orgName;
         _logo = d['logo'] ?? _logo;
         _fontSize = d['fontSize'] ?? _fontSize;
-        _darkMode = d['darkMode'] ?? _darkMode;
-        _compactMode = d['compactMode'] ?? _compactMode;
-        _singleDeviceMode = d['singleDeviceMode'] ?? _singleDeviceMode;
+        _darkMode = _parseBool(d['darkMode'], _darkMode);
+        _compactMode = _parseBool(d['compactMode'], _compactMode);
+        _singleDeviceMode = _parseBool(d['singleDeviceMode'], _singleDeviceMode);
         _lateGraceMinutes = (d['lateGraceMinutes'] as int?) ?? _lateGraceMinutes;
         _settingsUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>().where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
         _settingsUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
