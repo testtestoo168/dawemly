@@ -409,15 +409,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
-                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
-                          Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
-                        ]),
-                        const SizedBox(width: 8),
-                        CircleAvatar(radius: 17, backgroundColor: active ? W.priLight : Color(0xFFFEF3F2),
-                          backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                          child: (r['facePhotoUrl'] as String?) == null ? Text((r['name'] ?? 'م').toString().substring(0, 2), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: active ? W.pri : W.red)) : null),
+                      DataCell(Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                        Text('${r['empId'] ?? r['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
                       ])),
                     ]);
                   }).toList(),
@@ -467,19 +461,14 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       const Spacer(),
                       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                         Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
-                        const SizedBox(height: 3),
+                        Text(r['email'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+                        const SizedBox(height: 4),
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           _badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
                           const SizedBox(width: 4),
-                          _badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
-                          const SizedBox(width: 4),
-                          _badge('فترة ${r['shift'] ?? 1}', W.pri, W.priLight),
+                          _badge(roleLabel[role] ?? 'م��ظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
                         ]),
                       ]),
-                      const SizedBox(width: 10),
-                      CircleAvatar(radius: 20, backgroundColor: active ? W.priLight : Color(0xFFFEF3F2),
-                        backgroundImage: (r['facePhotoUrl'] as String?) != null ? NetworkImage(r['facePhotoUrl']) : null,
-                        child: (r['facePhotoUrl'] as String?) == null ? Text(av, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: active ? W.pri : W.red)) : null),
                     ]),
                   ),
                 );
