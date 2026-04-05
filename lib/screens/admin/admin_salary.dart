@@ -286,11 +286,192 @@ class _AdminSalaryState extends State<AdminSalary> {
     ]);
   }
 
+  // ─── Edit base salary dialog ───
+  void _editBaseSalaryDialog(String uid, String name, double currentSalary) {
+    final ctrl = TextEditingController(text: currentSalary > 0 ? currentSalary.toStringAsFixed(0) : '');
+    showDialog(context: context, builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Container(
+        width: min(400, MediaQuery.of(context).size.width - 40),
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('تحديد الراتب الأساسي', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+          const SizedBox(height: 4),
+          Text(name, style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.ltr,
+            style: _mono(fontSize: 24, fontWeight: FontWeight.w800, color: W.pri),
+            decoration: InputDecoration(
+              hintText: '0',
+              suffixText: 'ر.س',
+              suffixStyle: GoogleFonts.tajawal(fontSize: 14, color: W.muted),
+              filled: true, fillColor: W.bg,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: W.border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: W.pri, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(children: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.muted))),
+            const Spacer(),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final val = double.tryParse(ctrl.text.trim()) ?? 0;
+                await ApiService.post('salary.php?action=set_base_salary', {'uid': uid, 'base_salary': val});
+                if (ctx.mounted) Navigator.pop(ctx);
+                _loadAll();
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديد الراتب: $val ر.س', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+              },
+              icon: const Icon(Icons.save, size: 16),
+              label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            ),
+          ]),
+        ]),
+      ),
+    ));
+  }
+
+  // ─── Edit per-employee deduction dialog ───
+  void _editEmployeeDeductionDialog(String uid, String name) async {
+    // Load current override
+    final res = await ApiService.get('salary.php?action=get_employee_deduction', params: {'uid': uid});
+    final override = (res['override'] as Map<String, dynamic>?) ?? {};
+    final hasOverride = override['has_override'] == true;
+    final currentLate = (override['late_deductions'] as List?)?.cast<dynamic>() ?? [];
+    final currentAbsent = (override['absent_deductions'] as List?)?.cast<dynamic>() ?? [];
+
+    // Controllers for each occurrence (up to 10)
+    final lateControllers = List.generate(10, (i) =>
+      TextEditingController(text: i < currentLate.length ? '${currentLate[i]}' : ''));
+    final absentControllers = List.generate(10, (i) =>
+      TextEditingController(text: i < currentAbsent.length ? '${currentAbsent[i]}' : ''));
+
+    if (!mounted) return;
+    showDialog(context: context, builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        width: min(450, MediaQuery.of(context).size.width - 32),
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: W.priLight, borderRadius: const BorderRadius.vertical(top: Radius.circular(12))),
+            child: Row(children: [
+              InkWell(onTap: () => Navigator.pop(ctx), child: Icon(Icons.close, size: 18, color: W.sub)),
+              const Spacer(),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('خصومات فردية', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+                Text(name, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+              ]),
+              const SizedBox(width: 8),
+              Icon(Icons.person_outline, size: 20, color: W.pri),
+            ]),
+          ),
+          // Body
+          Flexible(child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              if (hasOverride) Container(
+                width: double.infinity, padding: const EdgeInsets.all(10), margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+                child: Text('هذا الموظف لديه خصومات فردية مختلفة عن الإعدادات العامة', style: GoogleFonts.tajawal(fontSize: 11, color: W.orange), textAlign: TextAlign.right),
+              ),
+              // Late deductions
+              Text('خصومات التأخير (لكل مرة)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+              const SizedBox(height: 4),
+              Text('حدد مبلغ الخصم لكل مرة تأخير. آخر مبلغ يتكرر لما بعده.', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              const SizedBox(height: 10),
+              ...List.generate(10, (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(children: [
+                  SizedBox(width: 80, child: TextField(
+                    controller: lateControllers[i],
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center, textDirection: TextDirection.ltr,
+                    style: _mono(fontSize: 14, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 9, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                  )),
+                  const Spacer(),
+                  Text('المرة ${i + 1}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: i < 3 ? W.green : i < 6 ? W.orange : W.red)),
+                  const SizedBox(width: 8),
+                  Container(width: 24, height: 24, decoration: BoxDecoration(color: (i < 3 ? W.greenL : i < 6 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(6)),
+                    child: Center(child: Text('${i + 1}', style: _mono(fontSize: 11, fontWeight: FontWeight.w700, color: i < 3 ? W.green : i < 6 ? W.orange : W.red)))),
+                ]),
+              )),
+
+              const SizedBox(height: 20),
+              Container(height: 1, color: W.border),
+              const SizedBox(height: 20),
+
+              // Absent deductions
+              Text('خصومات الغياب (لكل يوم)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+              const SizedBox(height: 4),
+              Text('حدد مبلغ الخصم لكل يوم غياب. آخر مبلغ يتكرر لما بعده.', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              const SizedBox(height: 10),
+              ...List.generate(10, (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(children: [
+                  SizedBox(width: 80, child: TextField(
+                    controller: absentControllers[i],
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center, textDirection: TextDirection.ltr,
+                    style: _mono(fontSize: 14, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 9, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                  )),
+                  const Spacer(),
+                  Text('اليوم ${i + 1}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: i < 3 ? W.orange : W.red)),
+                ]),
+              )),
+            ]),
+          )),
+          // Save button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              TextButton(onPressed: () async {
+                await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'has_override': false, 'late_deductions': [], 'absent_deductions': []});
+                if (ctx.mounted) Navigator.pop(ctx);
+                _loadAll();
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إزالة الخصومات الفردية — يستخدم الإعدادات العامة', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+              }, child: Text('إزالة الفردي', style: GoogleFonts.tajawal(fontSize: 12, color: W.red))),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final lateList = lateControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).where((v) => v > 0).toList();
+                  final absentList = absentControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).where((v) => v > 0).toList();
+                  await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'late_deductions': lateList, 'absent_deductions': absentList});
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _loadAll();
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الخصومات الفردية لـ $name', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                },
+                icon: const Icon(Icons.save, size: 16),
+                label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              ),
+            ]),
+          ),
+        ]),
+      ),
+    ));
+  }
+
   // ─── Salary card per employee ───
   Widget _salaryCard(Map<String, dynamic> emp, bool isMobile) {
     final name = emp['name'] ?? '---';
+    final uid = emp['uid'] ?? '';
     final empId = emp['emp_id'] ?? '';
     final dept = emp['dept'] ?? '';
+    final baseSalary = _toDouble(emp['base_salary']);
+    final netSalary = _toDouble(emp['net_salary']);
     final workingDays = _toInt(emp['working_days']);
     final daysPresent = _toInt(emp['days_present']);
     final daysAbsent = _toInt(emp['days_absent']);
@@ -312,23 +493,21 @@ class _AdminSalaryState extends State<AdminSalary> {
         border: Border.all(color: W.border),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // ─── Header: name + net effect badge ───
+        // ─── Header: name + salary info ───
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Net effect badge (left side in RTL)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: netEffect >= 0 ? W.greenL : W.redL,
-              borderRadius: BorderRadius.circular(6),
+          // Action buttons
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            InkWell(
+              onTap: () => _editBaseSalaryDialog(uid, name, baseSalary),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.pri), const SizedBox(width: 4), Text('الراتب', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.pri))])),
             ),
-            child: Column(children: [
-              Text(
-                '${netEffect >= 0 ? '+' : ''}${netEffect.toStringAsFixed(0)}',
-                style: _mono(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: netEffect >= 0 ? W.green : W.red),
-              ),
-              Text('ر.س', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
-            ]),
-          ),
+            InkWell(
+              onTap: () => _editEmployeeDeductionDialog(uid, name),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.orange), const SizedBox(width: 4), Text('خصومات', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))])),
+            ),
+          ]),
           const Spacer(),
           // Name + info
           Flexible(
@@ -339,6 +518,26 @@ class _AdminSalaryState extends State<AdminSalary> {
             ]),
           ),
         ]),
+        const SizedBox(height: 10),
+        // ─── Base salary + Net salary ───
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [W.priLight, W.white]),
+            borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border),
+          ),
+          child: Row(children: [
+            Expanded(child: Column(children: [
+              Text(netSalary.toStringAsFixed(0), style: _mono(fontSize: 18, fontWeight: FontWeight.w800, color: netSalary >= 0 ? W.green : W.red)),
+              Text('صافي الراتب', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
+            ])),
+            Container(width: 1, height: 30, color: W.border),
+            Expanded(child: Column(children: [
+              Text(baseSalary > 0 ? baseSalary.toStringAsFixed(0) : 'غير محدد', style: _mono(fontSize: baseSalary > 0 ? 18 : 12, fontWeight: FontWeight.w800, color: baseSalary > 0 ? W.pri : W.red)),
+              Text('الراتب الأساسي', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
+            ])),
+          ]),
+        ),
         const SizedBox(height: 12),
 
         // ─── Attendance row ───
