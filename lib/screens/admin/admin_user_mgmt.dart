@@ -358,8 +358,8 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             final filtered = _users.where((r) {
               if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['email'] ?? '').toString().contains(_search)) return false;
               if (_fRole != 'الكل' && r['role'] != _fRole) return false;
-              if (_fActive == 'نشط' && r['active'] != true) return false;
-              if (_fActive == 'معطّل' && r['active'] != false) return false;
+              if (_fActive == 'نشط' && r['active'] != true && r['active'] != 1) return false;
+              if (_fActive == 'معطّل' && r['active'] != false && r['active'] != 0) return false;
               return true;
             }).toList();
 
