@@ -9,10 +9,10 @@ class FaceRecognitionService {
     options: FaceDetectorOptions(
       enableContours: false,
       enableLandmarks: true,
-      enableClassification: true,
+      enableClassification: false, // not needed for verify — FASTER
       enableTracking: false,
       performanceMode: FaceDetectorMode.fast,
-      minFaceSize: 0.3,
+      minFaceSize: 0.2, // detect smaller faces — FASTER lock
     ),
   );
 

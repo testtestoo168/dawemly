@@ -31,8 +31,8 @@ class AttendanceService {
         return (success: false, error: 'لم يتم تسجيل بصمة على الجهاز — سجّل بصمة من إعدادات الجهاز');
       }
       final result = await _localAuth.authenticate(
-        localizedReason: 'يرجى استخدام بصمة الإصبع لإثبات الهوية',
-        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
+        localizedReason: 'بصمة الحضور',
+        options: const AuthenticationOptions(stickyAuth: false, biometricOnly: false, sensitiveTransaction: false),
       );
       if (result) return (success: true, error: '');
       return (success: false, error: 'تم إلغاء التحقق — حاول مرة أخرى');

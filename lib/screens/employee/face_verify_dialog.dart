@@ -8,7 +8,6 @@ import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
 
 /// Shows a camera dialog that verifies the user's face.
-/// Returns a Map with 'success', 'photoUrl', etc.
 Future<Map<String, dynamic>?> showFaceVerifyDialog(BuildContext context, String uid) async {
   return await showDialog<Map<String, dynamic>>(
     context: context,
@@ -32,13 +31,11 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   String _status = 'جارٍ تشغيل الكاميرا...';
   Color _statusColor = C.pri;
   int _attempts = 0;
-  static const _maxAttempts = 3;
+  static const _maxAttempts = 5; // more attempts
 
-  // Blink detection state
-  bool _blinkDetected = false;
-  bool _waitingForBlink = true;
-  bool _eyesWereClosed = false;
-  Timer? _blinkTimeout;
+  // Skip blink — go straight to face verify for SPEED
+  bool _blinkDetected = true;
+  bool _waitingForBlink = false;
 
   @override
   void initState() {
@@ -53,30 +50,16 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
+      // LOW resolution = FAST processing
       _camCtrl = CameraController(frontCam, ResolutionPreset.low, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
       await _camCtrl!.initialize();
       if (mounted) {
-        setState(() { _initialized = true; _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
+        setState(() { _initialized = true; _status = 'انظر للكاميرا'; _statusColor = C.pri; });
         _startDetection();
-        _startBlinkTimeout();
       }
     } catch (e) {
       if (mounted) setState(() { _status = 'خطأ في الكاميرا'; _statusColor = C.red; });
     }
-  }
-
-  void _startBlinkTimeout() {
-    _blinkTimeout?.cancel();
-    _blinkTimeout = Timer(const Duration(seconds: 8), () {
-      if (!mounted || _blinkDetected) return;
-      // Skip blink if user can't blink in time — proceed to face check
-      setState(() {
-        _blinkDetected = true;
-        _waitingForBlink = false;
-        _status = 'جارٍ التحقق...';
-        _statusColor = C.pri;
-      });
-    });
   }
 
   void _startDetection() {
@@ -111,51 +94,24 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       final face = faces.first;
       final yAngle = (face.headEulerAngleY ?? 0).abs();
       final xAngle = (face.headEulerAngleX ?? 0).abs();
-      final leftEye = face.leftEyeOpenProbability ?? 1;
-      final rightEye = face.rightEyeOpenProbability ?? 1;
       final bbox = face.boundingBox;
 
-      // ─── Blink detection challenge ───
-      if (_waitingForBlink) {
-        final eyesClosed = leftEye < 0.2 && rightEye < 0.2;
-        final eyesOpen = leftEye > 0.7 && rightEye > 0.7;
-
-        if (!_eyesWereClosed && eyesClosed) {
-          _eyesWereClosed = true; // eyes just closed
-        } else if (_eyesWereClosed && eyesOpen) {
-          _blinkDetected = true; // eyes opened again after closing = blink!
-          _waitingForBlink = false;
-        }
-
-        if (!_blinkDetected) {
-          setState(() { _status = 'ارمش مرة واحدة'; _statusColor = C.orange; });
-          _processing = false;
-          return;
-        }
-      }
-
-      if (bbox.width < 80 || bbox.height < 80) {
+      // Minimal checks — just need face detected and roughly facing camera
+      if (bbox.width < 60 || bbox.height < 60) {
         setState(() { _status = 'قرّب وجهك'; _statusColor = C.orange; });
         _processing = false;
         return;
       }
 
-      if (leftEye < 0.3 || rightEye < 0.3) {
-        setState(() { _status = 'افتح عينيك'; _statusColor = C.orange; });
-        _processing = false;
-        return;
-      }
-
-      if (yAngle > 20 || xAngle > 20) {
+      if (yAngle > 30 || xAngle > 30) {
         setState(() { _status = 'انظر للأمام'; _statusColor = C.orange; });
         _processing = false;
         return;
       }
 
-      // Face is good — verify!
+      // Face is good — verify IMMEDIATELY!
       setState(() { _verifying = true; _status = 'جارٍ التحقق...'; _statusColor = C.pri; });
 
-      // Stop stream and take photo
       try { await _camCtrl?.stopImageStream(); } catch (_) {}
 
       Uint8List? photoBytes;
@@ -167,7 +123,6 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (photoBytes == null) {
         setState(() { _status = 'فشل التقاط الصورة'; _statusColor = C.red; _verifying = false; });
         _processing = false;
-        // Restart stream
         try { _startDetection(); } catch (_) {}
         return;
       }
@@ -178,33 +133,23 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        setState(() { _status = '✓ تم التحقق بنجاح'; _statusColor = C.green; });
-        await Future.delayed(const Duration(milliseconds: 300));
+        setState(() { _status = '✓ تم التحقق'; _statusColor = C.green; });
+        await Future.delayed(const Duration(milliseconds: 200));
         if (mounted) Navigator.pop(context, result);
       } else {
         _attempts++;
         if (_attempts >= _maxAttempts) {
-          setState(() { _status = 'فشل التحقق — تجاوزت الحد المسموح'; _statusColor = C.red; });
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) Navigator.pop(context, {'success': false, 'error': 'فشل التحقق من الوجه بعد $_maxAttempts محاولات'});
+          setState(() { _status = 'فشل التحقق'; _statusColor = C.red; });
+          await Future.delayed(const Duration(milliseconds: 300));
+          if (mounted) Navigator.pop(context, {'success': false, 'error': 'فشل التحقق من الوجه'});
         } else {
           setState(() {
-            _status = 'الوجه غير مطابق — المحاولة $_attempts من $_maxAttempts';
-            _statusColor = C.red;
+            _status = 'حاول تاني — $_attempts/$_maxAttempts';
+            _statusColor = C.orange;
             _verifying = false;
           });
-          // Restart stream for another attempt
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) {
-            setState(() {
-              _status = 'ارمش مرة واحدة';
-              _statusColor = C.orange;
-              _blinkDetected = false;
-              _waitingForBlink = true;
-              _eyesWereClosed = false;
-            });
-            try { _startDetection(); _startBlinkTimeout(); } catch (_) {}
-          }
+          await Future.delayed(const Duration(milliseconds: 200));
+          if (mounted) { try { _startDetection(); } catch (_) {} }
         }
       }
     } catch (_) {}
@@ -234,7 +179,6 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
   @override
   void dispose() {
-    _blinkTimeout?.cancel();
     _camCtrl?.dispose();
     super.dispose();
   }
@@ -243,20 +187,20 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Center(child: Container(
-      width: screenWidth < 360 ? screenWidth - 40 : 340, height: 500,
+      width: screenWidth < 360 ? screenWidth - 40 : 340, height: 480,
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.hardEdge,
       child: Column(children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(children: [
             InkWell(onTap: () => Navigator.pop(context, null), child: const Icon(Icons.close, size: 20, color: Colors.white54)),
             const Spacer(),
-            Text('التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+            Text('التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(width: 8),
-            const Icon(Icons.face, size: 20, color: Colors.white70),
+            const Icon(Icons.face, size: 18, color: Colors.white70),
           ]),
         ),
 
@@ -264,12 +208,11 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         Expanded(child: _initialized && _camCtrl != null
           ? Stack(alignment: Alignment.center, children: [
               CameraPreview(_camCtrl!),
-              // Oval guide
               IgnorePointer(child: Container(
-                width: 200, height: 260,
+                width: 180, height: 240,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: _statusColor.withOpacity(0.8), width: 3),
+                  borderRadius: BorderRadius.circular(90),
+                  border: Border.all(color: _statusColor.withValues(alpha: 0.8), width: 3),
                 ),
               )),
             ])
@@ -279,10 +222,10 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         // Status
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: _statusColor.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: _statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
             child: Row(children: [
               if (_verifying) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               else Icon(_statusColor == C.green ? Icons.check_circle : Icons.info_outline, size: 16, color: _statusColor),

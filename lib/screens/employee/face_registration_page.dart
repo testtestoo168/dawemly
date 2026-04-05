@@ -28,11 +28,9 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
   // Multi-angle capture steps
   int _currentStep = 0;
   static const _steps = [
-    {'label': 'انظر للأمام', 'icon': '😐', 'yMin': -10.0, 'yMax': 10.0, 'xMin': -10.0, 'xMax': 10.0},
-    {'label': 'أدر رأسك لليمين قليلاً', 'icon': '👉', 'yMin': 15.0, 'yMax': 40.0, 'xMin': -15.0, 'xMax': 15.0},
-    {'label': 'أدر رأسك لليسار قليلاً', 'icon': '👈', 'yMin': -40.0, 'yMax': -15.0, 'xMin': -15.0, 'xMax': 15.0},
-    {'label': 'ارفع رأسك قليلاً', 'icon': '👆', 'yMin': -15.0, 'yMax': 15.0, 'xMin': -25.0, 'xMax': -5.0},
-    {'label': 'ابتسم 😊', 'icon': '😊', 'yMin': -15.0, 'yMax': 15.0, 'xMin': -10.0, 'xMax': 10.0},
+    {'label': 'انظر للأمام', 'icon': '😐', 'yMin': -15.0, 'yMax': 15.0, 'xMin': -15.0, 'xMax': 15.0},
+    {'label': 'أدر رأسك لليمين', 'icon': '👉', 'yMin': 10.0, 'yMax': 45.0, 'xMin': -20.0, 'xMax': 20.0},
+    {'label': 'أدر رأسك لليسار', 'icon': '👈', 'yMin': -45.0, 'yMax': -10.0, 'xMin': -20.0, 'xMax': 20.0},
   ];
 
   final List<List<double>> _capturedFeatures = [];
@@ -53,7 +51,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      _camCtrl = CameraController(frontCam, ResolutionPreset.high, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
+      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
       await _camCtrl!.initialize();
       if (mounted) {
         setState(() {
@@ -152,7 +150,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
         }
 
         // Wait a moment then move to next step
-        _captureDelay = Timer(const Duration(milliseconds: 400), () {
+        _captureDelay = Timer(const Duration(milliseconds: 250), () {
           if (!mounted) return;
           if (_currentStep < _steps.length - 1) {
             setState(() {
