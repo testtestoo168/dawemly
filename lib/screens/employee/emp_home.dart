@@ -794,11 +794,63 @@ class EmpHomePageState extends State<EmpHomePage> {
             const SizedBox(height: 12),
           ],
 
-          // Check-in / Check-out buttons — show only ONE at a time
-          if (isCurrentlyCheckedIn)
-            SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, _checkOut))
-          else
-            SizedBox(width: double.infinity, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
+          // Live distance check — disable button if outside range
+          Builder(builder: (ctx) {
+            final loc = _selectedLocation;
+            final adminLat = (loc?['lat'] as num?)?.toDouble();
+            final adminLng = (loc?['lng'] as num?)?.toDouble();
+            final radius = (loc?['radius'] as num?)?.toDouble() ?? 300;
+            final empLat = _livePosition?.latitude;
+            final empLng = _livePosition?.longitude;
+
+            bool isInRange = true; // default allow if no location set
+            double? distance;
+            if (adminLat != null && adminLng != null && empLat != null && empLng != null) {
+              distance = Geolocator.distanceBetween(empLat, empLng, adminLat, adminLng);
+              isInRange = (distance - (_livePosition?.accuracy ?? 0)).clamp(0, double.infinity) <= radius;
+            }
+
+            // Show range status
+            if (adminLat != null && distance != null && !isInRange)
+              return Column(children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFFF4D4D).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text('أنت خارج النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFFF4D4D))),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.location_off_rounded, size: 16, color: Color(0xFFFF4D4D)),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: Opacity(
+                  opacity: 0.4,
+                  child: isCurrentlyCheckedIn
+                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, () {})
+                    : _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
+                )),
+              ]);
+
+            // In range — show normal button
+            return Column(children: [
+              if (adminLat != null && distance != null) Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(color: const Color(0xFF17B26A).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text('داخل النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF17B26A))),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF17B26A)),
+                ]),
+              ),
+              if (isCurrentlyCheckedIn)
+                SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, _checkOut))
+              else
+                SizedBox(width: double.infinity, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
+            ]);
+          }),
         ]),
       ),
 
