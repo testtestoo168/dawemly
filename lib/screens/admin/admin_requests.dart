@@ -87,7 +87,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       await ApiService.post('requests.php?action=update_status', {
         'id': docId,
         'status': action,
-        'adminNote': noteCtrl.text.trim(),
+        'admin_note': noteCtrl.text.trim(),
         'adminName': widget.user['name'] ?? 'مدير النظام',
       });
 
@@ -121,7 +121,11 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           labelColor: W.pri,
           unselectedLabelColor: W.sub,
           labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600),
-          tabs: const [Tab(text: 'معلقة', height: 36), Tab(text: 'تمت الموافقة', height: 36), Tab(text: 'مرفوضة', height: 36)],
+          tabs: [
+            Tab(text: 'معلقة (${_requests.where((r) => r['status'] == 'تحت الإجراء').length})', height: 36),
+            Tab(text: 'تمت الموافقة (${_requests.where((r) => r['status'] == 'تم الموافقة' || r['status'] == 'approved').length})', height: 36),
+            Tab(text: 'مرفوضة (${_requests.where((r) => r['status'] == 'مرفوض' || r['status'] == 'rejected').length})', height: 36),
+          ],
         ),
       ),
 
@@ -141,10 +145,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   }
 
   Widget _buildList(String statusFilter, {bool showActions = false}) {
-    var docs = _requests.where((r) => r['status'] == statusFilter).toList();
+    var docs = _requests.where((r) {
+      final s = r['status'] ?? '';
+      if (statusFilter == 'تحت الإجراء') return s == 'تحت الإجراء' || s == 'pending';
+      if (statusFilter == 'تم الموافقة') return s == 'تم الموافقة' || s == 'approved';
+      if (statusFilter == 'مرفوض') return s == 'مرفوض' || s == 'rejected';
+      return s == statusFilter;
+    }).toList();
     docs.sort((a, b) {
-      final aT = a['createdAt'] as String?;
-      final bT = b['createdAt'] as String?;
+      final aT = (a['created_at'] ?? a['createdAt']) as String?;
+      final bT = (b['created_at'] ?? b['createdAt']) as String?;
       if (aT == null || bT == null) return 0;
       return bT.compareTo(aT);
     });
@@ -171,16 +181,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   Widget _requestCard(Map<String, dynamic> r, String docId, bool showActions) {
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 400;
-    final isLeave = r['requestType'] == 'إجازة';
+    final isLeave = (r['request_type'] ?? r['requestType']) == 'إجازة';
     final typeColor = isLeave ? const Color(0xFF2E90FA) : W.orange;
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
 
     String desc = '';
     if (isLeave) {
-      desc = '${r['leaveType'] ?? ''} — ${r['days'] ?? 0} يوم\nمن ${_fmtDate(r['startDate'])} إلى ${_fmtDate(r['endDate'])}';
+      desc = '${r['leave_type'] ?? r['leaveType'] ?? ''} — ${r['days'] ?? 0} يوم\nمن ${_fmtDate(r['start_date'] ?? r['startDate'])} إلى ${_fmtDate(r['end_date'] ?? r['endDate'])}';
     } else {
       final hours = (r['hours'] as num?)?.toStringAsFixed(1);
-      desc = '${r['permType'] ?? ''}${hours != null ? ' — $hours ساعة' : ''}\nمن ${r['fromTime'] ?? ''} إلى ${r['toTime'] ?? ''}';
+      desc = '${r['perm_type'] ?? r['permType'] ?? ''}${hours != null ? ' — $hours ساعة' : ''}\nمن ${r['from_time'] ?? r['fromTime'] ?? ''} إلى ${r['to_time'] ?? r['toTime'] ?? ''}';
     }
 
     return Container(
@@ -226,7 +236,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text)),
-            Text(r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
+            Text(r['emp_id'] ?? r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
           Container(
@@ -238,7 +248,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         const SizedBox(height: 10),
         Container(width: double.infinity, height: 1, color: W.div),
         const SizedBox(height: 10),
-        Text('${r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+        Text('${r['request_type'] ?? r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
         const SizedBox(height: 4),
         Text(desc, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub, height: 1.5)),
         if ((r['reason'] ?? '').isNotEmpty) ...[
