@@ -85,7 +85,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (res['success'] == true && mounted) {
         final all = (res['notifications'] as List? ?? []).cast<Map<String, dynamic>>();
         final mine = all.where((n) => n['uid'] == uid);
-        final unread = mine.where((n) => n['read'] != true && n['is_read'] != true).length;
+        final unread = mine.where((n) => n['is_read'] != 1 && n['is_read'] != true).length;
         setState(() => _unreadNotifCount = unread);
       }
     } catch (_) {}

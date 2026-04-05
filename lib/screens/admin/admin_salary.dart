@@ -185,77 +185,119 @@ class _AdminSalaryState extends State<AdminSalary> {
 
   // ─── Settings panel ───
   Widget _buildSettingsPanel() {
-    final lateCtrl = TextEditingController(text: '${_settings['late_deduction_per_minute'] ?? 1}');
-    final absentCtrl = TextEditingController(text: '${_settings['absent_deduction_per_day'] ?? 100}');
     final overtimeCtrl = TextEditingController(text: '${_settings['overtime_rate'] ?? 1.5}');
     final graceCtrl = TextEditingController(text: '${_settings['late_grace_minutes'] ?? 15}');
     final hoursCtrl = TextEditingController(text: '${_settings['standard_hours'] ?? 8}');
 
+    // Per-occurrence deductions (4 fields each, 4th repeats)
+    final existingLate = (_settings['late_deductions'] as List?)?.cast<dynamic>() ?? [50, 100, 150, 200];
+    final existingAbsent = (_settings['absent_deductions'] as List?)?.cast<dynamic>() ?? [100, 150, 200, 300];
+    final lateCtrls = List.generate(4, (i) => TextEditingController(text: i < existingLate.length ? '${existingLate[i]}' : ''));
+    final absentCtrls = List.generate(4, (i) => TextEditingController(text: i < existingAbsent.length ? '${existingAbsent[i]}' : ''));
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.pri.withOpacity(0.3))),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.pri.withValues(alpha: 0.3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
-          InkWell(
-            onTap: () => setState(() => _showSettings = false),
-            child: Icon(Icons.close, size: 18, color: W.muted),
-          ),
+          InkWell(onTap: () => setState(() => _showSettings = false), child: Icon(Icons.close, size: 18, color: W.muted)),
           const Spacer(),
-          Text('إعدادات الرواتب', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+          Text('إعدادات الرواتب (للكل)', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(width: 8),
           Icon(Icons.settings_outlined, size: 18, color: W.pri),
         ]),
         const SizedBox(height: 16),
-        _settingsField('خصم التأخير (لكل دقيقة)', 'ر.س', lateCtrl),
-        const SizedBox(height: 12),
-        _settingsField('خصم الغياب (لكل يوم)', 'ر.س', absentCtrl),
-        const SizedBox(height: 12),
+
+        // General settings
         _settingsField('معامل الأوفرتايم', 'x', overtimeCtrl),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _settingsField('فترة السماح (تأخير)', 'دقيقة', graceCtrl),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _settingsField('ساعات العمل اليومية', 'ساعة', hoursCtrl),
+
+        const SizedBox(height: 16),
+        Container(height: 1, color: W.border),
+        const SizedBox(height: 16),
+
+        // Late deductions per occurrence
+        Text('خصومات التأخير (تطبق على الكل)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+        const SizedBox(height: 4),
+        Text('المرة الرابعة تتكرر تلقائياً لكل مرة بعدها', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+        const SizedBox(height: 8),
+        Row(children: List.generate(4, (i) => Expanded(child: Padding(
+          padding: EdgeInsets.only(left: i < 3 ? 6 : 0),
+          child: Column(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL, borderRadius: BorderRadius.circular(4)),
+              child: Text('المرة ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: lateCtrls[i],
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center, textDirection: TextDirection.ltr,
+              style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+            ),
+          ]),
+        )))),
+
+        const SizedBox(height: 16),
+
+        // Absent deductions per occurrence
+        Text('خصومات الغياب (تطبق على الكل)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+        const SizedBox(height: 4),
+        Text('اليوم الرابع يتكرر تلقائياً لكل يوم بعده', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+        const SizedBox(height: 8),
+        Row(children: List.generate(4, (i) => Expanded(child: Padding(
+          padding: EdgeInsets.only(left: i < 3 ? 6 : 0),
+          child: Column(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: i < 2 ? W.orangeL : W.redL, borderRadius: BorderRadius.circular(4)),
+              child: Text('اليوم ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.orange : W.red)),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: absentCtrls[i],
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center, textDirection: TextDirection.ltr,
+              style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+            ),
+          ]),
+        )))),
+
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
+              final lateList = lateCtrls.map((c) => double.tryParse(c.text.trim()) ?? 0).toList();
+              final absentList = absentCtrls.map((c) => double.tryParse(c.text.trim()) ?? 0).toList();
               final body = {
-                'late_deduction_per_minute': double.tryParse(lateCtrl.text.trim()) ?? 1,
-                'absent_deduction_per_day': double.tryParse(absentCtrl.text.trim()) ?? 100,
+                'use_progressive': true,
                 'overtime_rate': double.tryParse(overtimeCtrl.text.trim()) ?? 1.5,
                 'late_grace_minutes': int.tryParse(graceCtrl.text.trim()) ?? 15,
                 'standard_hours': int.tryParse(hoursCtrl.text.trim()) ?? 8,
+                'late_deductions': lateList,
+                'absent_deductions': absentList,
               };
               final res = await ApiService.post('salary.php?action=save_settings', body);
               if (mounted) {
-                if (res['success'] == true) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('تم حفظ الإعدادات بنجاح', style: GoogleFonts.tajawal()),
-                    backgroundColor: W.green,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ));
-                  _loadAll();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(res['error'] ?? 'فشل حفظ الإعدادات', style: GoogleFonts.tajawal()),
-                    backgroundColor: W.red,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ));
-                }
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(res['success'] == true ? 'تم حفظ الإعدادات للكل' : 'فشل الحفظ', style: GoogleFonts.tajawal()),
+                  backgroundColor: res['success'] == true ? W.green : W.red,
+                  behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ));
+                _loadAll();
               }
             },
             icon: const Icon(Icons.save, size: 16),
-            label: Text('حفظ الإعدادات', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: W.pri,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
+            label: Text('حفظ (تطبق على الكل)', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
           ),
         ),
       ]),
@@ -347,10 +389,10 @@ class _AdminSalaryState extends State<AdminSalary> {
     final currentLate = (override['late_deductions'] as List?)?.cast<dynamic>() ?? [];
     final currentAbsent = (override['absent_deductions'] as List?)?.cast<dynamic>() ?? [];
 
-    // Controllers for each occurrence (up to 10)
-    final lateControllers = List.generate(10, (i) =>
+    // Controllers for each occurrence (4 fields, 4th repeats)
+    final lateControllers = List.generate(4, (i) =>
       TextEditingController(text: i < currentLate.length ? '${currentLate[i]}' : ''));
-    final absentControllers = List.generate(10, (i) =>
+    final absentControllers = List.generate(4, (i) =>
       TextEditingController(text: i < currentAbsent.length ? '${currentAbsent[i]}' : ''));
 
     if (!mounted) return;
@@ -388,47 +430,47 @@ class _AdminSalaryState extends State<AdminSalary> {
               // Late deductions
               Text('خصومات التأخير (لكل مرة)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
               const SizedBox(height: 4),
-              Text('حدد مبلغ الخصم لكل مرة تأخير. آخر مبلغ يتكرر لما بعده.', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              Text('المرة الرابعة تتكرر تلقائياً لكل مرة بعدها', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               const SizedBox(height: 10),
-              ...List.generate(10, (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+              ...List.generate(4, (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(children: [
-                  SizedBox(width: 80, child: TextField(
+                  SizedBox(width: 90, child: TextField(
                     controller: lateControllers[i],
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
-                    style: _mono(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 9, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                    style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
-                  Text('المرة ${i + 1}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: i < 3 ? W.green : i < 6 ? W.orange : W.red)),
+                  Text('المرة ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
                   const SizedBox(width: 8),
-                  Container(width: 24, height: 24, decoration: BoxDecoration(color: (i < 3 ? W.greenL : i < 6 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(6)),
-                    child: Center(child: Text('${i + 1}', style: _mono(fontSize: 11, fontWeight: FontWeight.w700, color: i < 3 ? W.green : i < 6 ? W.orange : W.red)))),
+                  Container(width: 28, height: 28, decoration: BoxDecoration(color: (i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(6)),
+                    child: Center(child: Text('${i + 1}${i == 3 ? '+' : ''}', style: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)))),
                 ]),
               )),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Container(height: 1, color: W.border),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Absent deductions
               Text('خصومات الغياب (لكل يوم)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
               const SizedBox(height: 4),
-              Text('حدد مبلغ الخصم لكل يوم غياب. آخر مبلغ يتكرر لما بعده.', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              Text('اليوم الرابع يتكرر تلقائياً لكل يوم بعده', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               const SizedBox(height: 10),
-              ...List.generate(10, (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+              ...List.generate(4, (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(children: [
-                  SizedBox(width: 80, child: TextField(
+                  SizedBox(width: 90, child: TextField(
                     controller: absentControllers[i],
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
-                    style: _mono(fontSize: 14, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 9, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                    style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
-                  Text('اليوم ${i + 1}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: i < 3 ? W.orange : W.red)),
+                  Text('اليوم ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.orange : W.red)),
                 ]),
               )),
             ]),
