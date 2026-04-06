@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
@@ -74,32 +74,40 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
     }
   }
 
+  Timer? _detectTimer;
+
   void _startDetection() {
     if (_camCtrl == null || !_camCtrl!.value.isInitialized) return;
-    _camCtrl!.startImageStream((image) {
-      if (_processing || _verifying) return;
+    // Use periodic takePicture instead of image stream — works on ALL devices.
+    _detectTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (_processing || _verifying || !mounted) return;
       _processing = true;
-      _processFrame(image);
+      _captureAndProcess();
     });
   }
 
-  Future<void> _processFrame(CameraImage image) async {
+  Future<void> _captureAndProcess() async {
     try {
-      final inputImage = _convertToInputImage(image);
-      if (inputImage == null) { _processing = false; return; }
+      if (_camCtrl == null || !_camCtrl!.value.isInitialized) { _processing = false; return; }
 
+      final xfile = await _camCtrl!.takePicture();
+      final filePath = xfile.path;
+      final inputImage = InputImage.fromFilePath(filePath);
       final faces = await FaceRecognitionService.detectFaces(inputImage);
+
       if (!mounted) return;
 
       if (faces.isEmpty) {
         setState(() { _status = 'وجّه الكاميرا لوجهك'; _statusColor = C.orange; });
         _processing = false;
+        try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
       if (faces.length > 1) {
         setState(() { _status = 'يجب وجه واحد فقط'; _statusColor = C.red; });
         _processing = false;
+        try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
@@ -108,36 +116,26 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       final xAngle = (face.headEulerAngleX ?? 0).abs();
       final bbox = face.boundingBox;
 
-      // Minimal checks — just need face detected and roughly facing camera
-      if (bbox.width < 60 || bbox.height < 60) {
+      if (bbox.width < 50 || bbox.height < 50) {
         setState(() { _status = 'قرّب وجهك'; _statusColor = C.orange; });
         _processing = false;
+        try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
-      if (yAngle > 30 || xAngle > 30) {
+      if (yAngle > 35 || xAngle > 35) {
         setState(() { _status = 'انظر للأمام'; _statusColor = C.orange; });
         _processing = false;
+        try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
-      // Face is good — verify IMMEDIATELY!
+      // Face is good — verify!
+      _detectTimer?.cancel();
       setState(() { _verifying = true; _status = 'جارٍ التحقق...'; _statusColor = C.pri; });
 
-      try { await _camCtrl?.stopImageStream(); } catch (_) {}
-
-      Uint8List? photoBytes;
-      try {
-        final xfile = await _camCtrl!.takePicture();
-        photoBytes = await xfile.readAsBytes();
-      } catch (_) {}
-
-      if (photoBytes == null) {
-        setState(() { _status = 'فشل التقاط الصورة'; _statusColor = C.red; _verifying = false; });
-        _processing = false;
-        try { _startDetection(); } catch (_) {}
-        return;
-      }
+      final photoBytes = await File(filePath).readAsBytes();
+      try { File(filePath).deleteSync(); } catch (_) {}
 
       final features = FaceRecognitionService.extractFaceFeatures(face);
       final result = await FaceRecognitionService.verifyFace(uid: widget.uid, currentFeatures: features, photoBytes: photoBytes);
@@ -160,49 +158,17 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
             _statusColor = C.orange;
             _verifying = false;
           });
-          await Future.delayed(const Duration(milliseconds: 200));
-          if (mounted) { try { _startDetection(); } catch (_) {} }
+          await Future.delayed(const Duration(milliseconds: 300));
+          if (mounted) _startDetection();
         }
       }
     } catch (_) {}
     _processing = false;
   }
 
-  InputImage? _convertToInputImage(CameraImage image) {
-    try {
-      final camera = _camCtrl!.description;
-      final rotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
-      if (rotation == null) return null;
-      if (image.planes.isEmpty) return null;
-
-      // Handle both NV21 (single plane) and YUV_420_888 (multi-plane)
-      final Uint8List bytes;
-      if (image.planes.length == 1) {
-        bytes = image.planes.first.bytes;
-      } else {
-        final allBytes = WriteBuffer();
-        for (final plane in image.planes) {
-          allBytes.putUint8List(plane.bytes);
-        }
-        bytes = allBytes.done().buffer.asUint8List();
-      }
-
-      final format = InputImageFormatValue.fromRawValue(image.format.raw);
-
-      return InputImage.fromBytes(
-        bytes: bytes,
-        metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation,
-          format: format ?? InputImageFormat.nv21,
-          bytesPerRow: image.planes.first.bytesPerRow,
-        ),
-      );
-    } catch (_) { return null; }
-  }
-
   @override
   void dispose() {
+    _detectTimer?.cancel();
     _camCtrl?.dispose();
     super.dispose();
   }

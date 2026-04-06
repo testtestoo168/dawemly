@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
@@ -80,20 +80,27 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
     }
   }
 
+  Timer? _detectTimer;
+
   void _startDetection() {
     if (_camCtrl == null || !_camCtrl!.value.isInitialized) return;
-    _camCtrl!.startImageStream((image) {
-      if (_processing || _saving || _stepCaptured) return;
+    // Use periodic takePicture instead of image stream.
+    // Image stream has format conversion issues across Android devices (YUV_420_888
+    // vs NV21, plane padding, rotation mismatches). takePicture returns a proper
+    // JPEG that InputImage.fromFilePath handles correctly on ALL devices.
+    _detectTimer = Timer.periodic(const Duration(milliseconds: 600), (_) {
+      if (_processing || _saving || _stepCaptured || !mounted) return;
       _processing = true;
-      _processFrame(image);
+      _captureAndProcess();
     });
   }
 
-  Future<void> _processFrame(CameraImage image) async {
+  Future<void> _captureAndProcess() async {
     try {
-      final inputImage = _convertToInputImage(image);
-      if (inputImage == null) { _processing = false; return; }
+      if (_camCtrl == null || !_camCtrl!.value.isInitialized) { _processing = false; return; }
 
+      final xfile = await _camCtrl!.takePicture();
+      final inputImage = InputImage.fromFilePath(xfile.path);
       final faces = await FaceRecognitionService.detectFaces(inputImage);
 
       if (!mounted) return;
@@ -120,21 +127,16 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
       final xMin = step['xMin'] as double;
       final xMax = step['xMax'] as double;
 
-      // Check if smile step
-      final isSmileStep = _currentStep == 4;
-      final smile = face.smilingProbability ?? 0;
-
       bool angleOk = yAngle >= yMin && yAngle <= yMax && xAngle >= xMin && xAngle <= xMax;
-      bool smileOk = !isSmileStep || smile > 0.5;
 
       // Check eyes are open
       final leftEye = face.leftEyeOpenProbability ?? 1;
       final rightEye = face.rightEyeOpenProbability ?? 1;
-      final eyesOpen = leftEye > 0.4 && rightEye > 0.4;
+      final eyesOpen = leftEye > 0.3 && rightEye > 0.3;
 
       // Check face size
       final bbox = face.boundingBox;
-      final faceOk = bbox.width > 80 && bbox.height > 80;
+      final faceOk = bbox.width > 60 && bbox.height > 60;
 
       if (!faceOk) {
         setState(() { _instruction = 'قرّب وجهك من الكاميرا'; _statusColor = C.orange; });
@@ -142,12 +144,15 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
         setState(() { _instruction = 'افتح عينيك'; _statusColor = C.orange; });
       } else if (!angleOk) {
         setState(() { _instruction = step['label'] as String; _statusColor = C.pri; });
-      } else if (!smileOk) {
-        setState(() { _instruction = 'ابتسم 😊'; _statusColor = C.pri; });
       } else {
-        // Step passed! Capture features
+        // Step passed!
         final features = FaceRecognitionService.extractFaceFeatures(face);
         _capturedFeatures.add(features);
+
+        // Save best photo from first frontal step
+        if (_currentStep == 0 && _bestPhoto == null) {
+          try { _bestPhoto = await File(xfile.path).readAsBytes(); } catch (_) {}
+        }
 
         setState(() {
           _stepCaptured = true;
@@ -155,16 +160,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
           _statusColor = C.green;
         });
 
-        // Take photo for the best shot (first frontal)
-        if (_currentStep == 0 && _bestPhoto == null) {
-          try {
-            final xfile = await _camCtrl!.takePicture();
-            _bestPhoto = await xfile.readAsBytes();
-          } catch (_) {}
-        }
-
-        // Wait a moment then move to next step
-        _captureDelay = Timer(const Duration(milliseconds: 250), () {
+        _captureDelay = Timer(const Duration(milliseconds: 400), () {
           if (!mounted) return;
           if (_currentStep < _steps.length - 1) {
             setState(() {
@@ -175,50 +171,14 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
               _statusColor = C.pri;
             });
           } else {
-            // All steps done — save
             _saveRegistration();
           }
         });
       }
+      // Clean up temp file
+      try { File(xfile.path).deleteSync(); } catch (_) {}
     } catch (_) {}
     _processing = false;
-  }
-
-  InputImage? _convertToInputImage(CameraImage image) {
-    try {
-      final camera = _camCtrl!.description;
-      final rotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
-      if (rotation == null) return null;
-      if (image.planes.isEmpty) return null;
-
-      // Some Android devices ignore imageFormatGroup.nv21 and return YUV_420_888.
-      // ML Kit needs either NV21 (single plane) or concatenated YUV planes.
-      final Uint8List bytes;
-      if (image.planes.length == 1) {
-        bytes = image.planes.first.bytes;
-      } else {
-        // Concatenate all planes (Y + U + V) for YUV_420_888
-        final allBytes = WriteBuffer();
-        for (final plane in image.planes) {
-          allBytes.putUint8List(plane.bytes);
-        }
-        bytes = allBytes.done().buffer.asUint8List();
-      }
-
-      final format = InputImageFormatValue.fromRawValue(image.format.raw);
-
-      return InputImage.fromBytes(
-        bytes: bytes,
-        metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation,
-          format: format ?? InputImageFormat.nv21,
-          bytesPerRow: image.planes.first.bytesPerRow,
-        ),
-      );
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> _saveRegistration() async {
@@ -226,7 +186,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
     setState(() { _saving = true; _instruction = 'جارٍ حفظ بصمة الوجه...'; _statusColor = C.pri; });
 
     // Stop camera stream
-    try { await _camCtrl?.stopImageStream(); } catch (_) {}
+    _detectTimer?.cancel();
 
     // Take final photo if we don't have one
     if (_bestPhoto == null) {
@@ -280,6 +240,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
 
   @override
   void dispose() {
+    _detectTimer?.cancel();
     _captureDelay?.cancel();
     _camCtrl?.dispose();
     super.dispose();
