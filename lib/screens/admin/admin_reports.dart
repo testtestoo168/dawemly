@@ -345,14 +345,14 @@ class _AdminReportsState extends State<AdminReports> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (isWide ? 56 : 28)),
+                constraints: BoxConstraints(minWidth: isWide ? 1200 : 900),
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(W.bg),
                   headingRowHeight: isWide ? 48 : 42,
                   dataRowMinHeight: isWide ? 44 : 36,
                   dataRowMaxHeight: isWide ? 52 : 44,
-                  columnSpacing: isWide ? 28 : 14,
-                  horizontalMargin: isWide ? 20 : 12,
+                  columnSpacing: isWide ? 32 : 16,
+                  horizontalMargin: isWide ? 24 : 12,
                   columns: ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
                     DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 11, fontWeight: FontWeight.w700, color: W.sub)))).toList(),
                   rows: data.map((r) => DataRow(cells: [
