@@ -328,24 +328,38 @@ class _AdminReportsState extends State<AdminReports> {
           else if (data.isEmpty)
             Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
               child: Center(child: Column(children: [Icon(Icons.bar_chart, size: 48, color: W.hint), SizedBox(height: 12), Text('لا توجد بيانات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
-          else Container(width: double.infinity, decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
-            child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
-              headingRowColor: WidgetStateProperty.all(W.bg), headingRowHeight: 42, columnSpacing: 14,
-              columns: ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
-                DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
-              rows: data.map((r) => DataRow(cells: [
-                DataCell(Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['overtime'] != '—' ? W.orange : W.muted))),
-                DataCell(Text(r['early'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['early'] != '—' ? W.orange : W.muted))),
-                DataCell(Text(r['late'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: r['late'] != '—' ? W.red : W.muted))),
-                DataCell(Text('${r['hours']}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
-                DataCell(Text(r['checkOut'] ?? '—', style: _mono(fontSize: 12, color: W.text))),
-                DataCell(Text(r['checkIn'] ?? '—', style: _mono(fontSize: 12, color: W.text))),
-                DataCell(Text(r['day'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
-                DataCell(Text(r['date'] ?? '', style: _mono(fontSize: 12, color: W.text))),
-                DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
-                DataCell(Text(r['empId'] ?? '', style: _mono(fontSize: 11, color: W.muted))),
-              ])).toList(),
-            ))),
+          else Container(
+            width: double.infinity,
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - (isWide ? 56 : 28)),
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(W.bg),
+                  headingRowHeight: isWide ? 48 : 42,
+                  dataRowMinHeight: isWide ? 44 : 36,
+                  dataRowMaxHeight: isWide ? 52 : 44,
+                  columnSpacing: isWide ? 28 : 14,
+                  horizontalMargin: isWide ? 20 : 12,
+                  columns: ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
+                    DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 11, fontWeight: FontWeight.w700, color: W.sub)))).toList(),
+                  rows: data.map((r) => DataRow(cells: [
+                    DataCell(Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: r['overtime'] != '—' ? W.orange : W.muted))),
+                    DataCell(Text(r['early'] ?? '—', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: r['early'] != '—' ? W.orange : W.muted))),
+                    DataCell(Text(r['late'] ?? '—', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: r['late'] != '—' ? W.red : W.muted))),
+                    DataCell(Text('${r['hours']}h', style: _mono(fontSize: isWide ? 13 : 12, fontWeight: FontWeight.w600, color: W.text))),
+                    DataCell(Text(r['checkOut'] ?? '—', style: _mono(fontSize: isWide ? 13 : 12, color: W.text))),
+                    DataCell(Text(r['checkIn'] ?? '—', style: _mono(fontSize: isWide ? 13 : 12, color: W.text))),
+                    DataCell(Text(r['day'] ?? '', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: W.sub))),
+                    DataCell(Text(r['date'] ?? '', style: _mono(fontSize: isWide ? 13 : 12, color: W.text))),
+                    DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, fontWeight: FontWeight.w600, color: W.text))),
+                    DataCell(Text(r['empId'] ?? '', style: _mono(fontSize: isWide ? 12 : 11, color: W.muted))),
+                  ])).toList(),
+                ),
+              ),
+            ),
+          ),
         ]));
       },
     );
