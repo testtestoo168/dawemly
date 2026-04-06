@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dawemly — لوحة المدير الأعلى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Login screen */
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .login-card { background: var(--panel); padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); width: 100%; max-width: 420px; }
+  .logo { font-size: 32px; font-weight: 900; text-align: center; margin-bottom: 8px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 32px; font-size: 14px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .field input, .field textarea {
+    width: 100%; padding: 12px 14px; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+
+  .btn { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; font-family: inherit; }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary { background: var(--panel2); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: var(--danger); }
+
+  .error { background: rgba(239,68,68,0.1); color: #fca5a5; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; border: 1px solid rgba(239,68,68,0.3); }
+  .success { background: rgba(16,185,129,0.1); color: #6ee7b7; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; border: 1px solid rgba(16,185,129,0.3); }
+
+  /* Dashboard */
+  .header {
+    background: var(--panel); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+  }
+  .header-title { font-size: 22px; font-weight: 900; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-user { display: flex; gap: 12px; align-items: center; font-size: 14px; }
+  .logout-btn { background: var(--panel2); color: var(--text); border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; }
+  .logout-btn:hover { background: var(--border); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--panel); padding: 24px; border-radius: 14px; border: 1px solid var(--border); }
+  .stat-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 900; }
+  .stat-blue { color: #60a5fa; }
+  .stat-green { color: #6ee7b7; }
+  .stat-purple { color: #c4b5fd; }
+  .stat-orange { color: #fbbf24; }
+
+  /* Sections */
+  .section { background: var(--panel); border-radius: 14px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-title { font-size: 18px; font-weight: 700; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: right; padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-active { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+  .badge-inactive { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .usage-bar { width: 120px; height: 8px; background: var(--panel2); border-radius: 10px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .usage-fill { height: 100%; background: linear-gradient(90deg, #10b981, #3b82f6); }
+  .usage-fill.warn { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+  .actions-cell button { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-inline-start: 4px; font-family: inherit; }
+  .actions-cell button:hover { background: var(--panel2); color: var(--text); }
+  .actions-cell button.toggle { color: var(--warning); }
+  .actions-cell button.edit { color: var(--accent); }
+
+  /* Modal */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--panel); border-radius: 14px; padding: 32px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+  .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .modal-actions .btn { flex: 1; }
+
+  .hidden { display: none !important; }
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+  .empty { text-align: center; padding: 40px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">⚡ Dawemly</div>
+    <div class="subtitle">لوحة المدير الأعلى — SaaS Control</div>
+    <div id="login-error" class="error hidden"></div>
+    <form id="login-form">
+      <div class="field">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="login-email" required placeholder="super@dawemly.com">
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <input type="password" id="login-password" required>
+      </div>
+      <button type="submit" class="btn" id="login-btn">تسجيل الدخول</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div id="dashboard" class="hidden">
+  <div class="header">
+    <div class="header-title">⚡ Dawemly SaaS</div>
+    <div class="header-user">
+      <span id="user-name">—</span>
+      <button class="logout-btn" onclick="logout()">خروج</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">إجمالي المؤسسات</div>
+        <div class="stat-value stat-blue" id="stat-orgs">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">المؤسسات النشطة</div>
+        <div class="stat-value stat-green" id="stat-active">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">إجمالي المستخدمين</div>
+        <div class="stat-value stat-purple" id="stat-users">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">حضور اليوم</div>
+        <div class="stat-value stat-orange" id="stat-today">—</div>
+      </div>
+    </div>
+
+    <!-- Organizations -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">المؤسسات</div>
+        <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openCreateOrg()">+ مؤسسة جديدة</button>
+      </div>
+      <div id="orgs-wrap">
+        <div class="loading">جاري التحميل...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CREATE/EDIT ORG MODAL ═══════════════ -->
+<div id="org-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">إنشاء مؤسسة جديدة</div>
+    <div id="modal-error" class="error hidden"></div>
+    <div id="modal-success" class="success hidden"></div>
+    <form id="org-form">
+      <input type="hidden" id="org-id">
+
+      <div class="field">
+        <label>اسم المؤسسة *</label>
+        <input type="text" id="org-name" required placeholder="مؤسسة الأمل">
+      </div>
+
+      <div class="field">
+        <label>الاسم بالإنجليزية</label>
+        <input type="text" id="org-name-en" placeholder="Hope Corp">
+      </div>
+
+      <div class="field">
+        <label>الحد الأقصى لعدد الموظفين *</label>
+        <input type="number" id="org-max-emp" required min="1" value="10">
+      </div>
+
+      <div class="field">
+        <label>البريد الإلكتروني للمؤسسة</label>
+        <input type="email" id="org-email" placeholder="info@example.com">
+      </div>
+
+      <div class="field">
+        <label>الهاتف</label>
+        <input type="tel" id="org-phone" placeholder="05xxxxxxxx">
+      </div>
+
+      <div class="field">
+        <label>العنوان</label>
+        <input type="text" id="org-address" placeholder="الرياض">
+      </div>
+
+      <!-- Admin creds — only shown when CREATING a new org -->
+      <div id="admin-fields">
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+        <div style="color: var(--muted); font-size: 13px; margin-bottom: 12px; font-weight: 600;">بيانات مدير المؤسسة</div>
+
+        <div class="field">
+          <label>اسم المدير</label>
+          <input type="text" id="admin-name" placeholder="مدير النظام">
+        </div>
+
+        <div class="field">
+          <label>بريد المدير *</label>
+          <input type="email" id="admin-email" placeholder="admin@example.com">
+        </div>
+
+        <div class="field">
+          <label>كلمة مرور المدير * (6 أحرف على الأقل)</label>
+          <input type="password" id="admin-password" minlength="6">
+        </div>
+      </div>
+
+      <!-- Existing admins list — shown only when EDITING -->
+      <div id="existing-admins" class="hidden">
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
+        <div style="color: var(--muted); font-size: 13px; margin-bottom: 12px; font-weight: 600;">مديرو المؤسسة الحاليون</div>
+        <div id="admins-list"><div class="loading" style="padding:20px">جاري التحميل...</div></div>
+        <p style="color: var(--muted); font-size: 12px; margin-top: 12px; line-height: 1.6;">
+          🔒 كلمات المرور مُشفّرة ولا يمكن استرجاعها. لو المدير نسي كلمة المرور، اضغط <strong>"تعيين كلمة مرور جديدة"</strong>.
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn" id="save-btn">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const API = '/attendance/api';
+let TOKEN = localStorage.getItem('sa_token') || '';
+let ME = null;
+
+// ─── API helper ───
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const res = await fetch(API + path, { ...options, headers });
+  const data = await res.json().catch(() => ({ success: false, error: 'Invalid response' }));
+  if (!res.ok && data.error) throw new Error(data.error);
+  if (!data.success && data.error) throw new Error(data.error);
+  return data;
+}
+
+// ─── Login ───
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'جاري التحقق...';
+  try {
+    const data = await api('/superadmin.php?action=login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      }),
+    });
+    TOKEN = data.token;
+    ME = data.user;
+    localStorage.setItem('sa_token', TOKEN);
+    localStorage.setItem('sa_me', JSON.stringify(ME));
+    showDashboard();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'تسجيل الدخول';
+  }
+});
+
+// ─── Logout ───
+function logout() {
+  localStorage.removeItem('sa_token');
+  localStorage.removeItem('sa_me');
+  TOKEN = '';
+  ME = null;
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+// ─── Show Dashboard ───
+function showDashboard() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('user-name').textContent = ME?.name || '';
+  loadStats();
+  loadOrgs();
+}
+
+// ─── Load Stats ───
+async function loadStats() {
+  try {
+    const data = await api('/superadmin.php?action=stats');
+    document.getElementById('stat-orgs').textContent = data.stats.total_organizations;
+    document.getElementById('stat-active').textContent = data.stats.active_organizations;
+    document.getElementById('stat-users').textContent = data.stats.total_users;
+    document.getElementById('stat-today').textContent = data.stats.today_attendance;
+  } catch (err) {
+    if (err.message.includes('جلسة')) { logout(); return; }
+    console.error(err);
+  }
+}
+
+// ─── Load Organizations ───
+async function loadOrgs() {
+  const wrap = document.getElementById('orgs-wrap');
+  wrap.innerHTML = '<div class="loading">جاري التحميل...</div>';
+  try {
+    const data = await api('/superadmin.php?action=organizations');
+    if (!data.organizations.length) {
+      wrap.innerHTML = '<div class="empty">لا توجد مؤسسات — اضغط "مؤسسة جديدة" للبدء</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>#</th><th>الاسم</th><th>الحد</th><th>الاستخدام</th><th>الإيميل</th><th>الهاتف</th><th>تاريخ الإنشاء</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>';
+    for (const o of data.organizations) {
+      const used = o.current_employees || 0;
+      const max = o.max_employees || 0;
+      const pct = max > 0 ? Math.min(100, (used / max) * 100) : 0;
+      const warn = pct >= 80 ? 'warn' : '';
+      html += `<tr>
+        <td>${o.id}</td>
+        <td><strong>${escapeHtml(o.name)}</strong>${o.name_en ? '<br><small style="color:var(--muted)">' + escapeHtml(o.name_en) + '</small>' : ''}</td>
+        <td>${max}</td>
+        <td>
+          <div class="usage-bar"><div class="usage-fill ${warn}" style="width:${pct}%"></div></div>
+          ${used} / ${max}
+        </td>
+        <td>${escapeHtml(o.email || '—')}</td>
+        <td>${escapeHtml(o.phone || '—')}</td>
+        <td>${o.created_at ? o.created_at.substring(0,10) : '—'}</td>
+        <td>${o.active == 1 ? '<span class="badge badge-active">نشطة</span>' : '<span class="badge badge-inactive">موقوفة</span>'}</td>
+        <td class="actions-cell">
+          <button class="edit" onclick='openEditOrg(${JSON.stringify(o).replace(/'/g, "&apos;")})'>تعديل</button>
+          <button class="toggle" onclick="toggleOrg(${o.id})">${o.active == 1 ? 'إيقاف' : 'تفعيل'}</button>
+        </td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  } catch (err) {
+    if (err.message.includes('جلسة')) { logout(); return; }
+    wrap.innerHTML = '<div class="error">فشل التحميل: ' + err.message + '</div>';
+  }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+// ─── Modal ───
+function openCreateOrg() {
+  document.getElementById('modal-title').textContent = 'إنشاء مؤسسة جديدة';
+  document.getElementById('org-form').reset();
+  document.getElementById('org-id').value = '';
+  document.getElementById('org-max-emp').value = '10';
+  document.getElementById('admin-fields').classList.remove('hidden');
+  document.getElementById('existing-admins').classList.add('hidden');
+  document.getElementById('admin-email').required = true;
+  document.getElementById('admin-password').required = true;
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('modal-success').classList.add('hidden');
+  document.getElementById('org-modal').classList.add('open');
+}
+
+function openEditOrg(o) {
+  document.getElementById('modal-title').textContent = 'تعديل المؤسسة: ' + o.name;
+  document.getElementById('org-id').value = o.id;
+  document.getElementById('org-name').value = o.name || '';
+  document.getElementById('org-name-en').value = o.name_en || '';
+  document.getElementById('org-max-emp').value = o.max_employees || 10;
+  document.getElementById('org-email').value = o.email || '';
+  document.getElementById('org-phone').value = o.phone || '';
+  document.getElementById('org-address').value = o.address || '';
+  document.getElementById('admin-fields').classList.add('hidden');
+  document.getElementById('existing-admins').classList.remove('hidden');
+  document.getElementById('admin-email').required = false;
+  document.getElementById('admin-password').required = false;
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('modal-success').classList.add('hidden');
+  document.getElementById('org-modal').classList.add('open');
+  loadOrgAdmins(o.id);
+}
+
+// ─── Load and render admins of an org ───
+async function loadOrgAdmins(orgId) {
+  const wrap = document.getElementById('admins-list');
+  wrap.innerHTML = '<div class="loading" style="padding:16px">جاري التحميل...</div>';
+  try {
+    const data = await api('/superadmin.php?action=org_admins&org_id=' + orgId);
+    const admins = data.admins || [];
+    if (!admins.length) {
+      wrap.innerHTML = '<div style="color:var(--muted);padding:8px;font-size:13px">لا يوجد مديرون لهذه المؤسسة</div>';
+      return;
+    }
+    let html = '';
+    for (const a of admins) {
+      const lastLogin = a.last_login_at ? a.last_login_at.substring(0,16).replace('T',' ') : 'لم يسجّل دخول بعد';
+      const statusBadge = a.active == 1
+        ? '<span class="badge badge-active">نشط</span>'
+        : '<span class="badge badge-inactive">موقوف</span>';
+      html += `
+        <div style="background: var(--panel2); padding: 14px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight: 700; margin-bottom: 4px;">${escapeHtml(a.name || '—')}</div>
+              <div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">📧 ${escapeHtml(a.email)}</div>
+              <div style="font-size: 11px; color: var(--muted);">آخر دخول: ${lastLogin}</div>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary" style="flex:1; padding: 8px 12px; font-size: 13px;" onclick="openResetPassword('${a.uid}', '${escapeHtml(a.email)}', '${escapeHtml(a.name)}')">🔑 تعيين كلمة مرور جديدة</button>
+          </div>
+        </div>`;
+    }
+    wrap.innerHTML = html;
+  } catch (err) {
+    wrap.innerHTML = '<div class="error">فشل التحميل: ' + err.message + '</div>';
+  }
+}
+
+// ─── Reset password prompt ───
+async function openResetPassword(uid, email, name) {
+  const newPass = prompt(`تعيين كلمة مرور جديدة للمدير:\n${name}\n${email}\n\nاكتب كلمة المرور الجديدة (6 أحرف على الأقل):`);
+  if (newPass === null) return; // cancelled
+  if (newPass.length < 6) {
+    alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    return;
+  }
+  try {
+    const res = await api('/superadmin.php?action=reset_admin_password', {
+      method: 'POST',
+      body: JSON.stringify({ uid, new_password: newPass }),
+    });
+    alert(`✓ تم تعيين كلمة المرور بنجاح\n\n📧 الإيميل: ${res.email}\n🔑 كلمة المرور الجديدة: ${newPass}\n\nاكتبها في مكان آمن الآن — مش هتقدر تشوفها تاني.`);
+  } catch (err) {
+    alert('خطأ: ' + err.message);
+  }
+}
+
+function closeModal() {
+  document.getElementById('org-modal').classList.remove('open');
+}
+
+document.getElementById('org-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('modal-error');
+  const okEl = document.getElementById('modal-success');
+  errEl.classList.add('hidden');
+  okEl.classList.add('hidden');
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الحفظ...';
+
+  const id = document.getElementById('org-id').value;
+  const payload = {
+    name: document.getElementById('org-name').value.trim(),
+    name_en: document.getElementById('org-name-en').value.trim(),
+    max_employees: parseInt(document.getElementById('org-max-emp').value, 10),
+    email: document.getElementById('org-email').value.trim(),
+    phone: document.getElementById('org-phone').value.trim(),
+    address: document.getElementById('org-address').value.trim(),
+  };
+  if (id) {
+    payload.id = parseInt(id, 10);
+  } else {
+    payload.admin_name = document.getElementById('admin-name').value.trim() || 'مدير النظام';
+    payload.admin_email = document.getElementById('admin-email').value.trim();
+    payload.admin_password = document.getElementById('admin-password').value;
+  }
+
+  try {
+    await api('/superadmin.php?action=save_organization', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    okEl.textContent = id ? 'تم التحديث بنجاح' : 'تم إنشاء المؤسسة وإضافة المدير بنجاح';
+    okEl.classList.remove('hidden');
+    loadStats();
+    loadOrgs();
+    setTimeout(closeModal, 1500);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'حفظ';
+  }
+});
+
+// ─── Toggle Org ───
+async function toggleOrg(id) {
+  if (!confirm('هل تريد تغيير حالة هذه المؤسسة؟')) return;
+  try {
+    await api('/superadmin.php?action=toggle_org', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    });
+    loadOrgs();
+    loadStats();
+  } catch (err) {
+    alert('خطأ: ' + err.message);
+  }
+}
+
+// ─── Auto-login if token exists ───
+if (TOKEN) {
+  ME = JSON.parse(localStorage.getItem('sa_me') || 'null');
+  // Verify token still valid
+  api('/superadmin.php?action=me')
+    .then(() => showDashboard())
+    .catch(() => logout());
+}
+</script>
+</body>
+</html>

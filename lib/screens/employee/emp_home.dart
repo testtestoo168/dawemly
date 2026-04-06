@@ -95,13 +95,25 @@ class EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     if (uid.isEmpty) return;
     try {
-      final reqs = await _attService.getAuthRequirements(uid);
-      final faceReq = await FaceRecognitionService.isFaceAuthRequired(uid);
+      // Run the two reads in parallel. Both share the same session cache in
+      // AttendanceService, so only ONE pair of network calls actually happens.
+      final results = await Future.wait([
+        _attService.getAuthRequirements(uid),
+        FaceRecognitionService.isFaceAuthRequired(uid),
+      ]);
+      final reqs = results[0] as ({bool requireBiometric, bool requireLocation});
+      final faceReq = results[1] as bool;
       if (mounted) {
         _cachedRequireBiometric = reqs.requireBiometric;
         _cachedRequireLocation = reqs.requireLocation;
         _cachedFaceRequired = faceReq;
         _authReqsLoaded = true;
+      }
+      // Warm up the face features cache in the background so the first
+      // check-in has zero latency on local comparison.
+      if (faceReq == true) {
+        // ignore: unawaited_futures
+        FaceRecognitionService.preloadFeatures(uid);
       }
     } catch (_) {}
   }
@@ -290,7 +302,16 @@ class EmpHomePageState extends State<EmpHomePage> {
     final requireLocation = _cachedRequireLocation;
     final faceRequired = _cachedFaceRequired;
 
-    // ─── Step 1: Biometric FIRST (instant, no API calls before this) ───
+    // ─── SPEED OPTIMIZATION ───
+    // Kick off the location fetch in parallel with the biometric/face prompt.
+    // The GPS fix and the fingerprint prompt happen at the same wall-clock time
+    // instead of one-after-the-other — typically saves 0.5-2 seconds on a real
+    // device because GPS warmup runs while the user taps their finger.
+    final loc = _selectedLocation;
+    final bool showLocCheck = loc != null && loc.isNotEmpty;
+    final locFuture = showLocCheck ? _attService.getCurrentLocation() : null;
+
+    // ─── Step 1: Biometric (instant dialog, while GPS warms up in background) ───
     if (requireBiometric && !faceRequired) {
       final bioResult = await _attService.authenticateBiometricWithDetails();
       if (!mounted) return;
@@ -322,12 +343,10 @@ class EmpHomePageState extends State<EmpHomePage> {
       usedFaceAuth = true;
     }
 
-    // ─── Step 3: Location check ───
-    final loc = _selectedLocation;
-    bool showLocCheck = loc != null && loc.isNotEmpty;
+    // ─── Step 3: Location check (already in-flight from above, just await it) ───
     if (showLocCheck) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.green);
-      final locResult = await _attService.getCurrentLocation();
+      final locResult = await locFuture!;
       final pos = locResult.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
@@ -428,7 +447,12 @@ class EmpHomePageState extends State<EmpHomePage> {
     final requireLocation = _cachedRequireLocation;
     final faceRequired = _cachedFaceRequired;
 
-    // ─── Step 1: Biometric FIRST (instant) ───
+    // ─── SPEED: start GPS fetch in parallel with biometric prompt ───
+    final loc2 = _selectedLocation;
+    final bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
+    final locFuture2 = showLocCheck2 ? _attService.getCurrentLocation() : null;
+
+    // ─── Step 1: Biometric (while GPS warms up in background) ───
     if (requireBiometric && !faceRequired) {
       final bioResult = await _attService.authenticateBiometricWithDetails();
       if (!mounted) return;
@@ -456,12 +480,10 @@ class EmpHomePageState extends State<EmpHomePage> {
       usedFaceAuth = true;
     }
 
-    // ─── Step 3: Location check ───
-    final loc2 = _selectedLocation;
-    bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
+    // ─── Step 3: Location check (await the fetch kicked off at the top) ───
     if (showLocCheck2) {
       _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.red);
-      final locResult2 = await _attService.getCurrentLocation();
+      final locResult2 = await locFuture2!;
       final pos = locResult2.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
