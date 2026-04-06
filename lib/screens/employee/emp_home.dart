@@ -787,10 +787,11 @@ class EmpHomePageState extends State<EmpHomePage> {
                 dropdownColor: const Color(0xFF0F4199),
                 style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
                 hint: Text('اختر موقع البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
+                isExpanded: true,
                 items: _allLocations.map((loc) => DropdownMenuItem<String>(
                   value: loc['id'].toString(),
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white)),
+                    Flexible(child: Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.right)),
                     const SizedBox(width: 8),
                     const Icon(Icons.location_on_rounded, size: 16, color: Colors.white70),
                   ]),
@@ -808,7 +809,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(_allLocations.first['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                Flexible(child: Text(_allLocations.first['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.center)),
                 const SizedBox(width: 8),
                 const Icon(Icons.location_on_rounded, size: 16, color: Colors.white70),
               ]),
