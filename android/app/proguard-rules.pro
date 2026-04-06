@@ -7,3 +7,7 @@
 
 ## Flutter
 -keep class io.flutter.** { *; }
+
+## Google Play Core (referenced by Flutter deferred components)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
