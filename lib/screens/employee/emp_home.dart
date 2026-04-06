@@ -787,7 +787,6 @@ class EmpHomePageState extends State<EmpHomePage> {
                 dropdownColor: const Color(0xFF0F4199),
                 style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
                 hint: Text('اختر موقع البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
-                isExpanded: true,
                 items: _allLocations.map((loc) => DropdownMenuItem<String>(
                   value: loc['id'].toString(),
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [

@@ -313,13 +313,24 @@ class _AdminReportsState extends State<AdminReports> {
           ),
           const SizedBox(height: 16),
 
-          // Stats
-          Wrap(spacing: 10, runSpacing: 10, children: [
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
-            SizedBox(width: isWide ? null : (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
-          ]),
+          // Stats — full-width row on web, 2-column grid on mobile
+          if (isWide)
+            Row(children: [
+              Expanded(child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
+              const SizedBox(width: 12),
+              Expanded(child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
+              const SizedBox(width: 12),
+              Expanded(child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
+              const SizedBox(width: 12),
+              Expanded(child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
+            ])
+          else
+            Wrap(spacing: 10, runSpacing: 10, children: [
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
+            ]),
           const SizedBox(height: 20),
 
           // Table
