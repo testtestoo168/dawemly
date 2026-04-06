@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
@@ -45,6 +46,16 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
   Future<void> _initCamera() async {
     try {
+      // Request camera permission before accessing the hardware
+      final perm = await Permission.camera.request();
+      if (!perm.isGranted) {
+        if (mounted) {
+          setState(() { _status = 'يجب السماح باستخدام الكاميرا'; _statusColor = C.red; });
+          if (perm.isPermanentlyDenied) openAppSettings();
+        }
+        return;
+      }
+
       final cameras = await availableCameras();
       final frontCam = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
