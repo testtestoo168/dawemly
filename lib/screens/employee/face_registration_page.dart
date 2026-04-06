@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:camera/camera.dart';
@@ -188,19 +189,31 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
       final camera = _camCtrl!.description;
       final rotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
       if (rotation == null) return null;
-
-      final format = InputImageFormatValue.fromRawValue(image.format.raw);
-      if (format == null) return null;
       if (image.planes.isEmpty) return null;
 
-      final plane = image.planes.first;
+      // Some Android devices ignore imageFormatGroup.nv21 and return YUV_420_888.
+      // ML Kit needs either NV21 (single plane) or concatenated YUV planes.
+      final Uint8List bytes;
+      if (image.planes.length == 1) {
+        bytes = image.planes.first.bytes;
+      } else {
+        // Concatenate all planes (Y + U + V) for YUV_420_888
+        final allBytes = WriteBuffer();
+        for (final plane in image.planes) {
+          allBytes.putUint8List(plane.bytes);
+        }
+        bytes = allBytes.done().buffer.asUint8List();
+      }
+
+      final format = InputImageFormatValue.fromRawValue(image.format.raw);
+
       return InputImage.fromBytes(
-        bytes: plane.bytes,
+        bytes: bytes,
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
           rotation: rotation,
-          format: format,
-          bytesPerRow: plane.bytesPerRow,
+          format: format ?? InputImageFormat.nv21,
+          bytesPerRow: image.planes.first.bytesPerRow,
         ),
       );
     } catch (_) {
