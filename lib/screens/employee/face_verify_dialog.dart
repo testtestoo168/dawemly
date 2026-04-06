@@ -159,7 +159,9 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
             _verifying = false;
           });
           await Future.delayed(const Duration(milliseconds: 300));
+          _processing = false; // reset before restarting timer
           if (mounted) _startDetection();
+          return; // skip the _processing = false at end
         }
       }
     } catch (e) {
