@@ -62,8 +62,8 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      // LOW resolution = faster capture + faster ML Kit processing for verification
-      _camCtrl = CameraController(frontCam, ResolutionPreset.low, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
+      // MEDIUM resolution — low (320x240) is too small for reliable face detection
+      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false);
       await _camCtrl!.initialize();
       if (mounted) {
         setState(() { _initialized = true; _status = 'انظر للكاميرا'; _statusColor = C.pri; });
@@ -162,7 +162,10 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
           if (mounted) _startDetection();
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) setState(() { _status = 'خطأ — حاول تاني'; _statusColor = C.orange; });
+      debugPrint('[FaceVerify] capture error: $e');
+    }
     _processing = false;
   }
 

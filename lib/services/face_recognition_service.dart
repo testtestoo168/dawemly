@@ -8,12 +8,12 @@ import 'attendance_service.dart';
 class FaceRecognitionService {
   static final _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
-      enableContours: false,
+      enableContours: true,
       enableLandmarks: true,
-      enableClassification: false, // not needed for verify — FASTER
+      enableClassification: true, // needed for eye-open + smile detection in features
       enableTracking: false,
       performanceMode: FaceDetectorMode.fast,
-      minFaceSize: 0.2, // detect smaller faces — FASTER lock
+      minFaceSize: 0.1, // detect faces even at arm's length on low-res cameras
     ),
   );
 

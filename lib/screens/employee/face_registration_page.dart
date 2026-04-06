@@ -65,7 +65,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
+      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false);
       await _camCtrl!.initialize();
       if (mounted) {
         setState(() {
@@ -177,7 +177,10 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
       }
       // Clean up temp file
       try { File(xfile.path).deleteSync(); } catch (_) {}
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) setState(() { _instruction = 'خطأ — حاول تاني'; _statusColor = C.orange; });
+      debugPrint('[FaceReg] capture error: $e');
+    }
     _processing = false;
   }
 
