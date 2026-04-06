@@ -660,16 +660,16 @@ class _AdminSettingsState extends State<AdminSettings> {
     final onlineCount = employees.where((e) => sessionMap.containsKey((e['uid'] ?? '').toString())).length;
     final offlineCount = employees.length - onlineCount;
 
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
 
       // ── Stats ──
       Row(children: [
-        _devStatCard('متصل الآن', '$onlineCount', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded),
-        SizedBox(width: isMobile ? 6 : 10),
-        _devStatCard('غير متصل', '$offlineCount', W.red, W.redL, Icons.wifi_off_rounded),
-        SizedBox(width: isMobile ? 6 : 10),
-        _devStatCard('إجمالي', '${employees.length}', W.muted, W.bg, Icons.people_rounded),
+        Expanded(child: _devStatCard('متصل الآن', '$onlineCount', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded)),
+        SizedBox(width: isMobile ? 6 : 12),
+        Expanded(child: _devStatCard('غير متصل', '$offlineCount', W.red, W.redL, Icons.wifi_off_rounded)),
+        SizedBox(width: isMobile ? 6 : 12),
+        Expanded(child: _devStatCard('إجمالي', '${employees.length}', W.muted, W.bg, Icons.people_rounded)),
       ]),
       const SizedBox(height: 14),
 
