@@ -88,7 +88,7 @@ class _FaceRegistrationPageState extends State<FaceRegistrationPage> {
     // Image stream has format conversion issues across Android devices (YUV_420_888
     // vs NV21, plane padding, rotation mismatches). takePicture returns a proper
     // JPEG that InputImage.fromFilePath handles correctly on ALL devices.
-    _detectTimer = Timer.periodic(const Duration(milliseconds: 600), (_) {
+    _detectTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
       if (_processing || _saving || _stepCaptured || !mounted) return;
       _processing = true;
       _captureAndProcess();

@@ -62,8 +62,8 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      // MEDIUM resolution — low was too small for face detection on some devices
-      _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
+      // LOW resolution = faster capture + faster ML Kit processing for verification
+      _camCtrl = CameraController(frontCam, ResolutionPreset.low, enableAudio: false, imageFormatGroup: ImageFormatGroup.nv21);
       await _camCtrl!.initialize();
       if (mounted) {
         setState(() { _initialized = true; _status = 'انظر للكاميرا'; _statusColor = C.pri; });
@@ -79,7 +79,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   void _startDetection() {
     if (_camCtrl == null || !_camCtrl!.value.isInitialized) return;
     // Use periodic takePicture instead of image stream — works on ALL devices.
-    _detectTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+    _detectTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
       if (_processing || _verifying || !mounted) return;
       _processing = true;
       _captureAndProcess();
