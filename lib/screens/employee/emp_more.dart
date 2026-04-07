@@ -46,6 +46,9 @@ class _EmpMorePageState extends State<EmpMorePage> {
           if (active == false || active == 0) return false;
           final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ??
               (loc['assigned_employees'] as List?)?.cast<String>() ?? [];
+          final excluded = (loc['excludedEmployees'] as List?)?.cast<String>() ??
+              (loc['excluded_employees'] as List?)?.cast<String>() ?? [];
+          if (excluded.contains(uid)) return false;
           return assigned.isEmpty || assigned.contains(uid);
         }).toList();
         if (mounted) {
