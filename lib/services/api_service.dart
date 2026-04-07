@@ -7,6 +7,13 @@ class ApiService {
   static String? _token;
   static Map<String, dynamic>? _currentUser;
 
+  // Persistent HTTP client — reuses TCP connections (keep-alive)
+  static final http.Client _client = http.Client();
+
+  // Simple in-memory cache for GET requests (TTL-based)
+  static final Map<String, _CacheEntry> _cache = {};
+  static const _defaultCacheTtl = Duration(seconds: 10);
+
   // ─── Token Management ───
   static Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,26 +58,50 @@ class ApiService {
     if (_token != null && _token!.isNotEmpty) 'Authorization': 'Bearer $_token',
   };
 
-  // ─── GET ───
+  // ─── GET (with optional cache) ───
   static Future<Map<String, dynamic>> get(
     String endpoint, {
     Map<String, String>? params,
+    Duration? cacheTtl,
   }) async {
     try {
       var uri = Uri.parse('$baseUrl/$endpoint');
       if (params != null && params.isNotEmpty) {
-        // Merge params with existing query parameters (don't replace action, etc.)
         final merged = Map<String, String>.from(uri.queryParameters)..addAll(params);
         uri = uri.replace(queryParameters: merged);
       }
-      final response = await http
+
+      // Check cache
+      final cacheKey = uri.toString();
+      if (cacheTtl != null) {
+        final cached = _cache[cacheKey];
+        if (cached != null && !cached.isExpired) return cached.data;
+      }
+
+      final response = await _client
           .get(uri, headers: _headers)
-          .timeout(const Duration(seconds: 30));
-      return _handleResponse(response);
+          .timeout(const Duration(seconds: 15));
+      final result = _handleResponse(response);
+
+      // Store in cache if requested
+      if (cacheTtl != null && result['success'] == true) {
+        _cache[cacheKey] = _CacheEntry(result, cacheTtl);
+      }
+
+      return result;
     } catch (e) {
+      // Return stale cache if available
+      if (cacheTtl != null) {
+        final cacheKey = Uri.parse('$baseUrl/$endpoint').toString();
+        final cached = _cache[cacheKey];
+        if (cached != null) return cached.data;
+      }
       return {'success': false, 'error': 'لا يوجد اتصال بالسيرفر'};
     }
   }
+
+  /// Clear all cached responses
+  static void clearCache() => _cache.clear();
 
   // ─── POST ───
   static Future<Map<String, dynamic>> post(
@@ -79,9 +110,9 @@ class ApiService {
   ) async {
     try {
       final uri = Uri.parse('$baseUrl/$endpoint');
-      final response = await http
+      final response = await _client
           .post(uri, headers: _headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'error': 'لا يوجد اتصال بالسيرفر'};
@@ -143,4 +174,11 @@ class ApiService {
       };
     }
   }
+}
+
+class _CacheEntry {
+  final Map<String, dynamic> data;
+  final DateTime _expiry;
+  _CacheEntry(this.data, Duration ttl) : _expiry = DateTime.now().add(ttl);
+  bool get isExpired => DateTime.now().isAfter(_expiry);
 }

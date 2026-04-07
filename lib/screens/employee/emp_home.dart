@@ -84,7 +84,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final uid = widget.user['uid'] ?? '';
     if (uid.isEmpty) return;
     try {
-      final res = await ApiService.get('admin.php?action=get_notifications');
+      final res = await ApiService.get('admin.php?action=get_notifications', cacheTtl: const Duration(seconds: 30));
       if (res['success'] == true && mounted) {
         final all = (res['notifications'] as List? ?? []).cast<Map<String, dynamic>>();
         final mine = all.where((n) => n['uid'] == uid);
@@ -238,7 +238,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   void _loadLocations() async {
     try {
       final uid = widget.user['uid'] ?? '';
-      final result = await ApiService.get('admin.php?action=get_locations');
+      final result = await ApiService.get('admin.php?action=get_locations', cacheTtl: const Duration(minutes: 5));
       if (result['success'] == true) {
         final allLocs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
         final locs = allLocs.where((loc) {
@@ -1051,8 +1051,8 @@ class EmpHomePageState extends State<EmpHomePage> {
               Flexible(child: Text(authName, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.right)),
             ]),
           ),
-          // Map
-          ClipRRect(
+          // Map — wrapped in RepaintBoundary to isolate repaints
+          RepaintBoundary(child: ClipRRect(
             borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
             child: SizedBox(
               height: 220,
@@ -1065,12 +1065,12 @@ class EmpHomePageState extends State<EmpHomePage> {
                   _animateMapToAdminLocation();
                 },
                 myLocationEnabled: false,
-                zoomControlsEnabled: true,
+                zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
                 liteModeEnabled: false,
               ),
             ),
-          ),
+          )),
         ]),
       ),
     );
