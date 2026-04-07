@@ -453,8 +453,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             if (isWide) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 300),
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(W.bg),
+                  columnSpacing: 20,
+                  horizontalMargin: 16,
                   columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
                   rows: filtered.map((r) {
                     final uid = r['uid'] ?? r['_id'] ?? '';
@@ -501,7 +505,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     ]);
                   }).toList(),
                 ),
-              );
+              ));
             } else {
               if (filtered.isEmpty) return Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))));
               return Column(children: filtered.map((r) {
