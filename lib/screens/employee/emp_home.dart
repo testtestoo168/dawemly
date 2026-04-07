@@ -1043,7 +1043,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               const Spacer(),
               const Icon(Icons.location_on_rounded, size: 14, color: C.sub),
               const SizedBox(width: 4),
-              Text(authName, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text)),
+              Flexible(child: Text(authName, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.text), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.right)),
             ]),
           ),
           // Map

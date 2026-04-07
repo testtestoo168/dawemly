@@ -95,6 +95,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
       EmpMorePage(user: widget.user, onLogout: widget.onLogout),
     ];
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: IndexedStack(index: _i, children: pages),
       bottomNavigationBar: _buildBottomNav(),
     );
