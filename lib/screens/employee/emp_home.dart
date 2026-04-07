@@ -186,6 +186,11 @@ class EmpHomePageState extends State<EmpHomePage> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _updateTime();
       _updateElapsed();
+      // Reload at midnight
+      final now = DateTime.now();
+      if (now.hour == 0 && now.minute == 0 && now.second == 0) {
+        _loadToday();
+      }
     });
   }
 

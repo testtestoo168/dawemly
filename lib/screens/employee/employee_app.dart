@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
@@ -20,6 +21,8 @@ class EmployeeApp extends StatefulWidget {
 class _EmployeeAppState extends State<EmployeeApp> {
   int _i = 0;
   final GlobalKey<EmpHomePageState> _homeKey = GlobalKey<EmpHomePageState>();
+  StreamSubscription? _onMessageSub;
+  StreamSubscription? _onMessageOpenedSub;
 
   @override
   void initState() {
@@ -27,9 +30,16 @@ class _EmployeeAppState extends State<EmployeeApp> {
     if (!kIsWeb) _setupFcmHandlers();
   }
 
+  @override
+  void dispose() {
+    _onMessageSub?.cancel();
+    _onMessageOpenedSub?.cancel();
+    super.dispose();
+  }
+
   void _setupFcmHandlers() {
     // App in foreground — FCM message arrives
-    FirebaseMessaging.onMessage.listen((RemoteMessage msg) {
+    _onMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage msg) {
       if (msg.data['type'] == 'verify_request') {
         _handleVerifyRequest(msg.data);
       } else if (msg.data['type'] == 'request_update') {
@@ -37,7 +47,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
       }
     });
     // App in background/killed — user taps notification
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
+    _onMessageOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
       if (msg.data['type'] == 'verify_request') {
         _handleVerifyRequest(msg.data);
       } else if (msg.data['type'] == 'request_update') {

@@ -29,9 +29,14 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final usersRes = await ApiService.get('users.php?action=list');
-      final attList = await _svc.getAllTodayRecords();
-      final locsRes = await ApiService.get('admin.php?action=get_locations');
+      final results = await Future.wait([
+        ApiService.get('users.php?action=list'),
+        _svc.getAllTodayRecords(),
+        ApiService.get('admin.php?action=get_locations'),
+      ]);
+      final usersRes = results[0] as Map<String, dynamic>;
+      final attList = results[1] as List<Map<String, dynamic>>;
+      final locsRes = results[2] as Map<String, dynamic>;
       if (mounted) setState(() {
         _users = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
         _attList = attList;
