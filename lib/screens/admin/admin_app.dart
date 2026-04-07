@@ -694,7 +694,7 @@ class _AdminAppState extends State<AdminApp> {
       Expanded(child: Column(children: [
         Container(
           height: 56, padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(color: Colors.white, boxShadow: DS.shadowSm),
+          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: W.border)),
           child: Row(textDirection: TextDirection.rtl, children: [
             InkWell(
               onTap: () => setState(() => _sc = !_sc),

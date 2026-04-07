@@ -212,7 +212,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       borderRadius: BorderRadius.circular(DS.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+        decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
         child: Column(children: [
           Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
           const SizedBox(height: 6),

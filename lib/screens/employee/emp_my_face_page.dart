@@ -65,7 +65,7 @@ class EmpMyFacePage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: C.white,
                   borderRadius: BorderRadius.circular(DS.radiusMd),
-                  boxShadow: DS.shadowSm,
+                  border: Border.all(color: C.border),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Row(children: [

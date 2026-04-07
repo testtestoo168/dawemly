@@ -127,21 +127,17 @@ class DS {
     BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 8)),
   ];
 
-  // Card decoration
-  static BoxDecoration cardDecoration({Color? color, double radius = radiusMd}) => BoxDecoration(
+  // Card decoration — classic style with border
+  static BoxDecoration cardDecoration({Color? color, double radius = radiusMd, Color? borderColor}) => BoxDecoration(
     color: color ?? Colors.white,
     borderRadius: BorderRadius.circular(radius),
-    boxShadow: shadowSm,
+    border: Border.all(color: borderColor ?? const Color(0xFFE5E7EB)),
   );
 
-  // Gradient card for stat cards
+  // Gradient card for stat cards — classic with border
   static BoxDecoration gradientCard(Color accent, {double radius = radiusMd}) => BoxDecoration(
+    color: Colors.white,
     borderRadius: BorderRadius.circular(radius),
-    gradient: LinearGradient(
-      begin: Alignment.topRight,
-      end: Alignment.bottomLeft,
-      colors: [Colors.white, accent.withValues(alpha: 0.06)],
-    ),
-    boxShadow: shadowSm,
+    border: Border.all(color: const Color(0xFFE5E7EB)),
   );
 }

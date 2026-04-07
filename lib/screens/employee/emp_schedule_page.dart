@@ -141,7 +141,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           decoration: BoxDecoration(
                             color: C.white,
                             borderRadius: BorderRadius.circular(DS.radiusMd),
-                            boxShadow: DS.shadowSm,
+                            border: Border.all(color: C.border),
                           ),
                           child: Column(
                             children: [
@@ -182,7 +182,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           decoration: BoxDecoration(
                             color: C.white.withOpacity(0.6),
                             borderRadius: BorderRadius.circular(DS.radiusMd),
-                            boxShadow: DS.shadowSm,
+                            border: Border.all(color: C.border),
                           ),
                           child: Center(
                             child: Text(

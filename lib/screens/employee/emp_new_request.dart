@@ -34,7 +34,7 @@ class EmpNewRequestPage extends StatelessWidget {
             decoration: BoxDecoration(
               color: C.card,
               borderRadius: BorderRadius.circular(DS.radiusMd),
-              boxShadow: DS.shadowSm,
+              border: Border.all(color: C.border),
             ),
             child: InkWell(
               onTap: () {

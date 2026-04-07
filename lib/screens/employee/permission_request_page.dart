@@ -142,7 +142,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+              decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Icon(Icons.calendar_today_outlined, size: 16, color: C.pri),
                 const SizedBox(width: 8),
@@ -219,7 +219,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
       decoration: BoxDecoration(
         color: selected ? C.orange.withOpacity(0.08) : C.white,
         borderRadius: BorderRadius.circular(DS.radiusMd),
-        boxShadow: selected ? DS.shadowMd : DS.shadowSm,
+        border: Border.all(color: C.border),
       ),
       child: Column(children: [
         Icon(label.contains('انصراف') ? Icons.logout : Icons.access_time, size: 22, color: selected ? C.orange : C.muted),
@@ -234,7 +234,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
     borderRadius: BorderRadius.circular(DS.radiusMd),
     child: Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
       child: Column(children: [
         Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
         const SizedBox(height: 6),

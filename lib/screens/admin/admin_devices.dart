@@ -111,7 +111,7 @@ class _AdminDevicesState extends State<AdminDevices> {
               borderRadius: BorderRadius.circular(DS.radiusSm),
               child: Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusSm), boxShadow: DS.shadowSm),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusSm), border: Border.all(color: W.border)),
                 child: Icon(Icons.refresh_rounded, size: 16, color: W.sub),
               ),
             ),

@@ -474,7 +474,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         if (_searchResults.isNotEmpty) Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 4),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowMd),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
           child: Column(children: [
             ..._searchResults.map((r) => InkWell(
               onTap: () => _selectSearchResult(r),

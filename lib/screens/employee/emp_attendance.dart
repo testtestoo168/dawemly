@@ -198,7 +198,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
             return ListView(padding: const EdgeInsets.all(14), children: [
               // Stats
               Container(
-                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
                 padding: const EdgeInsets.all(12),
                 child: Column(children: [
                   Row(children: [
@@ -275,7 +275,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
         decoration: BoxDecoration(
           color: C.card,
           borderRadius: BorderRadius.circular(DS.radiusMd),
-          boxShadow: isExpanded ? [BoxShadow(color: C.pri.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : DS.shadowSm,
+          border: Border.all(color: C.border),
         ),
         child: Column(children: [
           // ═══ Summary row (always visible) ═══

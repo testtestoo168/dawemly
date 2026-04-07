@@ -886,7 +886,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
           child: Row(children: [
             _empQuickBtn(Icons.calendar_today_rounded, 'سجل\nحضوري', () => widget.onTabChange?.call(1)),
             _empQuickBtn(Icons.description_outlined, 'طلباتي', () => widget.onTabChange?.call(3)),
@@ -903,7 +903,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (hasCheckIn) Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Container(
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: _hasOvertime ? DS.shadowMd : DS.shadowSm),
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
           padding: const EdgeInsets.all(20),
           child: Column(children: [
             Row(children: [
@@ -934,7 +934,7 @@ class EmpHomePageState extends State<EmpHomePage> {
 
       // ═══ TODAY RECORD ═══
       Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 0), child: Container(
-        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
+        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
         child: Column(children: [
           Padding(padding: const EdgeInsets.all(16), child: Row(children: [
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
@@ -1021,7 +1021,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         decoration: BoxDecoration(
           color: C.white,
           borderRadius: BorderRadius.circular(DS.radiusMd),
-          boxShadow: DS.shadowSm,
+          border: Border.all(color: C.border),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           // Header row

@@ -227,9 +227,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
             decoration: BoxDecoration(
               color: C.white,
               borderRadius: BorderRadius.circular(DS.radiusMd),
-              boxShadow: isSelected
-                  ? [BoxShadow(color: C.green.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 2))]
-                  : DS.shadowSm,
+              border: Border.all(color: C.border),
             ),
             padding: const EdgeInsets.all(14),
             child: Row(

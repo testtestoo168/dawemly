@@ -211,7 +211,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
       decoration: BoxDecoration(
         color: C.white,
         borderRadius: BorderRadius.circular(DS.radiusMd),
-        boxShadow: read ? DS.shadowSm : DS.shadowMd,
+        border: Border.all(color: C.border),
       ),
       child: Opacity(
         opacity: read ? 0.65 : 1.0,

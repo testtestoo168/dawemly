@@ -243,7 +243,7 @@ class _AdminAuditState extends State<AdminAudit> {
         decoration: BoxDecoration(
           color: on ? (tm != null ? bg : W.pri) : W.white,
           borderRadius: BorderRadius.circular(DS.radiusSm),
-          boxShadow: on ? null : DS.shadowSm,
+          border: on ? null : Border.all(color: W.border),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text('$count', style: _tj(10, w: FontWeight.w700, color: on ? color : W.muted)),

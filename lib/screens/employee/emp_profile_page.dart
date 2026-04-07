@@ -38,7 +38,7 @@ class EmpProfilePage extends StatelessWidget {
             decoration: BoxDecoration(
               color: C.white,
               borderRadius: BorderRadius.circular(DS.radiusMd),
-              boxShadow: DS.shadowSm,
+              border: Border.all(color: C.border),
             ),
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -96,7 +96,7 @@ class EmpProfilePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: C.white,
         borderRadius: BorderRadius.circular(DS.radiusMd),
-        boxShadow: DS.shadowSm,
+        border: Border.all(color: C.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
