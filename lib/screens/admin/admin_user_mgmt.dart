@@ -464,33 +464,29 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
 
                     return DataRow(cells: [
-                      DataCell(Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(Icons.edit, () => _showAddEditDialog(existing: r, docId: uid)),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.face, () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
-                          }),
-                        ]),
-                        const SizedBox(height: 4),
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(active ? Icons.block : Icons.check_circle, () async {
-                            await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
-                            _load();
-                          }),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.delete_outline, () async {
-                            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                              title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                              content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
-                              ],
-                            ));
-                            if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
-                          }),
-                        ]),
+                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                        _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
+                        const SizedBox(width: 4),
+                        _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
+                        }),
+                        const SizedBox(width: 4),
+                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
+                          await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
+                          _load();
+                        }),
+                        const SizedBox(width: 4),
+                        _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
+                          final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                            title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                            content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
+                            ],
+                          ));
+                          if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
+                        }),
                       ])),
                       DataCell(_badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
                       DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
@@ -523,33 +519,29 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.border.withOpacity(0.5)))),
                     child: Row(children: [
-                      Column(mainAxisSize: MainAxisSize.min, children: [
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(Icons.edit, () => _showAddEditDialog(existing: r, docId: uid)),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.face, () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
-                          }),
-                        ]),
-                        const SizedBox(height: 4),
-                        Row(mainAxisSize: MainAxisSize.min, children: [
-                          _actionBtn(active ? Icons.block : Icons.check_circle, () async {
-                            await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
-                            _load();
-                          }),
-                          const SizedBox(width: 4),
-                          _actionBtn(Icons.delete_outline, () async {
-                            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                              title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                              content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
-                              ],
-                            ));
-                            if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
-                          }),
-                        ]),
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
+                        const SizedBox(width: 4),
+                        _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
+                        }),
+                        const SizedBox(width: 4),
+                        _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
+                          await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
+                          _load();
+                        }),
+                        const SizedBox(width: 4),
+                        _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
+                          final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                            title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                            content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
+                            ],
+                          ));
+                          if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
+                        }),
                       ]),
                       const Spacer(),
                       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -702,12 +694,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     );
   }
 
-  Widget _actionBtn(IconData icon, VoidCallback onTap) {
+  Widget _actionBtn(IconData icon, Color color, Color bg, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(DS.radiusMd),
-      hoverColor: W.bg,
-      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)), child: Icon(icon, size: 12, color: W.sub)),
+      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: color.withOpacity(0.3))), child: Icon(icon, size: 12, color: color)),
     );
   }
 }

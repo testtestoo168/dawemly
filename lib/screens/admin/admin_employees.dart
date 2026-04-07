@@ -220,11 +220,10 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           ]),
         ]),
         const SizedBox(height: 8),
-        // Action buttons - stacked vertically
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          InkWell(onTap: () => _openEmployeeHistory(e), child: Container(padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 10, vertical: 6), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.history, size: 14, color: W.sub), const SizedBox(width: 4), Text('السجل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub))]))),
-          const SizedBox(height: 6),
-          InkWell(onTap: () => _adminPunchDialog(e), child: Container(padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 10, vertical: 6), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.fingerprint, size: 14, color: W.sub), const SizedBox(width: 4), Text('بصمة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub))]))),
+        // Action buttons row - use Wrap to prevent overflow on narrow screens
+        Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.start, children: [
+          InkWell(onTap: () => _openEmployeeHistory(e), child: Container(padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 10, vertical: 6), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.history, size: 14, color: W.pri), const SizedBox(width: 4), Text('السجل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.pri))]))),
+          InkWell(onTap: () => _adminPunchDialog(e), child: Container(padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 10, vertical: 6), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.fingerprint, size: 14, color: W.orange), const SizedBox(width: 4), Text('بصمة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.orange))]))),
         ]),
         const SizedBox(height: 10),
         Container(height: 1, color: W.div),

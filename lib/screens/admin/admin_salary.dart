@@ -581,17 +581,16 @@ class _AdminSalaryState extends State<AdminSalary> {
         // ─── Header: name + salary info ───
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Action buttons
-          Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Wrap(spacing: 6, runSpacing: 6, children: [
             InkWell(
               onTap: () => _editBaseSalaryDialog(uid, name, baseSalary),
-              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.sub), const SizedBox(width: 4), Text('الراتب', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.sub))])),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.pri), const SizedBox(width: 4), Text('الراتب', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.pri))])),
             ),
-            const SizedBox(height: 6),
             InkWell(
               onTap: () => _editEmployeeDeductionDialog(uid, name),
-              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.sub), const SizedBox(width: 4), Text('خصومات', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.sub))])),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.orange), const SizedBox(width: 4), Text('خصومات', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))])),
             ),
           ]),
           const Spacer(),
