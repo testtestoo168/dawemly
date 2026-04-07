@@ -67,12 +67,15 @@ class EmpHomePageState extends State<EmpHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadToday();
-    _loadLocations();
-    _loadAuthRequirements(); // Pre-cache so biometric is instant
-    _loadUnreadNotifCount();
     _startClock();
-    _checkPendingVerification();
+    // Fire ALL network calls in parallel for fastest startup
+    Future.wait([
+      Future(() => _loadToday()),
+      Future(() => _loadLocations()),
+      Future(() => _loadAuthRequirements()),
+      Future(() => _loadUnreadNotifCount()),
+      Future(() => _checkPendingVerification()),
+    ]);
     _verifyPollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkPendingVerification());
     _startLiveLocation();
   }
@@ -608,7 +611,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   }
 
   void _showLoadingDialog(String title, String sub, Color color) {
-    showDialog(context: context, barrierDismissible: false, builder: (ctx) => Center(child: Container(
+    showDialog(context: context, barrierDismissible: false, builder: (ctx) => Center(child: Material(color: Colors.transparent, child: Container(
       width: 300, padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -618,11 +621,11 @@ class EmpHomePageState extends State<EmpHomePage> {
         const SizedBox(height: 4),
         Text(sub, style: GoogleFonts.tajawal(fontSize: 12, color: C.sub)),
       ]),
-    )));
+    ))));
   }
 
   void _showResultDialog(bool success, String title, String sub) {
-    showDialog(context: context, builder: (ctx) => Center(child: Container(
+    showDialog(context: context, builder: (ctx) => Center(child: Material(color: Colors.transparent, child: Container(
       width: 300, padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -634,7 +637,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         const SizedBox(height: 16),
         SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: success ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
-    )));
+    ))));
   }
 
   void _showLocationResultDialog(bool success, String title, String time, dynamic lat, dynamic lng) async {

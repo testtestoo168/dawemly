@@ -25,70 +25,17 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await initializeDateFormatting('ar', null);
 
-  // Load saved token
-  await ApiService.loadToken();
+  // Run critical init in parallel for fastest startup
+  await Future.wait([
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    initializeDateFormatting('ar', null),
+    ApiService.loadToken(),
+  ]);
 
-  // Sync server time (non-blocking, runs in background)
+  // Non-blocking: sync server time + setup FCM in background
   ServerTimeService().startPeriodicSync();
-
-  // Setup FCM notifications
-  if (!kIsWeb) {
-    try {
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true, badge: true, sound: true,
-      );
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-        alert: true, badge: true, sound: true,
-      );
-
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'dawemly_channel', 'إشعارات داوملي',
-        description: 'إشعارات نظام الحضور والانصراف',
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-      );
-
-      final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-          FlutterLocalNotificationsPlugin();
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
-
-      await flutterLocalNotificationsPlugin.initialize(
-        const InitializationSettings(
-          android: AndroidInitializationSettings('@drawable/ic_notification'),
-          iOS: DarwinInitializationSettings(),
-        ),
-      );
-
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        final notification = message.notification;
-        if (notification != null) {
-          flutterLocalNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                'dawemly_channel', 'إشعارات داوملي',
-                channelDescription: 'إشعارات نظام الحضور والانصراف',
-                importance: Importance.high,
-                priority: Priority.high,
-                icon: '@drawable/ic_notification',
-                color: const Color(0xFF175CD3),
-                largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-              ),
-            ),
-          );
-        }
-      });
-    } catch (_) {}
-  }
+  _setupFcm();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -96,6 +43,53 @@ void main() async {
   ));
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const RasdApp());
+}
+
+/// FCM setup — runs in background, never blocks app startup
+void _setupFcm() async {
+  if (kIsWeb) return;
+  try {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true, badge: true, sound: true,
+    );
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true, badge: true, sound: true,
+    );
+
+    const channel = AndroidNotificationChannel(
+      'dawemly_channel', 'إشعارات داوملي',
+      description: 'إشعارات نظام الحضور والانصراف',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    final flnp = FlutterLocalNotificationsPlugin();
+    await flnp.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await flnp.initialize(const InitializationSettings(
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
+      iOS: DarwinInitializationSettings(),
+    ));
+
+    FirebaseMessaging.onMessage.listen((msg) {
+      final n = msg.notification;
+      if (n != null) {
+        flnp.show(n.hashCode, n.title, n.body, NotificationDetails(
+          android: AndroidNotificationDetails(
+            'dawemly_channel', 'إشعارات داوملي',
+            channelDescription: 'إشعارات نظام الحضور والانصراف',
+            importance: Importance.high, priority: Priority.high,
+            icon: '@drawable/ic_notification',
+            color: const Color(0xFF175CD3),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          ),
+        ));
+      }
+    });
+  } catch (_) {}
 }
 
 class RasdApp extends StatefulWidget {

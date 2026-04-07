@@ -181,7 +181,9 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return Center(child: Container(
+    return Center(child: Material(
+      color: Colors.transparent,
+      child: Container(
       width: screenWidth < 360 ? screenWidth - 40 : 340, height: 480,
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(DS.radiusXl)),
@@ -191,7 +193,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(children: [
-            InkWell(onTap: () => Navigator.pop(context, null), child: const Icon(Icons.close, size: 20, color: Colors.white54)),
+            GestureDetector(onTap: () => Navigator.pop(context, null), child: const Icon(Icons.close, size: 20, color: Colors.white54)),
             const Spacer(),
             Text('التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(width: 8),
@@ -230,6 +232,6 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
           ),
         ),
       ]),
-    ));
+    )));
   }
 }
