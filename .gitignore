@@ -1,0 +1,17 @@
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+.idea/
+.vscode/
+*.jks
+*.keystore
+android/.gradle/
+ios/Pods/
+ios/.symlinks/
+*.jpeg
+*.png
+!assets/**
+!app/assets/**
