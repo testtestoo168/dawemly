@@ -34,8 +34,8 @@ class EmpHomePageState extends State<EmpHomePage> {
   Map<String, dynamic>? _todayRecord;
   bool _loadingRecord = true;
   Timer? _timer;
-  Duration _elapsed = Duration.zero;
-  String _currentTime = '';
+  final ValueNotifier<Duration> _elapsed = ValueNotifier(Duration.zero);
+  final ValueNotifier<String> _currentTime = ValueNotifier('');
   int _unreadNotifCount = 0;
 
   // ═══ Location selection ═══
@@ -176,6 +176,8 @@ class EmpHomePageState extends State<EmpHomePage> {
     _locationStreamSub?.cancel();
     _verifyPollTimer?.cancel();
     _liveMapController?.dispose();
+    _currentTime.dispose();
+    _elapsed.dispose();
     super.dispose();
   }
 
@@ -191,7 +193,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     if (mounted) {
-      setState(() => _currentTime = '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}');
+      _currentTime.value = '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
     }
   }
 
@@ -210,13 +212,13 @@ class EmpHomePageState extends State<EmpHomePage> {
       final sessionStart = _parseTs(sessionStartRaw);
       if (sessionStart != null) {
         final liveSeconds = ServerTimeService().now.difference(sessionStart).inSeconds;
-        if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveSeconds));
+        if (mounted) _elapsed.value = Duration(minutes: totalWorkedMinutes) + Duration(seconds: liveSeconds);
       } else {
-        if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));
+        if (mounted) _elapsed.value = Duration(minutes: totalWorkedMinutes);
       }
     } else {
       // All sessions complete — just show total
-      if (mounted) setState(() => _elapsed = Duration(minutes: totalWorkedMinutes));
+      if (mounted) _elapsed.value = Duration(minutes: totalWorkedMinutes);
     }
   }
 
@@ -285,7 +287,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     }
   }
 
-  double get _workedHours => _elapsed.inMinutes / 60.0;
+  double get _workedHours => _elapsed.value.inMinutes / 60.0;
   double get _overtime => (_workedHours - _standardHours).clamp(0, 24);
   bool get _hasOvertime => _workedHours > _standardHours;
 
@@ -768,7 +770,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Column(children: [
-              Text(_currentTime, style: GoogleFonts.ibmPlexMono(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 3)),
+              ValueListenableBuilder<String>(valueListenable: _currentTime, builder: (_, t, __) => Text(t, style: GoogleFonts.ibmPlexMono(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 3))),
               const SizedBox(height: 4),
               Text('$dayName ${now.day} $monthName — ${widget.user['dept'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 12, color: Colors.white.withOpacity(0.5))),
             ]),
@@ -916,7 +918,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               Text(hasCheckOut ? 'إجمالي ساعات العمل' : 'الوقت المنقضي', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
             ]),
             const SizedBox(height: 14),
-            Text(_fmtDuration(_elapsed), style: GoogleFonts.ibmPlexMono(fontSize: 40, fontWeight: FontWeight.w700, color: hasCheckOut ? C.green : C.pri, letterSpacing: 4)),
+            ValueListenableBuilder<Duration>(valueListenable: _elapsed, builder: (_, e, __) => Text(_fmtDuration(e), style: GoogleFonts.ibmPlexMono(fontSize: 40, fontWeight: FontWeight.w700, color: hasCheckOut ? C.green : C.pri, letterSpacing: 4))),
             const SizedBox(height: 14),
             Row(children: [
               _statBox('أوفر تايم', _hasOvertime ? '${_overtime.toStringAsFixed(1)} ساعة' : '—', _hasOvertime ? C.orange : C.muted),
