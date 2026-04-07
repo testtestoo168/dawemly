@@ -62,13 +62,14 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setDState) {
         final screenW = MediaQuery.of(ctx).size.width;
-        final dialogW = min<double>(520, screenW - 40);
+        final isWebWide = screenW > 800;
+        final dialogW = isWebWide ? min<double>(700, screenW - 80) : min<double>(520, screenW - 40);
         final isMobile = screenW < 600;
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           child: Container(
             width: dialogW,
-            constraints: const BoxConstraints(maxHeight: 600),
+            constraints: BoxConstraints(maxHeight: isWebWide ? 700 : 600),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               // Header
               Container(
@@ -87,65 +88,124 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(children: [
-                    _formField('الاسم الكامل *', nameCtrl),
+                    if (isWebWide)
+                      Row(children: [
+                        Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _formField('الاسم الكامل *', nameCtrl)),
+                      ])
+                    else ...[
+                      _formField('الاسم الكامل *', nameCtrl),
+                    ],
                     const SizedBox(height: 12),
                     if (isMobile) ...[
                       _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true),
                       const SizedBox(height: 12),
                       _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true),
+                    ] else if (isWebWide) ...[
+                      Row(children: [
+                        if (existing == null) ...[
+                          Expanded(child: _formField('كلمة المرور *', passCtrl, hint: '••••••••', isPass: true)),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
+                      ]),
                     ] else
                       Row(children: [
                         Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
                         const SizedBox(width: 12),
                         Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
                       ]),
-                    if (existing == null) ...[
+                    if (!isWebWide && existing == null) ...[
                       const SizedBox(height: 12),
                       _formField('كلمة المرور *', passCtrl, hint: '••••••••', isPass: true),
                     ],
                     const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
-                        const SizedBox(height: 4),
-                        DropdownButtonFormField<String>(
-                          value: dept,
-                          items: _depts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-                          onChanged: (v) => setDState(() => dept = v!),
-                          decoration: _dropDecor(),
-                        ),
-                      ])),
-                      const SizedBox(width: 12),
-                      Expanded(child: _formField('المسمى الوظيفي', roleCtrl)),
-                    ]),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
-                        const SizedBox(height: 4),
-                        DropdownButtonFormField<int>(
-                          value: shift,
-                          items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text('فترة $s', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-                          onChanged: (v) => setDState(() => shift = v!),
-                          decoration: _dropDecor(),
-                        ),
-                      ])),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
-                        const SizedBox(height: 4),
-                        DropdownButtonFormField<String>(
-                          value: userRole,
-                          items: [
-                            DropdownMenuItem(value: 'employee', child: Text('موظف', style: GoogleFonts.tajawal(fontSize: 13))),
-                            DropdownMenuItem(value: 'moderator', child: Text('مشرف', style: GoogleFonts.tajawal(fontSize: 13))),
-                            DropdownMenuItem(value: 'admin', child: Text('مدير النظام', style: GoogleFonts.tajawal(fontSize: 13))),
-                          ],
-                          onChanged: (v) => setDState(() => userRole = v!),
-                          decoration: _dropDecor(),
-                        ),
-                      ])),
-                    ]),
+                    if (isWebWide)
+                      Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<int>(
+                            value: shift,
+                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text('فترة $s', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            onChanged: (v) => setDState(() => shift = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<String>(
+                            value: userRole,
+                            items: [
+                              DropdownMenuItem(value: 'employee', child: Text('موظف', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'moderator', child: Text('مشرف', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'admin', child: Text('مدير النظام', style: GoogleFonts.tajawal(fontSize: 13))),
+                            ],
+                            onChanged: (v) => setDState(() => userRole = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<String>(
+                            value: dept,
+                            items: _depts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            onChanged: (v) => setDState(() => dept = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                        const SizedBox(width: 12),
+                        Expanded(child: _formField('المسمى الوظيفي', roleCtrl)),
+                      ])
+                    else ...[
+                      Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<String>(
+                            value: dept,
+                            items: _depts.map((d) => DropdownMenuItem(value: d, child: Text(d, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            onChanged: (v) => setDState(() => dept = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                        const SizedBox(width: 12),
+                        Expanded(child: _formField('المسمى الوظيفي', roleCtrl)),
+                      ]),
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<int>(
+                            value: shift,
+                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text('فترة $s', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            onChanged: (v) => setDState(() => shift = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<String>(
+                            value: userRole,
+                            items: [
+                              DropdownMenuItem(value: 'employee', child: Text('موظف', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'moderator', child: Text('مشرف', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'admin', child: Text('مدير النظام', style: GoogleFonts.tajawal(fontSize: 13))),
+                            ],
+                            onChanged: (v) => setDState(() => userRole = v!),
+                            decoration: _dropDecor(),
+                          ),
+                        ])),
+                      ]),
+                    ],
                     const SizedBox(height: 16),
                     // ─── Custom Work Schedule ───
                     Container(
@@ -316,21 +376,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
         const SizedBox(height: 20),
 
         // Filters
-        Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, children: [
-          DropdownButton<String>(
-            value: _fActive,
-            items: ['الكل', 'نشط', 'معطّل'].map((s) => DropdownMenuItem(value: s, child: Text(s, style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-            onChanged: (v) => setState(() => _fActive = v!),
-            underline: const SizedBox(),
-          ),
-          DropdownButton<String>(
-            value: _fRole,
-            items: ['الكل', 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? s : s == 'admin' ? 'مدير' : s == 'moderator' ? 'مشرف' : 'موظف', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
-            onChanged: (v) => setState(() => _fRole = v!),
-            underline: const SizedBox(),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width > 700 ? 260 : double.infinity,
+        Builder(builder: (context) {
+          final filterW = MediaQuery.of(context).size.width;
+          final isFilterWide = filterW > 700;
+          final searchField = SizedBox(
+            width: isFilterWide ? 320 : double.infinity,
             child: TextField(
               onChanged: (v) => setState(() => _search = v),
               textAlign: TextAlign.right,
@@ -342,11 +392,46 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 filled: true, fillColor: W.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.pri, width: 2)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
-          ),
-        ]),
+          );
+          final activeFilter = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: DS.cardDecoration(),
+            child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+              value: _fActive, isDense: true,
+              style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+              items: ['الكل', 'نشط', 'معطّل'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              onChanged: (v) => setState(() => _fActive = v!),
+            )),
+          );
+          final roleFilter = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: DS.cardDecoration(),
+            child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+              value: _fRole, isDense: true,
+              style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+              items: ['الكل', 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? 'كل الصلاحيات' : s == 'admin' ? 'مدير' : s == 'moderator' ? 'مشرف' : 'موظف', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+              onChanged: (v) => setState(() => _fRole = v!),
+            )),
+          );
+          if (isFilterWide) {
+            return Row(children: [
+              activeFilter,
+              const SizedBox(width: 8),
+              roleFilter,
+              const Spacer(),
+              searchField,
+            ]);
+          }
+          return Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.end, children: [
+            activeFilter,
+            roleFilter,
+            searchField,
+          ]);
+        }),
         const SizedBox(height: 14),
 
         // Table / Cards
@@ -600,8 +685,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   Widget _badge(String text, Color color, Color bg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: bg)),
-      child: Text(text, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.3))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 5),
+        Text(text, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      ]),
     );
   }
 

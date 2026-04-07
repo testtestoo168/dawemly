@@ -51,6 +51,21 @@ class _AdminSalaryState extends State<AdminSalary> {
   double _toDouble(dynamic v) => double.tryParse('${v ?? 0}') ?? 0;
   int _toInt(dynamic v) => int.tryParse('${v ?? 0}') ?? 0;
 
+  /// Format number with commas: 12500 -> 12,500
+  String _fmtNum(double v) {
+    if (v == 0) return '0';
+    final s = v.toStringAsFixed(0);
+    final result = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      if (s[i] == '-') { result.write('-'); break; }
+      if (count > 0 && count % 3 == 0) result.write(',');
+      result.write(s[i]);
+      count++;
+    }
+    return result.toString().split('').reversed.join();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
@@ -140,25 +155,25 @@ class _AdminSalaryState extends State<AdminSalary> {
           // ─── Summary cards ───
           if (isWide)
             Row(children: [
-              Expanded(child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${totalAbsentDeduction.toStringAsFixed(0)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
+              Expanded(child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${_fmtNum(totalAbsentDeduction)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.access_time, 'خصم التأخير', '${totalLateDeduction.toStringAsFixed(0)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
+              Expanded(child: _stat(Icons.access_time, 'خصم التأخير', '${_fmtNum(totalLateDeduction)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${totalOvertimeAmt.toStringAsFixed(0)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
+              Expanded(child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${_fmtNum(totalOvertimeAmt)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${totalDeductions.toStringAsFixed(0)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
+              Expanded(child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${_fmtNum(totalDeductions)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
             ])
           else
             SizedBox(
               height: 130,
               child: ListView(scrollDirection: Axis.horizontal, children: [
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${totalAbsentDeduction.toStringAsFixed(0)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${_fmtNum(totalAbsentDeduction)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'خصم التأخير', '${totalLateDeduction.toStringAsFixed(0)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'خصم التأخير', '${_fmtNum(totalLateDeduction)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${totalOvertimeAmt.toStringAsFixed(0)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${_fmtNum(totalOvertimeAmt)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${totalDeductions.toStringAsFixed(0)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${_fmtNum(totalDeductions)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
               ]),
             ),
           const SizedBox(height: 20),
@@ -174,6 +189,34 @@ class _AdminSalaryState extends State<AdminSalary> {
                 Text('لا يوجد بيانات رواتب في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
               ])),
             )
+          else if (isWide)
+            // Grid layout for web: 2 columns (3 if very wide)
+            Builder(builder: (context) {
+              final cols = screenW > 1200 ? 3 : 2;
+              final rows = (_records.length / cols).ceil();
+              return Column(children: List.generate(rows, (row) {
+                final start = row * cols;
+                final end = (start + cols).clamp(0, _records.length);
+                final items = _records.sublist(start, end);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < items.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 10),
+                        Expanded(child: _salaryCard(items[i], false)),
+                      ],
+                      // Fill remaining space if last row is incomplete
+                      for (int i = items.length; i < cols; i++) ...[
+                        const SizedBox(width: 10),
+                        const Expanded(child: SizedBox()),
+                      ],
+                    ],
+                  ),
+                );
+              }));
+            })
           else
             ..._records.map((emp) => _salaryCard(emp, isMobile)),
 
@@ -570,12 +613,12 @@ class _AdminSalaryState extends State<AdminSalary> {
           ),
           child: Row(children: [
             Expanded(child: Column(children: [
-              Text(netSalary.toStringAsFixed(0), style: _mono(fontSize: 18, fontWeight: FontWeight.w800, color: netSalary >= 0 ? W.green : W.red)),
+              Text(_fmtNum(netSalary), style: _mono(fontSize: 18, fontWeight: FontWeight.w800, color: netSalary >= 0 ? W.green : W.red)),
               Text('صافي الراتب', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
             ])),
             Container(width: 1, height: 30, color: W.border),
             Expanded(child: Column(children: [
-              Text(baseSalary > 0 ? baseSalary.toStringAsFixed(0) : 'غير محدد', style: _mono(fontSize: baseSalary > 0 ? 18 : 12, fontWeight: FontWeight.w800, color: baseSalary > 0 ? W.pri : W.red)),
+              Text(baseSalary > 0 ? _fmtNum(baseSalary) : 'غير محدد', style: _mono(fontSize: baseSalary > 0 ? 18 : 12, fontWeight: FontWeight.w800, color: baseSalary > 0 ? W.pri : W.red)),
               Text('الراتب الأساسي', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
             ])),
           ]),
@@ -615,7 +658,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           ),
           child: Row(children: [
             Text(
-              '${totalDeductions.toStringAsFixed(0)} ر.س',
+              '${_fmtNum(totalDeductions)} ر.س',
               style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: W.red),
             ),
             const Spacer(),
@@ -631,7 +674,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Row(children: [
               Text(
-                '+${overtimeAmt.toStringAsFixed(0)} ر.س',
+                '+${_fmtNum(overtimeAmt)} ر.س',
                 style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: W.green),
               ),
               const Spacer(),
@@ -648,7 +691,7 @@ class _AdminSalaryState extends State<AdminSalary> {
   Widget _deductionRow(IconData icon, String label, String detail, double amount, Color color, {bool isPositive = false}) {
     return Row(children: [
       Text(
-        '${isPositive ? '+' : '-'}${amount.toStringAsFixed(0)} ر.س',
+        '${isPositive ? '+' : '-'}${_fmtNum(amount)} ر.س',
         style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: color),
       ),
       const SizedBox(width: 8),

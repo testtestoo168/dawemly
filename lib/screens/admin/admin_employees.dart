@@ -115,18 +115,62 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('سجل الموظفين', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 18 : 24, fontWeight: FontWeight.w800, color: W.text)),
           const SizedBox(height: 20),
-          Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
-            _searchBox(),
-            _drop(_fSt, ['الكل','حاضر','مكتمل','غير حاضر'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
-            _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
-            Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4)),
-              child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted))),
-          ]),
+          Builder(builder: (context) {
+            final fW = MediaQuery.of(context).size.width;
+            final isFilterWide = fW > 800;
+            final countBadge = Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4)),
+              child: Text('${filtered.length} نتيجة', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)));
+            if (isFilterWide) {
+              return Row(children: [
+                countBadge,
+                const SizedBox(width: 10),
+                _drop(_fSt, ['الكل','حاضر','مكتمل','غير حاضر'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
+                const SizedBox(width: 10),
+                _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
+                const Spacer(),
+                _searchBox(),
+              ]);
+            }
+            return Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.end, children: [
+              _searchBox(),
+              _drop(_fSt, ['الكل','حاضر','مكتمل','غير حاضر'], (v) => setState(() { _fSt = v; }), 'كل الحالات'),
+              _drop(_fDept, depts.toList(), (v) => setState(() { _fDept = v; }), 'كل الأقسام'),
+              countBadge,
+            ]);
+          }),
           const SizedBox(height: 18),
 
           if (filtered.isEmpty)
-            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: DS.cardDecoration(),
-              child: Center(child: Column(children: [Icon(Icons.people_outline, size: 48, color: W.hint), SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
+            Container(width: double.infinity, padding: const EdgeInsets.all(50), decoration: DS.cardDecoration(),
+              child: Center(child: Column(children: [Icon(Icons.people_outline, size: 48, color: W.hint), const SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
+          else if (MediaQuery.of(context).size.width > 800)
+            // Grid layout for web: 2 columns (3 if very wide)
+            Builder(builder: (context) {
+              final gridW = MediaQuery.of(context).size.width;
+              final cols = gridW > 1200 ? 3 : 2;
+              final rows = (filtered.length / cols).ceil();
+              return Column(children: List.generate(rows, (row) {
+                final start = row * cols;
+                final end = (start + cols).clamp(0, filtered.length);
+                final items = filtered.sublist(start, end);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < items.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 10),
+                        Expanded(child: _empCard(items[i])),
+                      ],
+                      for (int i = items.length; i < cols; i++) ...[
+                        const SizedBox(width: 10),
+                        const Expanded(child: SizedBox()),
+                      ],
+                    ],
+                  ),
+                );
+              }));
+            })
           else
             ...filtered.map((e) => _empCard(e)),
         ]),
@@ -207,9 +251,9 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
     showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, ss) { final dw = MediaQuery.of(ctx).size.width; return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(horizontal: dw > 800 ? 40 : 16, vertical: 24),
       child: Container(
-      width: dw < 420 ? dw - 40 : 380, padding: EdgeInsets.all(dw < 400 ? 16 : 24),
+      width: dw > 800 ? 440 : dw < 420 ? dw - 40 : 380, padding: EdgeInsets.all(dw < 400 ? 16 : 24),
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 48, height: 48, decoration: BoxDecoration(color: W.orangeL, shape: BoxShape.circle), child: Icon(Icons.fingerprint, size: 24, color: W.orange)),
         const SizedBox(height: 14),
@@ -321,12 +365,12 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     List<Map<String, dynamic>>? expandedPunches;
     bool loadingPunches = false;
 
-    showDialog(context: context, barrierDismissible: true, builder: (ctx) { final dw = MediaQuery.of(ctx).size.width; final isNarrow = dw < 400; return Dialog(
+    showDialog(context: context, barrierDismissible: true, builder: (ctx) { final dw = MediaQuery.of(ctx).size.width; final isNarrow = dw < 400; final isWebDialog = dw > 800; return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(isNarrow ? 10 : 20),
+      insetPadding: EdgeInsets.all(isNarrow ? 10 : isWebDialog ? 40 : 20),
       child: StatefulBuilder(builder: (ctx, ss) {
         return Container(
-          constraints: BoxConstraints(maxWidth: 560, maxHeight: MediaQuery.of(ctx).size.height * 0.85),
+          constraints: BoxConstraints(maxWidth: isWebDialog ? 700 : 560, maxHeight: MediaQuery.of(ctx).size.height * 0.85),
           decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(18)),
           child: Column(children: [
             // Header
@@ -780,7 +824,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     ]),
   );
 
-  Widget _searchBox() { final sw = MediaQuery.of(context).size.width; return SizedBox(width: sw < 400 ? sw - 40 : 260, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), prefixIcon: Icon(Icons.search, size: 16, color: W.muted)))); }
+  Widget _searchBox() { final sw = MediaQuery.of(context).size.width; final w = sw > 800 ? 360.0 : sw < 400 ? sw - 40.0 : 260.0; return SizedBox(width: w, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث بالاسم أو الرقم الوظيفي...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.pri, width: 2)), prefixIcon: Icon(Icons.search, size: 16, color: W.muted)))); }
   Widget _drop(String v, List<String> items, ValueChanged<String> cb, String all) => Container(padding: EdgeInsets.symmetric(horizontal: 16), decoration: DS.cardDecoration(), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: v, isDense: true, style: GoogleFonts.tajawal(fontSize: 13, color: W.text), items: items.map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? all : s))).toList(), onChanged: (x) { if (x != null) cb(x); })));
 
   Widget _timeField(TextEditingController ctrl, String label, String hint, IconData icon, Color color) => Column(
