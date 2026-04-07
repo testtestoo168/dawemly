@@ -169,7 +169,17 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
+    // Register auto-logout callback for 401 responses
+    ApiService.onUnauthorized = () {
+      if (mounted) setState(() => _user = null);
+    };
     _checkExistingSession();
+  }
+
+  @override
+  void dispose() {
+    ApiService.onUnauthorized = null;
+    super.dispose();
   }
 
   void _checkExistingSession() async {

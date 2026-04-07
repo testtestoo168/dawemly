@@ -14,6 +14,9 @@ class ApiService {
   static final Map<String, _CacheEntry> _cache = {};
   static const _defaultCacheTtl = Duration(seconds: 10);
 
+  // Callback for 401 — set by AuthGate to trigger auto-logout
+  static void Function()? onUnauthorized;
+
   // ─── Token Management ───
   static Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -155,6 +158,10 @@ class ApiService {
   // ─── Handle Response ───
   static Map<String, dynamic> _handleResponse(http.Response response) {
     if (response.statusCode == 401) {
+      // Auto-logout: clear token and notify the app
+      clearToken();
+      _cache.clear();
+      onUnauthorized?.call();
       return {'success': false, 'error': 'انتهت الجلسة — يرجى تسجيل الدخول مرة أخرى', 'unauthorized': true};
     }
     if (response.statusCode == 403) {
