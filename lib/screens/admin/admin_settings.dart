@@ -1462,6 +1462,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     const SizedBox(height: 14),
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       _cardHeader('خيارات العرض', Icons.visibility, const Color(0xFF0BA5EC)),
+      _secToggle('الوضع الداكن', 'تغيير الألوان لوضع مريح للعين في الإضاءة المنخفضة', _darkMode, (v) => setState(() => _darkMode = v)),
       _secToggle('الوضع المضغوط', 'تقليل المسافات والحجوم لعرض بيانات أكثر', _compactMode, (v) => setState(() => _compactMode = v)),
     ])),
   ]);

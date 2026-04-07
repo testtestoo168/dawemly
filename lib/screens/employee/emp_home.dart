@@ -43,7 +43,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   String? _selectedLocationId;
   bool _loadingLocations = true;
 
-  static const double _standardHours = 8.0;
+  double _standardHours = 8.0;
 
   // Live map
   Position? _livePosition;
@@ -112,6 +112,15 @@ class EmpHomePageState extends State<EmpHomePage> {
         _cachedFaceRequired = faceReq;
         _authReqsLoaded = true;
       }
+      // Load standard hours from settings
+      try {
+        final settingsRes = await ApiService.get('admin.php?action=get_settings', cacheTtl: const Duration(minutes: 5));
+        if (settingsRes['success'] == true && mounted) {
+          final s = settingsRes['settings'] as Map<String, dynamic>? ?? {};
+          final h = double.tryParse('${s['generalH'] ?? s['general']?['generalH'] ?? ''}');
+          if (h != null && h > 0) _standardHours = h;
+        }
+      } catch (_) {}
       // Warm up the face features cache in the background so the first
       // check-in has zero latency on local comparison.
       if (faceReq == true) {

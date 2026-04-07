@@ -11,10 +11,13 @@ import 'theme/app_colors.dart';
 import 'screens/login_page.dart';
 import 'screens/employee/employee_app.dart';
 import 'screens/admin/admin_app.dart';
+import 'screens/superadmin/superadmin_app.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/server_time_service.dart';
 import 'screens/splash_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -100,6 +103,7 @@ class RasdApp extends StatefulWidget {
 
 class _RasdAppState extends State<RasdApp> {
   String _fontSize = 'medium';
+  bool _darkMode = false;
 
   @override
   void initState() {
@@ -112,7 +116,11 @@ class _RasdAppState extends State<RasdApp> {
       final res = await ApiService.get('admin.php?action=get_settings');
       final settings = res['settings'] as Map<String, dynamic>? ?? {};
       if (mounted) {
-        setState(() => _fontSize = settings['fontSize'] ?? 'medium');
+        setState(() {
+          _fontSize = settings['fontSize'] ?? 'medium';
+          final dm = settings['darkMode'];
+          _darkMode = dm == true || dm == 1 || dm == '1' || dm == 'true';
+        });
       }
     } catch (_) {}
   }
@@ -131,10 +139,23 @@ class _RasdAppState extends State<RasdApp> {
       title: 'داوِملي',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
+      themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         scaffoldBackgroundColor: C.bg,
         textTheme: GoogleFonts.tajawalTextTheme(),
         colorScheme: ColorScheme.fromSeed(seedColor: C.pri),
+        useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      darkTheme: ThemeData(
+        scaffoldBackgroundColor: CD.bg,
+        textTheme: GoogleFonts.tajawalTextTheme(ThemeData.dark().textTheme),
+        colorScheme: ColorScheme.fromSeed(seedColor: CD.pri, brightness: Brightness.dark),
         useMaterial3: true,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
@@ -165,6 +186,8 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   Map<String, dynamic>? _user;
   bool _loading = true;
+  bool? _onboardingDone;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -183,6 +206,10 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _checkExistingSession() async {
+    // Load onboarding status
+    final prefs = await SharedPreferences.getInstance();
+    _onboardingDone = prefs.getBool('onboarding_done') ?? false;
+
     if (ApiService.isLoggedIn) {
       try {
         final user = await AuthService().getCurrentUser();
@@ -218,6 +245,13 @@ class _AuthGateState extends State<AuthGate> {
     final role = _user!['role'] ?? 'employee';
 
     final isWeb = MediaQuery.of(context).size.width > 800;
+
+    // Super admin — web only
+    if (role == 'superadmin' && isWeb) {
+      return SuperadminApp(user: _user!, onLogout: _onLogout);
+    }
+
+    // Block non-admin, non-superadmin from web
     if (isWeb && role != 'admin') {
       return Scaffold(
         body: Center(child: Container(
@@ -257,6 +291,15 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     if (role == 'admin') return AdminApp(user: _user!, onLogout: _onLogout);
+
+    // Employee — show onboarding if not done yet
+    if (_onboardingDone != true && !_showOnboarding && !isWeb) {
+      // First time employee — show onboarding
+      return OnboardingScreen(onComplete: () {
+        if (mounted) setState(() => _onboardingDone = true);
+      });
+    }
+
     return EmployeeApp(user: _user!, onLogout: _onLogout);
   }
 }

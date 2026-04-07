@@ -274,11 +274,23 @@ class AttendanceService {
   }
 
   // ─── All records (admin) ───
-  Future<List<Map<String, dynamic>>> getAllRecords() async {
-    final result = await ApiService.get('attendance.php?action=all_records');
+  Future<List<Map<String, dynamic>>> getAllRecords({int? limit, int? offset}) async {
+    final params = <String, String>{};
+    if (limit != null) params['limit'] = limit.toString();
+    if (offset != null) params['offset'] = offset.toString();
+    final result = await ApiService.get('attendance.php?action=all_records', params: params);
     if (result['success'] == true) {
       return (result['records'] as List? ?? []).cast<Map<String, dynamic>>();
     }
     return [];
+  }
+
+  // ─── All records count (admin) ───
+  Future<int> getAllRecordsCount() async {
+    final result = await ApiService.get('attendance.php?action=all_records', params: {'limit': '1', 'offset': '0'});
+    if (result['success'] == true) {
+      return (result['total'] as int?) ?? 0;
+    }
+    return 0;
   }
 }

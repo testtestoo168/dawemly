@@ -31,6 +31,11 @@ class _AdminReportsState extends State<AdminReports> {
   List<Map<String, dynamic>> _allRecords = [];
   bool _loading = true;
 
+  // Pagination
+  int _page = 0;
+  static const _pageSize = 50;
+  int _totalRecords = 0;
+
   @override
   void initState() {
     super.initState();
@@ -60,9 +65,13 @@ class _AdminReportsState extends State<AdminReports> {
         _allUsers = list.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
         _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
       }
-      final recRes = await ApiService.get('attendance.php?action=all_records');
+      final recRes = await ApiService.get('attendance.php?action=all_records', params: {
+        'limit': _pageSize.toString(),
+        'offset': (_page * _pageSize).toString(),
+      });
       if (recRes['success'] == true) {
         _allRecords = (recRes['records'] as List? ?? []).cast<Map<String, dynamic>>();
+        _totalRecords = int.tryParse('${recRes['total'] ?? ''}') ?? _allRecords.length;
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
@@ -279,11 +288,11 @@ class _AdminReportsState extends State<AdminReports> {
             child: Column(children: [
               // Month selector
               Row(children: [
-                InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
+                InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } _page = 0; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
                 const Spacer(),
                 Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
                 const Spacer(),
-                InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
+                InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } _page = 0; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
               ]),
               const SizedBox(height: 10),
               Container(height: 1, color: W.div),
@@ -302,7 +311,7 @@ class _AdminReportsState extends State<AdminReports> {
                     DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
                     ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
-                  onChanged: (v) => setState(() => _selectedUid = v ?? 'الكل'),
+                  onChanged: (v) => setState(() { _selectedUid = v ?? 'الكل'; _page = 0; }),
                 )),
                 const SizedBox(width: 10),
                 Text('الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub)),
@@ -316,7 +325,7 @@ class _AdminReportsState extends State<AdminReports> {
           // Stats — full-width row on web, 2-column grid on mobile
           if (isWide)
             Row(children: [
-              Expanded(child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
+              Expanded(child: _stat('إجمالي السجلات', '$_totalRecords', W.pri)),
               const SizedBox(width: 12),
               Expanded(child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
               const SizedBox(width: 12),
@@ -326,7 +335,7 @@ class _AdminReportsState extends State<AdminReports> {
             ])
           else
             Wrap(spacing: 10, runSpacing: 10, children: [
-              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '${data.length}', W.pri)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '$_totalRecords', W.pri)),
               SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
               SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
               SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
@@ -371,8 +380,66 @@ class _AdminReportsState extends State<AdminReports> {
               ),
             ),
           ),
+
+          // Pagination controls
+          if (!_loading && data.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildPagination(data.length),
+          ],
         ]));
       },
+    );
+  }
+
+  void _goToPage(int page) {
+    setState(() => _page = page);
+    _loadAll();
+  }
+
+  int get _totalPages => (_totalRecords / _pageSize).ceil().clamp(1, 999999);
+
+  Widget _buildPagination(int currentCount) {
+    final start = _page * _pageSize + 1;
+    final end = _page * _pageSize + currentCount;
+    final isWide = MediaQuery.of(context).size.width > 800;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: DS.cardDecoration(),
+      child: Row(children: [
+        // Previous button
+        TextButton.icon(
+          onPressed: _page > 0 ? () => _goToPage(_page - 1) : null,
+          icon: const Icon(Icons.chevron_right, size: 18),
+          label: Text('السابق', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
+          style: TextButton.styleFrom(
+            foregroundColor: _page > 0 ? W.pri : W.muted,
+          ),
+        ),
+        const Spacer(),
+        // Record count and page info
+        Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            'صفحة ${_page + 1} من $_totalPages',
+            style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'عرض $start-$end من $_totalRecords سجل',
+            style: GoogleFonts.tajawal(fontSize: 11, color: W.sub),
+          ),
+        ]),
+        const Spacer(),
+        // Next button
+        TextButton.icon(
+          onPressed: _page < _totalPages - 1 ? () => _goToPage(_page + 1) : null,
+          icon: Text('التالي', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
+          label: const Icon(Icons.chevron_left, size: 18),
+          style: TextButton.styleFrom(
+            foregroundColor: _page < _totalPages - 1 ? W.pri : W.muted,
+          ),
+        ),
+      ]),
     );
   }
 

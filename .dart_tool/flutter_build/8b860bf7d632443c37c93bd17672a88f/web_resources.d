@@ -1,0 +1,1 @@
+ build/web/manifest.json:  /var/www/attendance/web/index.html /var/www/attendance/web/manifest.json

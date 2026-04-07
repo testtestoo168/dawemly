@@ -1,0 +1,1 @@
+{"inputs":["/var/www/attendance/web/*/index.html","/var/www/attendance/web/flutter_bootstrap.js","/opt/flutter/bin/internal/engine.version"],"outputs":["/var/www/attendance/build/web/*/index.html","/var/www/attendance/build/web/flutter_bootstrap.js"],"buildKey":"[{\"compileTarget\":\"dart2js\",\"renderer\":\"canvaskit\",\"mainJsPath\":\"main.dart.js\"}]"}

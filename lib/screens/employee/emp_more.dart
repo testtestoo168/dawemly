@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -9,6 +10,7 @@ import 'emp_schedule_page.dart';
 import 'emp_profile_page.dart';
 import 'emp_my_face_page.dart';
 import 'emp_notifications_page.dart';
+import '../onboarding_screen.dart';
 
 class EmpMorePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -269,7 +271,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                   _menuItem(
                     icon: Icons.info_outline_rounded,
                     label: 'جولة تعريفية للتطبيق',
-                    onTap: () {},
+                    onTap: () => _showOnboardingTour(),
                   ),
                 ],
               ),
@@ -383,6 +385,14 @@ class _EmpMorePageState extends State<EmpMorePage> {
     final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     return '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
+  }
+
+  void _showOnboardingTour() {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => OnboardingScreen(onComplete: () {
+        Navigator.pop(context);
+      }),
+    ));
   }
 
   void _showChangePasswordDialog() {

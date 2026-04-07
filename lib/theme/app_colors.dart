@@ -77,6 +77,44 @@ class AC {
   static const Color dark    = Color(0xFF1A1A2E);
 }
 
+/// Dark mode colors
+class CD {
+  static const Color pri     = Color(0xFF4B8BF5);
+  static const Color priDark = Color(0xFF3A6FD8);
+  static const Color priLight= Color(0xFF1E2D4A);
+  static const Color priBg   = Color(0xFF1A2744);
+
+  static const Color bg      = Color(0xFF121212);
+  static const Color white   = Color(0xFF1E1E1E);
+  static const Color card    = Color(0xFF1E1E1E);
+
+  static const Color text    = Color(0xFFE0E0E0);
+  static const Color sub     = Color(0xFF9E9E9E);
+  static const Color muted   = Color(0xFF757575);
+  static const Color hint    = Color(0xFF616161);
+
+  static const Color border  = Color(0xFF333333);
+  static const Color div     = Color(0xFF2A2A2A);
+
+  static const Color green   = Color(0xFF4CAF50);
+  static const Color greenL  = Color(0xFF1B3A1B);
+  static const Color greenBd = Color(0xFF2E7D32);
+
+  static const Color red     = Color(0xFFEF5350);
+  static const Color redL    = Color(0xFF3A1B1B);
+  static const Color redBd   = Color(0xFFC62828);
+
+  static const Color orange  = Color(0xFFFFB74D);
+  static const Color orangeL = Color(0xFF3A2E1B);
+  static const Color orangeBd= Color(0xFFF57F17);
+
+  static const Color purple  = Color(0xFFB39DDB);
+  static const Color purpleL = Color(0xFF2A1F3A);
+
+  static const Color teal    = Color(0xFF4FC3F7);
+  static const Color dark    = Color(0xFFE0E0E0);
+}
+
 /// Adaptive colors: web=pharmacy, mobile=original
 class W {
   static Color get pri      => kIsWeb ? AC.pri      : C.pri;
