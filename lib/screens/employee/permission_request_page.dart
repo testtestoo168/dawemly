@@ -136,12 +136,13 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
 
           // ─── التاريخ ───
           _sectionLabel('التاريخ'),
-          GestureDetector(
+          InkWell(
             onTap: _pickDate,
+            borderRadius: BorderRadius.circular(DS.radiusMd),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.border)),
+              decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Icon(Icons.calendar_today_outlined, size: 16, color: C.pri),
                 const SizedBox(width: 8),
@@ -210,14 +211,15 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
     child: Text(t, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.text)),
   );
 
-  Widget _typeCard(String label, bool selected, VoidCallback onTap) => GestureDetector(
+  Widget _typeCard(String label, bool selected, VoidCallback onTap) => InkWell(
     onTap: onTap,
+    borderRadius: BorderRadius.circular(DS.radiusMd),
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
         color: selected ? C.orange.withOpacity(0.08) : C.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: selected ? C.orange : C.border, width: selected ? 2 : 1),
+        borderRadius: BorderRadius.circular(DS.radiusMd),
+        boxShadow: selected ? DS.shadowMd : DS.shadowSm,
       ),
       child: Column(children: [
         Icon(label.contains('انصراف') ? Icons.logout : Icons.access_time, size: 22, color: selected ? C.orange : C.muted),
@@ -227,11 +229,12 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
     ),
   );
 
-  Widget _timeCard(String label, TimeOfDay? time, VoidCallback onTap) => GestureDetector(
+  Widget _timeCard(String label, TimeOfDay? time, VoidCallback onTap) => InkWell(
     onTap: onTap,
+    borderRadius: BorderRadius.circular(DS.radiusMd),
     child: Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: time != null ? C.orange : C.border)),
+      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
       child: Column(children: [
         Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
         const SizedBox(height: 6),

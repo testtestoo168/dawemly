@@ -29,7 +29,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         title: Text('إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Text('سيتم حذف بصمة الوجه المسجلة وسيُطلب من الموظف تسجيلها من جديد.\n\nهل أنت متأكد؟', style: GoogleFonts.tajawal(fontSize: 14, height: 1.6), textAlign: TextAlign.right),
         actions: [
@@ -41,7 +41,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
     if (confirm == true) {
       await FaceRecognitionService.resetFaceRegistration(_uid);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
         setState(() => _loading = true);
         _load();
       }
@@ -77,7 +77,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: registered ? W.greenBd : W.border)),
+              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: registered ? W.greenBd : W.border)),
               child: Column(children: [
                 Row(children: [
                   if (registered) InkWell(
@@ -153,7 +153,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
             if (_verifications.isEmpty)
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+                decoration: DS.cardDecoration(),
                 child: Column(children: [
                   Icon(Icons.face_outlined, size: 40, color: W.hint),
                   const SizedBox(height: 8),
@@ -173,7 +173,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: W.white,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(DS.radiusMd),
                     border: Border.all(color: matched ? W.greenBd : W.redBd),
                   ),
                   child: Row(children: [
@@ -191,7 +191,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
                     Container(
                       width: 56, height: 56,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(DS.radiusMd),
                         border: Border.all(color: matched ? W.greenBd : W.redBd, width: 2),
                       ),
                       clipBehavior: Clip.hardEdge,

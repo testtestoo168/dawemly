@@ -18,13 +18,13 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
   final _typeColor = const {
-    'alert': Color(0xFFF04438),
-    'urgent': Color(0xFFF04438),
-    'warning': Color(0xFFF79009),
-    'security': Color(0xFF7F56D9),
-    'info': Color(0xFF175CD3),
-    'verify_request': Color(0xFFF79009),
-    'verify': Color(0xFFF79009),
+    'alert': C.red,
+    'urgent': C.red,
+    'warning': C.orange,
+    'security': C.purple,
+    'info': C.pri,
+    'verify_request': C.orange,
+    'verify': C.orange,
   };
   final _typeIcon = const {
     'alert': Icons.warning_amber,
@@ -131,7 +131,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     final unread = _notifs.where((n) => !_isRead(n)).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: C.bg,
       appBar: AppBar(
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -210,8 +210,8 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: C.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: read ? C.border : color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(DS.radiusMd),
+        boxShadow: read ? DS.shadowSm : DS.shadowMd,
       ),
       child: Opacity(
         opacity: read ? 0.65 : 1.0,
@@ -227,12 +227,13 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
               children: [
                 // Mark read button
                 if (!read && id.isNotEmpty) ...[
-                  GestureDetector(
+                  InkWell(
                     onTap: () => _markRead(id),
+                    borderRadius: BorderRadius.circular(DS.radiusSm),
                     child: Container(
                       width: 24, height: 24,
                       margin: const EdgeInsets.only(top: 4),
-                      decoration: BoxDecoration(color: C.greenL, borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: C.greenL, borderRadius: BorderRadius.circular(DS.radiusSm)),
                       child: const Icon(Icons.check, size: 12, color: C.green),
                     ),
                   ),
@@ -256,7 +257,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: color.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(DS.radiusSm),
                             ),
                             child: Text(label, style: _tj(10, weight: FontWeight.w600, color: color)),
                           ),

@@ -84,7 +84,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Row(children: [
               InkWell(
                 onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } _loadAll(); }),
@@ -108,7 +108,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                 onTap: () => _exportCSV(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.greenBd)),
+                  decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.greenBd)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.download_rounded, size: 14, color: W.green),
                     const SizedBox(width: 6),
@@ -121,7 +121,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                 onTap: () => setState(() => _showSettings = !_showSettings),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: _showSettings ? W.priLight : W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: _showSettings ? W.pri : W.border)),
+                  decoration: BoxDecoration(color: _showSettings ? W.priLight : W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: _showSettings ? W.pri : W.border)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.settings_outlined, size: 14, color: _showSettings ? W.pri : W.sub),
                     const SizedBox(width: 6),
@@ -167,7 +167,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           if (_records.isEmpty)
             Container(
               width: double.infinity, padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: DS.cardDecoration(),
               child: Center(child: Column(children: [
                 Icon(Icons.account_balance_wallet_outlined, size: 36, color: W.hint),
                 const SizedBox(height: 10),
@@ -198,7 +198,7 @@ class _AdminSalaryState extends State<AdminSalary> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.pri.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.pri.withValues(alpha: 0.3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
           InkWell(onTap: () => setState(() => _showSettings = false), child: Icon(Icons.close, size: 18, color: W.muted)),
@@ -239,7 +239,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center, textDirection: TextDirection.ltr,
               style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
             ),
           ]),
         )))),
@@ -265,7 +265,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center, textDirection: TextDirection.ltr,
               style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
             ),
           ]),
         )))),
@@ -290,14 +290,14 @@ class _AdminSalaryState extends State<AdminSalary> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(res['success'] == true ? 'تم حفظ الإعدادات للكل' : 'فشل الحفظ', style: GoogleFonts.tajawal()),
                   backgroundColor: res['success'] == true ? W.green : W.red,
-                  behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                 ));
                 _loadAll();
               }
             },
             icon: const Icon(Icons.save, size: 16),
             label: Text('حفظ (تطبق على الكل)', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
           ),
         ),
       ]),
@@ -368,7 +368,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                 await ApiService.post('salary.php?action=set_base_salary', {'uid': uid, 'base_salary': val});
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadAll();
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديد الراتب: $val ر.س', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديد الراتب: $val ر.س', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
               },
               icon: const Icon(Icons.save, size: 16),
               label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
@@ -424,7 +424,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               if (hasOverride) Container(
                 width: double.infinity, padding: const EdgeInsets.all(10), margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Text('هذا الموظف لديه خصومات فردية مختلفة عن الإعدادات العامة', style: GoogleFonts.tajawal(fontSize: 11, color: W.orange), textAlign: TextAlign.right),
               ),
               // Late deductions
@@ -440,12 +440,12 @@ class _AdminSalaryState extends State<AdminSalary> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
                     style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
                   Text('المرة ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
                   const SizedBox(width: 8),
-                  Container(width: 28, height: 28, decoration: BoxDecoration(color: (i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(6)),
+                  Container(width: 28, height: 28, decoration: BoxDecoration(color: (i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Center(child: Text('${i + 1}${i == 3 ? '+' : ''}', style: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)))),
                 ]),
               )),
@@ -467,7 +467,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
                     style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border))),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
                   Text('اليوم ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.orange : W.red)),
@@ -483,7 +483,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                 await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'has_override': false, 'late_deductions': [], 'absent_deductions': []});
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadAll();
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إزالة الخصومات الفردية — يستخدم الإعدادات العامة', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إزالة الخصومات الفردية — يستخدم الإعدادات العامة', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
               }, child: Text('إزالة الفردي', style: GoogleFonts.tajawal(fontSize: 12, color: W.red))),
               const Spacer(),
               ElevatedButton.icon(
@@ -493,7 +493,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                   await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'late_deductions': lateList, 'absent_deductions': absentList});
                   if (ctx.mounted) Navigator.pop(ctx);
                   _loadAll();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الخصومات الفردية لـ $name', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الخصومات الفردية لـ $name', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 },
                 icon: const Icon(Icons.save, size: 16),
                 label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
@@ -531,7 +531,7 @@ class _AdminSalaryState extends State<AdminSalary> {
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(DS.radiusMd),
         border: Border.all(color: W.border),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -541,12 +541,12 @@ class _AdminSalaryState extends State<AdminSalary> {
           Wrap(spacing: 6, runSpacing: 6, children: [
             InkWell(
               onTap: () => _editBaseSalaryDialog(uid, name, baseSalary),
-              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.pri), const SizedBox(width: 4), Text('الراتب', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.pri))])),
             ),
             InkWell(
               onTap: () => _editEmployeeDeductionDialog(uid, name),
-              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.orange), const SizedBox(width: 4), Text('خصومات', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))])),
             ),
           ]),
@@ -566,7 +566,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: [W.priLight, W.white]),
-            borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border),
+            borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border),
           ),
           child: Row(children: [
             Expanded(child: Column(children: [
@@ -585,7 +585,7 @@ class _AdminSalaryState extends State<AdminSalary> {
         // ─── Attendance row ───
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
           child: Row(children: [
             _miniStat('$lateCount', 'مرة تأخير', W.orange),
             _miniStatSep(),
@@ -611,7 +611,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: totalDeductions > 0 ? W.redL : W.greenL,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(DS.radiusMd),
           ),
           child: Row(children: [
             Text(
@@ -628,7 +628,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Row(children: [
               Text(
                 '+${overtimeAmt.toStringAsFixed(0)} ر.س',
@@ -675,9 +675,9 @@ class _AdminSalaryState extends State<AdminSalary> {
   Widget _stat(IconData icon, String label, String value, Color color, Color bg, String sub) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.gradientCard(color),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Container(width: 34, height: 34, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)),
+        Container(width: 34, height: 34, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(icon, size: 16, color: color)),
         const SizedBox(height: 8),
         Text(value, style: _mono(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
         const SizedBox(height: 4),
@@ -694,7 +694,7 @@ class _AdminSalaryState extends State<AdminSalary> {
         content: Text('لا يوجد بيانات للتصدير', style: GoogleFonts.tajawal()),
         backgroundColor: W.orange,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
       ));
       return;
     }
@@ -736,7 +736,7 @@ class _AdminSalaryState extends State<AdminSalary> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Container(
           width: min(400, MediaQuery.of(context).size.width - 40),
@@ -751,7 +751,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(filename, style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.text)),
                 const SizedBox(height: 4),
@@ -762,7 +762,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             Container(
               width: double.infinity, height: 200,
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(

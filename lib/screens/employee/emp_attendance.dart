@@ -138,7 +138,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
           child: Row(children: [
             InkWell(onTap: _prevMonth, child: Container(width: 36, height: 36, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.chevron_right, size: 20, color: C.sub))),
             const Spacer(),
-            GestureDetector(
+            InkWell(
               onTap: () async {
                 final years = List.generate(5, (i) => now.year - i);
                 await showDialog(context: context, builder: (ctx) => SimpleDialog(
@@ -198,7 +198,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
             return ListView(padding: const EdgeInsets.all(14), children: [
               // Stats
               Container(
-                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+                decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
                 padding: const EdgeInsets.all(12),
                 child: Column(children: [
                   Row(children: [
@@ -265,17 +265,17 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     final earlyMin = (r['early_leave_minutes'] is int ? r['early_leave_minutes'] : int.tryParse('${r['early_leave_minutes'] ?? 0}')) ?? 0;
     final isEarlyFlag = (r['is_early_leave'] is int ? r['is_early_leave'] : int.tryParse('${r['is_early_leave'] ?? 0}')) ?? 0;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => _toggleDay(dateKey),
+      borderRadius: BorderRadius.circular(DS.radiusMd),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: C.card,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: isExpanded ? C.pri.withOpacity(0.4) : C.border),
-          boxShadow: isExpanded ? [BoxShadow(color: C.pri.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : [],
+          borderRadius: BorderRadius.circular(DS.radiusMd),
+          boxShadow: isExpanded ? [BoxShadow(color: C.pri.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : DS.shadowSm,
         ),
         child: Column(children: [
           // ═══ Summary row (always visible) ═══
@@ -287,14 +287,14 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                 Row(children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
                     child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
                   ),
                   if (isLateFlag == 1) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: C.red.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: C.red.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
                       child: Text('متأخر $lateMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.red)),
                     ),
                   ],
@@ -302,7 +302,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: C.orange.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: C.orange.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
                       child: Text('مبكر $earlyMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.orange)),
                     ),
                   ],
@@ -327,7 +327,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               const SizedBox(width: 10),
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
                 child: Icon(
                   isExpanded ? Icons.expand_less : (hasOut ? Icons.check_circle_outline : Icons.access_time),
                   size: 16, color: stColor,
@@ -425,7 +425,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                   child: Row(children: [
                     Container(
                       width: 28, height: 28,
-                      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
                       child: Icon(icon, size: 14, color: color),
                     ),
                     const SizedBox(width: 8),

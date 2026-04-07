@@ -146,14 +146,19 @@ class EmpHomePageState extends State<EmpHomePage> {
     try {
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
-      // Get initial position once
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      // Get initial position with high accuracy
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
       if (mounted) setState(() => _livePosition = pos);
-      // Only update when user actually moves 15+ meters
+      // Stream updates with high accuracy, update every 5 meters
       _locationStreamSub = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          distanceFilter: 15,
+          accuracy: LocationAccuracy.best,
+          distanceFilter: 5,
         ),
       ).listen((p) {
         if (mounted) setState(() => _livePosition = p);
@@ -577,26 +582,26 @@ class EmpHomePageState extends State<EmpHomePage> {
         Text('أنت خارج نطاق العمل', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.red)),
         Text('ادخل النطاق لتسجيل الحضور', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 14),
-        ClipRRect(borderRadius: BorderRadius.circular(6), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
+        ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(adminLat, adminLng), zoom: 14),
           markers: {
             Marker(markerId: const MarkerId('emp'), position: LatLng(empLat, empLng), infoWindow: InfoWindow(title: 'موقعك — ${distance.round()}م'), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
             Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng), infoWindow: InfoWindow(title: locName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
           },
           circles: {
-            Circle(circleId: const CircleId('zone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: const Color(0xFF17B26A).withValues(alpha: 0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2),
+            Circle(circleId: const CircleId('zone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: C.green.withValues(alpha: 0.15), strokeColor: C.green, strokeWidth: 2),
           },
           myLocationEnabled: false, zoomControlsEnabled: false, liteModeEnabled: false,
         ))),
         const SizedBox(height: 10),
-        Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(6)),
+        Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(DS.radiusMd)),
           child: Column(children: [
             Text('أنت تبعد ${distance.round()} متر عن $locName', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.red)),
             Text('النطاق المسموح: ${radius.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, color: C.red.withOpacity(0.7))),
           ]),
         ),
         const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), padding: const EdgeInsets.symmetric(vertical: 12)),
+        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)),
           child: Text('فهمت', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     ))));
@@ -605,7 +610,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   void _showLoadingDialog(String title, String sub, Color color) {
     showDialog(context: context, barrierDismissible: false, builder: (ctx) => Center(child: Container(
       width: 300, padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(width: 50, height: 50, child: CircularProgressIndicator(strokeWidth: 3, color: color)),
         const SizedBox(height: 16),
@@ -619,15 +624,15 @@ class EmpHomePageState extends State<EmpHomePage> {
   void _showResultDialog(bool success, String title, String sub) {
     showDialog(context: context, builder: (ctx) => Center(child: Container(
       width: 300, padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 60, height: 60, decoration: BoxDecoration(color: success ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2), shape: BoxShape.circle), child: Icon(success ? Icons.check : Icons.close, size: 30, color: success ? C.green : C.red)),
+        Container(width: 60, height: 60, decoration: BoxDecoration(color: success ? C.greenL : C.redL, shape: BoxShape.circle), child: Icon(success ? Icons.check : Icons.close, size: 30, color: success ? C.green : C.red)),
         const SizedBox(height: 16),
         Text(title, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
         const SizedBox(height: 4),
         Text(sub, style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 16),
-        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: success ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: success ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     )));
   }
@@ -651,14 +656,14 @@ class EmpHomePageState extends State<EmpHomePage> {
         Text(title, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
         Text('الوقت: $time', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 14),
-        if (lat != null && lng != null) ClipRRect(borderRadius: BorderRadius.circular(6), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
+        if (lat != null && lng != null) ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(adminLat ?? empLat, adminLng ?? empLng), zoom: 15),
           markers: {
             Marker(markerId: const MarkerId('employee'), position: LatLng(empLat, empLng), infoWindow: const InfoWindow(title: 'موقع البصمة'), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
             if (adminLat != null) Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng!), infoWindow: InfoWindow(title: adminName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
           },
           circles: {
-            if (adminLat != null) Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng!), radius: adminRadius, fillColor: const Color(0xFF17B26A).withValues(alpha: 0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2),
+            if (adminLat != null) Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng!), radius: adminRadius, fillColor: C.green.withValues(alpha: 0.15), strokeColor: C.green, strokeWidth: 2),
           },
           myLocationEnabled: false, zoomControlsEnabled: false, mapToolbarEnabled: false, liteModeEnabled: false,
         ))),
@@ -669,7 +674,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             const SizedBox(width: 6), const Icon(Icons.check_circle, size: 16, color: C.green),
           ])),
         const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     ))));
   }
@@ -726,14 +731,14 @@ class EmpHomePageState extends State<EmpHomePage> {
         child: Column(children: [
           // Top row
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            GestureDetector(
+            InkWell(
               onTap: () => _showNotifications(),
               child: Stack(clipBehavior: Clip.none, children: [
-                Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
                 if (_unreadNotifCount > 0)
                   Positioned(top: -4, left: -4, child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: const Color(0xFFF04438), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                    decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
                     constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text('$_unreadNotifCount', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white), textAlign: TextAlign.center),
                   )),
@@ -746,9 +751,9 @@ class EmpHomePageState extends State<EmpHomePage> {
               ]),
               const SizedBox(width: 12),
               Stack(children: [
-                Container(width: 44, height: 44, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5)),
+                Container(width: 44, height: 44, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5)),
                   child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)))),
-                Positioned(bottom: -1, right: -1, child: Container(width: 14, height: 14, decoration: BoxDecoration(shape: BoxShape.circle, color: isCurrentlyCheckedIn ? const Color(0xFF17B26A) : const Color(0xFFEF4444), border: Border.all(color: Colors.white, width: 2)))),
+                Positioned(bottom: -1, right: -1, child: Container(width: 14, height: 14, decoration: BoxDecoration(shape: BoxShape.circle, color: isCurrentlyCheckedIn ? C.green : C.red, border: Border.all(color: Colors.white, width: 2)))),
               ]),
             ]),
           ]),
@@ -758,7 +763,7 @@ class EmpHomePageState extends State<EmpHomePage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Column(children: [
               Text(_currentTime, style: GoogleFonts.ibmPlexMono(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 3)),
               const SizedBox(height: 4),
@@ -779,7 +784,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withOpacity(0.2))),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: Colors.white.withOpacity(0.2))),
               child: DropdownButtonHideUnderline(child: DropdownButton<String>(
                 isExpanded: true,
                 value: _selectedLocationId ?? (_allLocations.isNotEmpty ? _allLocations.first['id'].toString() : null),
@@ -806,7 +811,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Flexible(child: Text(_allLocations.first['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.center)),
                 const SizedBox(width: 8),
@@ -838,18 +843,18 @@ class EmpHomePageState extends State<EmpHomePage> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFFFF4D4D).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: C.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text('أنت خارج النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFFF4D4D))),
+                    Text('أنت خارج النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: C.red)),
                     const SizedBox(width: 6),
-                    const Icon(Icons.location_off_rounded, size: 16, color: Color(0xFFFF4D4D)),
+                    const Icon(Icons.location_off_rounded, size: 16, color: C.red),
                   ]),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(width: double.infinity, child: Opacity(
                   opacity: 0.4,
                   child: isCurrentlyCheckedIn
-                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, () {})
+                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, () {})
                     : _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
                 )),
               ]);
@@ -860,15 +865,15 @@ class EmpHomePageState extends State<EmpHomePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(color: const Color(0xFF17B26A).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: C.green.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('داخل النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF17B26A))),
+                  Text('داخل النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.green)),
                   const SizedBox(width: 6),
-                  const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF17B26A)),
+                  const Icon(Icons.check_circle_rounded, size: 14, color: C.green),
                 ]),
               ),
               if (isCurrentlyCheckedIn)
-                SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, const Color(0xFFFF4D4D), Colors.white, _checkOut))
+                SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, _checkOut))
               else
                 SizedBox(width: double.infinity, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
             ]);
@@ -881,7 +886,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
           child: Row(children: [
             _empQuickBtn(Icons.calendar_today_rounded, 'سجل\nحضوري', () => widget.onTabChange?.call(1)),
             _empQuickBtn(Icons.description_outlined, 'طلباتي', () => widget.onTabChange?.call(3)),
@@ -898,7 +903,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (hasCheckIn) Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Container(
-          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: _hasOvertime ? C.orange.withOpacity(0.4) : C.border)),
+          decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: _hasOvertime ? DS.shadowMd : DS.shadowSm),
           padding: const EdgeInsets.all(20),
           child: Column(children: [
             Row(children: [
@@ -917,7 +922,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             ]),
             if (_hasOvertime && !hasCheckOut) ...[
               const SizedBox(height: 12),
-              Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(6)),
+              Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text('تجاوزت ساعات العمل الأساسية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
                   const SizedBox(width: 8), const Icon(Icons.warning_amber_rounded, size: 18, color: C.orange),
@@ -929,7 +934,7 @@ class EmpHomePageState extends State<EmpHomePage> {
 
       // ═══ TODAY RECORD ═══
       Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 0), child: Container(
-        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
         child: Column(children: [
           Padding(padding: const EdgeInsets.all(16), child: Row(children: [
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
@@ -943,7 +948,7 @@ class EmpHomePageState extends State<EmpHomePage> {
           if (_loadingRecord) const ShimmerAttendanceCard()
           else if (_todayRecord == null)
             Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-              Container(width: 56, height: 56, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6)), child: const Icon(Icons.fingerprint_rounded, size: 30, color: C.hint)),
+              Container(width: 56, height: 56, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: const Icon(Icons.fingerprint_rounded, size: 30, color: C.hint)),
               const SizedBox(height: 12),
               Text('لم تسجّل بعد اليوم', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.text)),
               const SizedBox(height: 4),
@@ -997,8 +1002,8 @@ class EmpHomePageState extends State<EmpHomePage> {
         circleId: const CircleId('authZone'),
         center: LatLng(authLat, authLng),
         radius: authRadius,
-        fillColor: const Color(0xFFFF9500).withValues(alpha: 0.15),
-        strokeColor: const Color(0xFFFF9500),
+        fillColor: C.orange.withValues(alpha: 0.15),
+        strokeColor: C.orange,
         strokeWidth: 2,
       ));
     }
@@ -1015,8 +1020,8 @@ class EmpHomePageState extends State<EmpHomePage> {
       child: Container(
         decoration: BoxDecoration(
           color: C.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: C.border),
+          borderRadius: BorderRadius.circular(DS.radiusMd),
+          boxShadow: DS.shadowSm,
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           // Header row
@@ -1026,7 +1031,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               if (insideZone != null) Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: insideZone ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                  color: insideZone ? C.greenL : C.redL,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1068,10 +1073,12 @@ class EmpHomePageState extends State<EmpHomePage> {
 
   // ─── Quick action button — CONNECTED ───
   Widget _empQuickBtn(IconData icon, String label, VoidCallback onTap) {
-    return Expanded(child: GestureDetector(
+    return Expanded(child: InkWell(
       onTap: onTap,
+      splashColor: C.pri.withOpacity(0.08),
+      highlightColor: Colors.transparent,
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 52, height: 52, decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 1))]),
+        Container(width: 52, height: 52, decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 1))]),
           child: Icon(icon, size: 22, color: C.pri)),
         const SizedBox(height: 8),
         Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.text, height: 1.4), textAlign: TextAlign.center),
@@ -1096,7 +1103,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   }
 
   Widget _clockBtn(String text, IconData icon, Color bg, Color fg, VoidCallback onTap) {
-    return Material(color: bg, borderRadius: BorderRadius.circular(6), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(6), child: Container(padding: const EdgeInsets.symmetric(vertical: 13), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 18, color: fg), const SizedBox(width: 6), Text(text, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: fg))]))));
+    return Material(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(DS.radiusMd), child: Container(padding: const EdgeInsets.symmetric(vertical: 13), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 18, color: fg), const SizedBox(width: 6), Text(text, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: fg))]))));
   }
 
   // ═══════════════════════════════════════════════
@@ -1142,10 +1149,10 @@ class EmpHomePageState extends State<EmpHomePage> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    decoration: BoxDecoration(color: isRead ? Colors.transparent : (isVerifyRequest ? const Color(0xFFFFF3E0) : isUrgent ? C.redL : C.priLight), border: const Border(bottom: BorderSide(color: C.div))),
+                    decoration: BoxDecoration(color: isRead ? Colors.transparent : (isVerifyRequest ? C.orangeL : isUrgent ? C.redL : C.priLight), border: const Border(bottom: BorderSide(color: C.div))),
                     child: Row(children: [
                       if (isVerifyRequest && !isRead) ...[
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: C.orange, borderRadius: BorderRadius.circular(6)),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: C.orange, borderRadius: BorderRadius.circular(DS.radiusMd)),
                           child: Text('إثبات الآن', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white))),
                         const SizedBox(width: 8),
                       ] else if (!isRead) ...[Container(width: 8, height: 8, decoration: BoxDecoration(color: isUrgent ? C.red : C.pri, shape: BoxShape.circle)), const SizedBox(width: 8)],
@@ -1182,7 +1189,7 @@ class EmpHomePageState extends State<EmpHomePage> {
           const SizedBox(height: 20),
           SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
             onPressed: () async { Navigator.pop(ctx); _doVerificationResponse(uid, verificationId: verificationId); },
-            style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), elevation: 4),
+            style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), elevation: 4),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.my_location, size: 20), const SizedBox(width: 8), Text('إثبات موقعي الآن', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700))]),
           )),
         ]),
@@ -1249,13 +1256,13 @@ class EmpHomePageState extends State<EmpHomePage> {
           Text(inRange ? 'أنت داخل النطاق ✓' : 'أنت خارج النطاق ⚠', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: inRange ? C.green : C.red)),
           Text('المسافة: ${distance.round()} متر من $locName', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
           const SizedBox(height: 14),
-          ClipRRect(borderRadius: BorderRadius.circular(6), child: SizedBox(width: double.infinity, height: 220, child: GoogleMap(
+          ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 220, child: GoogleMap(
             initialCameraPosition: CameraPosition(target: LatLng(adminLat, adminLng), zoom: 15),
             markers: {
               Marker(markerId: const MarkerId('employee'), position: LatLng(pos.latitude, pos.longitude), infoWindow: InfoWindow(title: 'موقعك — ${distance.round()}م'), icon: BitmapDescriptor.defaultMarkerWithHue(inRange ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed)),
               Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng), infoWindow: InfoWindow(title: locName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)),
             },
-            circles: { Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: const Color(0xFF17B26A).withOpacity(0.15), strokeColor: const Color(0xFF17B26A), strokeWidth: 2) },
+            circles: { Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: C.green.withOpacity(0.15), strokeColor: C.green, strokeWidth: 2) },
             myLocationEnabled: false, zoomControlsEnabled: false, mapToolbarEnabled: false, liteModeEnabled: true,
           ))),
           const SizedBox(height: 10),
@@ -1265,7 +1272,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               const SizedBox(width: 6), Icon(inRange ? Icons.check_circle : Icons.error, size: 16, color: inRange ? C.green : C.red),
             ])),
           const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: inRange ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)), padding: const EdgeInsets.symmetric(vertical: 12)),
+          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: inRange ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)),
             child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
         ]),
       ))));

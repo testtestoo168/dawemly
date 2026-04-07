@@ -17,7 +17,7 @@ class EmpProfilePage extends StatelessWidget {
     final role = user['role'] ?? 'employee';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: C.bg,
       appBar: AppBar(
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -37,8 +37,8 @@ class EmpProfilePage extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: C.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: C.border),
+              borderRadius: BorderRadius.circular(DS.radiusMd),
+              boxShadow: DS.shadowSm,
             ),
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -95,8 +95,8 @@ class EmpProfilePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: C.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: C.border),
+        borderRadius: BorderRadius.circular(DS.radiusMd),
+        boxShadow: DS.shadowSm,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -114,7 +114,7 @@ class EmpProfilePage extends StatelessWidget {
           const SizedBox(width: 12),
           Container(
             width: 38, height: 38,
-            decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(DS.radiusSm)),
             child: Icon(icon, size: 18, color: C.pri),
           ),
         ],

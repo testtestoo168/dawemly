@@ -110,8 +110,8 @@ class _AdminAppState extends State<AdminApp> {
       appBar: PreferredSize(preferredSize: const Size.fromHeight(56), child: Container(
         decoration: BoxDecoration(color: W.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: Offset(0, 2))]),
         child: SafeArea(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Row(children: [
-          GestureDetector(onTap: () => setState(() => _mTab = 3), child: Stack(children: [
-            Container(width: 38, height: 38, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)), child: Icon(Icons.notifications_none_rounded, size: 20, color: W.sub)),
+          InkWell(onTap: () => setState(() => _mTab = 3), borderRadius: BorderRadius.circular(DS.radiusMd), child: Stack(children: [
+            Container(width: 38, height: 38, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.notifications_none_rounded, size: 20, color: W.sub)),
             Positioned(top: 6, right: 6, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: W.red, shape: BoxShape.circle, border: Border.all(color: W.white, width: 1.5)))),
           ])),
           const Spacer(),
@@ -154,15 +154,15 @@ class _AdminAppState extends State<AdminApp> {
         const SizedBox(height: 8),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
-                  child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
+                  decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
                 ),
                 const SizedBox(width: 12),
                 Flexible(child: Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)),
@@ -229,7 +229,7 @@ class _AdminAppState extends State<AdminApp> {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: W.redBd),
                 backgroundColor: W.redL,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
@@ -278,11 +278,7 @@ class _AdminAppState extends State<AdminApp> {
   Widget _moreMenuGroup(List<_MoreMenuItem> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: W.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: W.border),
-      ),
+      decoration: DS.cardDecoration(),
       child: Column(
         children: items.asMap().entries.map((e) {
           final i = e.key;
@@ -328,7 +324,7 @@ class _AdminAppState extends State<AdminApp> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         title: Text('تسجيل الخروج', style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
         content: Text('هل تريد تسجيل الخروج من حسابك؟', style: _tj(14), textAlign: TextAlign.right),
         actions: [
@@ -375,7 +371,7 @@ class _AdminAppState extends State<AdminApp> {
                         height: on ? 30 : 26,
                         decoration: BoxDecoration(
                           color: on ? W.pri.withOpacity(0.1) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(DS.radiusMd),
                         ),
                         child: Icon(
                           on ? items[i]['active'] as IconData : items[i]['icon'] as IconData,
@@ -466,7 +462,7 @@ class _AdminAppState extends State<AdminApp> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Row(children: [
               _quickBtn(Icons.wifi_tethering_outlined, 'إثبات\nالحالة', () => _openMobilePage('verify')),
               _quickBtn(Icons.assignment_outlined, 'الطلبات', () => setState(() => _mTab = 2)),
@@ -482,7 +478,7 @@ class _AdminAppState extends State<AdminApp> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: _mHomeLoading
               ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
               : _mHomeRequests.isEmpty
@@ -505,7 +501,7 @@ class _AdminAppState extends State<AdminApp> {
                           Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
                         ])),
                         const SizedBox(width: 10),
-                        Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(6)),
+                        Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
                           child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
                       ]),
                     );
@@ -519,7 +515,7 @@ class _AdminAppState extends State<AdminApp> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: _mHomeLoading
               ? const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
               : _mHomeUsers.isEmpty
@@ -575,7 +571,7 @@ class _AdminAppState extends State<AdminApp> {
                             Text(emp['empId'] ?? emp['emp_id'] ?? '', style: _tj(11, color: W.muted)),
                           ])),
                           const SizedBox(width: 10),
-                          Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                          Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
                             child: Center(child: Text(_getInitials(emp['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
                         ]),
                       );
@@ -593,7 +589,7 @@ class _AdminAppState extends State<AdminApp> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
           width: 56, height: 56,
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: Offset(0, 1))]),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: Offset(0, 1))]),
           child: Icon(icon, size: 24, color: W.pri),
         ),
         const SizedBox(height: 8),
@@ -613,12 +609,12 @@ class _AdminAppState extends State<AdminApp> {
     );
   }
 
-  Widget _mStat(String v, String l, Color fg) => Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+  Widget _mStat(String v, String l, Color fg) => Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd)),
     child: Column(children: [Text(v, style: GoogleFonts.ibmPlexMono(fontSize: 26, fontWeight: FontWeight.w800, color: fg)), const SizedBox(height: 2), Text(l, style: _tj(12, color: fg.withOpacity(0.85)))]));
 
   Widget _mStatTap(String v, String l, Color fg, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
-    child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+    child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd)),
       child: Column(children: [Text(v, style: GoogleFonts.ibmPlexMono(fontSize: 26, fontWeight: FontWeight.w800, color: fg)), const SizedBox(height: 2), Text(l, style: _tj(12, color: fg.withOpacity(0.85)))])),
   );
 
@@ -648,8 +644,8 @@ class _AdminAppState extends State<AdminApp> {
             child: Row(children: [
               Container(
                 width: _sc ? 32 : 42, height: _sc ? 32 : 42,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4)]),
-                child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4)]),
+                child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
               ),
               if (!_sc) ...[const SizedBox(width: 12), Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text('داوِملي', style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
@@ -677,8 +673,8 @@ class _AdminAppState extends State<AdminApp> {
               if (!_sc) Container(
                 padding: const EdgeInsets.all(12),
                 child: Row(children: [
-                  Container(width: 34, height: 34, decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
-                    child: ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
+                  Container(width: 34, height: 34, decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd)),
+                    child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(widget.user['name'] ?? 'المستخدم', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
@@ -686,8 +682,8 @@ class _AdminAppState extends State<AdminApp> {
                   ])),
                 ]),
               ),
-              InkWell(onTap: () => setState(() => _sc = !_sc), borderRadius: BorderRadius.circular(6),
-                child: Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: Colors.white.withOpacity(0.1)), borderRadius: BorderRadius.circular(6)),
+              InkWell(onTap: () => setState(() => _sc = !_sc), borderRadius: BorderRadius.circular(DS.radiusMd),
+                child: Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(border: Border.all(color: Colors.white.withOpacity(0.1)), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Icon(_sc ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded, size: 16, color: Colors.white.withOpacity(0.4)))),
             ]),
           ),
@@ -698,14 +694,14 @@ class _AdminAppState extends State<AdminApp> {
       Expanded(child: Column(children: [
         Container(
           height: 56, padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: const Color(0xFFE5E7EB)))),
+          decoration: BoxDecoration(color: Colors.white, boxShadow: DS.shadowSm),
           child: Row(textDirection: TextDirection.rtl, children: [
             InkWell(
               onTap: () => setState(() => _sc = !_sc),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(DS.radiusMd),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(border: Border.all(color: const Color(0xFFD1D5DB)), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(border: Border.all(color: const Color(0xFFD1D5DB)), borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: const Icon(Icons.menu, size: 18, color: Color(0xFF374151)),
               ),
             ),

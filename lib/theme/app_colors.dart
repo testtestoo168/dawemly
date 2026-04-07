@@ -106,3 +106,42 @@ class W {
   static Color get teal     => AC.teal;
   static Color get dark     => kIsWeb ? AC.dark     : C.dark;
 }
+
+/// Design system constants for premium UI
+class DS {
+  // Border radius
+  static const double radiusSm = 8;
+  static const double radiusMd = 12;
+  static const double radiusLg = 16;
+  static const double radiusXl = 20;
+  static const double radiusPill = 100;
+
+  // Shadows
+  static List<BoxShadow> get shadowSm => [
+    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+  ];
+  static List<BoxShadow> get shadowMd => [
+    BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4)),
+  ];
+  static List<BoxShadow> get shadowLg => [
+    BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 8)),
+  ];
+
+  // Card decoration
+  static BoxDecoration cardDecoration({Color? color, double radius = radiusMd}) => BoxDecoration(
+    color: color ?? Colors.white,
+    borderRadius: BorderRadius.circular(radius),
+    boxShadow: shadowSm,
+  );
+
+  // Gradient card for stat cards
+  static BoxDecoration gradientCard(Color accent, {double radius = radiusMd}) => BoxDecoration(
+    borderRadius: BorderRadius.circular(radius),
+    gradient: LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: [Colors.white, accent.withValues(alpha: 0.06)],
+    ),
+    boxShadow: shadowSm,
+  );
+}

@@ -184,7 +184,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
     return Center(child: Container(
       width: screenWidth < 360 ? screenWidth - 40 : 340, height: 480,
       margin: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(DS.radiusXl)),
       clipBehavior: Clip.hardEdge,
       child: Column(children: [
         // Header
@@ -220,7 +220,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
           padding: const EdgeInsets.all(14),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(color: _statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: _statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Row(children: [
               if (_verifying) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               else Icon(_statusColor == C.green ? Icons.check_circle : Icons.info_outline, size: 16, color: _statusColor),

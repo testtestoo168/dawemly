@@ -91,16 +91,16 @@ class _AdminNotificationsState extends State<AdminNotifications> {
             ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
-                  if (unread > 0) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(6)), child: Text('$unread', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)))],
+                  if (unread > 0) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Text('$unread', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)))],
                 ]),
                 const SizedBox(height: 6),
-                GestureDetector(onTap: _markAllRead, child: Text('تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
+                InkWell(onTap: _markAllRead, child: Text('تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
               ])
             : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 TextButton(onPressed: _markAllRead, child: Text('تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub))),
                 Row(children: [
                   Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: W.text)),
-                  if (unread > 0) ...[const SizedBox(width: 10), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(6)), child: Text('$unread غير مقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)))],
+                  if (unread > 0) ...[const SizedBox(width: 10), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Text('$unread غير مقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)))],
                 ]),
               ]),
           const SizedBox(height: 14),
@@ -114,7 +114,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
           if (_loading)
             const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (filtered.isEmpty)
-            Container(padding: const EdgeInsets.all(40), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            Container(padding: const EdgeInsets.all(40), decoration: DS.cardDecoration(),
               child: Center(child: Column(children: [
                 Icon(Icons.notifications_off, size: 36, color: W.hint),
                 const SizedBox(height: 12),
@@ -127,14 +127,14 @@ class _AdminNotificationsState extends State<AdminNotifications> {
               final id = (n['id'] ?? '').toString();
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isRead ? W.border : color.withOpacity(0.25))),
+                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: isRead ? W.border : color.withOpacity(0.25))),
                 child: Opacity(opacity: isRead ? 0.65 : 1, child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: isSmall ? 12 : 22, vertical: isSmall ? 10 : 16),
                   child: isSmall
                     // Mobile layout: stack vertically
                     ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                         Row(children: [
-                          if (!isRead && id.isNotEmpty) InkWell(onTap: () => _markRead(id), child: Container(width: 22, height: 22, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(6)), child: Icon(Icons.check, size: 10, color: W.green))),
+                          if (!isRead && id.isNotEmpty) InkWell(onTap: () => _markRead(id), child: Container(width: 22, height: 22, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.check, size: 10, color: W.green))),
                           const Spacer(),
                           if (!isRead) Container(width: 7, height: 7, margin: const EdgeInsets.only(left: 6), decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
                           _badge(_typeLabel[n['type']] ?? 'معلومات', color, color.withOpacity(0.08)),
@@ -155,7 +155,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
                     // Wide layout: horizontal row
                     : Row(children: [
                         Row(mainAxisSize: MainAxisSize.min, children: [
-                          if (!isRead && id.isNotEmpty) ...[const SizedBox(width: 4), InkWell(onTap: () => _markRead(id), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(6)), child: Icon(Icons.check, size: 10, color: W.green)))],
+                          if (!isRead && id.isNotEmpty) ...[const SizedBox(width: 4), InkWell(onTap: () => _markRead(id), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.check, size: 10, color: W.green)))],
                           const SizedBox(width: 8),
                           Text(_fmtTime(n['timestamp']), style: GoogleFonts.ibmPlexMono(fontSize: 11, color: W.muted)),
                           const SizedBox(width: 6),

@@ -56,7 +56,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         title: Text(action == 'تم الموافقة' ? 'موافقة على الطلب' : 'رفض الطلب', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text('هل أنت متأكد؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
@@ -96,7 +96,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           content: Text(action == 'تم الموافقة' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب', style: GoogleFonts.tajawal()),
           backgroundColor: action == 'تم الموافقة' ? W.green : W.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
         _loadRequests();
       }
@@ -111,7 +111,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       // Tabs
       Container(
         margin: EdgeInsets.fromLTRB(isWide ? 28 : 14, isWide ? 20 : 10, isWide ? 28 : 14, 0),
-        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
         padding: const EdgeInsets.all(3),
         child: TabBar(
           controller: _tabCtrl,
@@ -195,7 +195,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       padding: EdgeInsets.all(isSmall ? 12 : 18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [

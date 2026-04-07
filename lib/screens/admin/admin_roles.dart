@@ -177,7 +177,7 @@ class _AdminRolesState extends State<AdminRoles> {
   );
 
   Widget _emptyState() => Container(
-    decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+    decoration: DS.cardDecoration(),
     child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(width: 64, height: 64, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(18)),
         child: Icon(Icons.vpn_key_rounded, size: 30, color: W.pri)),
@@ -192,14 +192,14 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _employeeList() {
     final list = _filtered;
     return Container(
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         // Header
         Container(
           padding: const EdgeInsets.fromLTRB(10, 11, 14, 11),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div)), borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           child: Row(children: [
-            GestureDetector(
+            InkWell(
               onTap: () => setState(() => _listVisible = !_listVisible),
               child: Container(
                 width: 28, height: 28,
@@ -258,7 +258,7 @@ class _AdminRolesState extends State<AdminRoles> {
     final isSelected = _selectedUser?['uid'] == u['uid'];
     final count = _permCount(u);
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => _selectUser(u),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -294,7 +294,7 @@ class _AdminRolesState extends State<AdminRoles> {
     final total = _allKeys.length;
 
     return Container(
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         // ── Header ──
         Container(
@@ -304,7 +304,7 @@ class _AdminRolesState extends State<AdminRoles> {
             // Save
             _saving
               ? const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 2))
-              : GestureDetector(
+              : InkWell(
                   onTap: _savePerms,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -325,7 +325,7 @@ class _AdminRolesState extends State<AdminRoles> {
             CircleAvatar(radius: 19, backgroundColor: W.priLight,
               child: Text(initials, style: _tj(12, w: FontWeight.w700, color: W.pri))),
             const SizedBox(width: 8),
-            GestureDetector(
+            InkWell(
               onTap: () => setState(() { _selectedUser = null; _editPerms = {}; }),
               child: Container(width: 28, height: 28, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
                 child: Icon(Icons.close_rounded, size: 14, color: W.muted)),
@@ -357,7 +357,7 @@ class _AdminRolesState extends State<AdminRoles> {
     final total = _allKeys.length;
 
     return Container(
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         // ── Header ──
         Container(
@@ -367,11 +367,11 @@ class _AdminRolesState extends State<AdminRoles> {
             // Save
             _saving
               ? const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 2))
-              : GestureDetector(
+              : InkWell(
                   onTap: _savePerms,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(color: _saved ? W.green : W.pri, borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(color: _saved ? W.green : W.pri, borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(_saved ? Icons.check_rounded : Icons.save_rounded, size: 13, color: Colors.white),
                       const SizedBox(width: 4),
@@ -388,7 +388,7 @@ class _AdminRolesState extends State<AdminRoles> {
             CircleAvatar(radius: 16, backgroundColor: W.priLight,
               child: Text(initials, style: _tj(11, w: FontWeight.w700, color: W.pri))),
             const SizedBox(width: 6),
-            GestureDetector(
+            InkWell(
               onTap: () => setState(() { _selectedUser = null; _editPerms = {}; }),
               child: Container(width: 26, height: 26, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
                 child: Icon(Icons.close_rounded, size: 13, color: W.muted)),
@@ -427,7 +427,7 @@ class _AdminRolesState extends State<AdminRoles> {
         child: Container(
           decoration: BoxDecoration(
             color: enabledCount > 0 ? color.withValues(alpha: 0.04) : W.bg,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(DS.radiusMd),
             border: Border.all(color: enabledCount > 0 ? color.withValues(alpha: 0.25) : W.border),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -436,7 +436,7 @@ class _AdminRolesState extends State<AdminRoles> {
               padding: const EdgeInsets.fromLTRB(12, 11, 12, 8),
               child: Row(children: [
                 // Toggle all
-                GestureDetector(
+                InkWell(
                   onTap: () => setState(() { for (final p in perms) _editPerms[p['key'] as String] = !allOn; }),
                   child: Container(
                     width: 26, height: 26,
@@ -462,7 +462,7 @@ class _AdminRolesState extends State<AdminRoles> {
                 final isDanger = key == 'delete';
                 final on = _editPerms[key] ?? false;
                 final activeColor = isDanger ? W.red : color;
-                return GestureDetector(
+                return InkWell(
                   onTap: () => setState(() => _editPerms[key] = !on),
                   child: Container(
       

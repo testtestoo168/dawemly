@@ -96,7 +96,7 @@ class _AdminAuditState extends State<AdminAudit> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: [
               _filterTab('الكل', null, _logs.length),
               ..._typeMap.entries.map((e) {
@@ -113,7 +113,7 @@ class _AdminAuditState extends State<AdminAudit> {
           else if (filtered.isEmpty)
             Container(
               padding: const EdgeInsets.all(50),
-              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: DS.cardDecoration(),
               child: Center(child: Column(children: [
                 Icon(Icons.history_rounded, size: 48, color: W.hint),
                 const SizedBox(height: 12),
@@ -124,7 +124,7 @@ class _AdminAuditState extends State<AdminAudit> {
             )
           else
             Container(
-              decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: DS.cardDecoration(),
               child: Column(children: [
                 // Table header
                 if (isWide) Container(
@@ -235,14 +235,15 @@ class _AdminAuditState extends State<AdminAudit> {
     final color = tm != null ? Color(tm['c'] as int) : W.pri;
     final bg = tm != null ? Color(tm['bg'] as int) : W.priLight;
     final label = tm != null ? tm['l'] as String : 'الكل';
-    return GestureDetector(
+    return InkWell(
       onTap: () => setState(() => _fType = key),
+      borderRadius: BorderRadius.circular(DS.radiusSm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: on ? (tm != null ? bg : W.pri) : W.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: on ? color.withOpacity(0.4) : W.border),
+          borderRadius: BorderRadius.circular(DS.radiusSm),
+          boxShadow: on ? null : DS.shadowSm,
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text('$count', style: _tj(10, w: FontWeight.w700, color: on ? color : W.muted)),

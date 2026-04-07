@@ -79,7 +79,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
                 // Year picker
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+                  decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusSm), border: Border.all(color: C.border)),
                   child: DropdownButtonHideUnderline(child: DropdownButton<int>(
                     value: _selYear,
                     style: GoogleFonts.ibmPlexMono(fontSize: 13, color: C.text),
@@ -93,7 +93,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+                    decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusSm), border: Border.all(color: C.border)),
                     child: DropdownButtonHideUnderline(child: DropdownButton<int>(
                       value: _selMonth,
                       isExpanded: true,
@@ -110,7 +110,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
                 // Results count badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(DS.radiusSm)),
                   child: Text('${_filtered.length}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.pri)),
                 ),
               ]),
@@ -152,11 +152,11 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
     Color stColor, stBg, stBd;
 
     if (status == 'تم الموافقة') {
-      stColor = C.green; stBg = const Color(0xFFECFDF3); stBd = const Color(0xFFABEFC6);
+      stColor = C.green; stBg = C.greenL; stBd = C.greenBd;
     } else if (status == 'مرفوض') {
-      stColor = C.red; stBg = const Color(0xFFFEF3F2); stBd = const Color(0xFFFECDCA);
+      stColor = C.red; stBg = C.redL; stBd = C.redBd;
     } else {
-      stColor = C.orange; stBg = const Color(0xFFFFFAEB); stBd = const Color(0xFFFEDF89);
+      stColor = C.orange; stBg = C.orangeL; stBd = C.orangeBd;
     }
 
     final requestType = r['requestType'] ?? r['request_type'] ?? '';
@@ -180,7 +180,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: C.border)),
+      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -198,8 +198,8 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
             const SizedBox(width: 8),
             Container(
               width: 30, height: 30,
-              decoration: BoxDecoration(color: (isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009)).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Icon(isLeave ? Icons.beach_access : Icons.access_time, size: 16, color: isLeave ? const Color(0xFF2E90FA) : const Color(0xFFF79009)),
+              decoration: BoxDecoration(color: (isLeave ? C.teal : C.orange).withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusSm)),
+              child: Icon(isLeave ? Icons.beach_access : Icons.access_time, size: 16, color: isLeave ? C.teal : C.orange),
             ),
           ]),
         ]),
@@ -213,7 +213,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
           const SizedBox(height: 6),
           Container(
             width: double.infinity, padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusSm)),
             child: Text('ملاحظة الإدارة: $adminNote', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
           ),
         ],

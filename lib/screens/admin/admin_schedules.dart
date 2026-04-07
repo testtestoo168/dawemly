@@ -276,7 +276,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final empCount = (sch['empIds'] as List?)?.length ?? 0;
     final isSel = _selSchId == sch['id']?.toString();
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => setState(() => _selSchId = sch['id']?.toString()),
       child: Container(
         padding: EdgeInsets.all(compact ? 12 : 16),
@@ -328,7 +328,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
               margin: const EdgeInsets.symmetric(horizontal: 1),
               decoration: BoxDecoration(
                 color: active ? c.withOpacity(0.12) : W.bg,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
               ),
               child: Center(child: Text(
                 d.substring(0, 2),
@@ -381,7 +381,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           width: double.infinity,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
           child: DropdownButtonHideUnderline(child: DropdownButton<int>(
             value: _schShift,
             isExpanded: true,
@@ -401,13 +401,13 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           final on = _schDays.contains(d);
           return Expanded(child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: GestureDetector(
+            child: InkWell(
               onTap: () => setState(() => on ? _schDays.remove(d) : _schDays.add(d)),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: on ? accent.withOpacity(0.1) : W.white,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(DS.radiusMd),
                   border: Border.all(color: on ? accent : W.border, width: on ? 2 : 1),
                 ),
                 child: Center(child: Text(
@@ -544,8 +544,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 filled: true,
                 fillColor: W.bg,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
                 isDense: true,
               ),
             ),
@@ -574,7 +574,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
       child: Row(children: [
-        GestureDetector(
+        InkWell(
           onTap: onTap,
           child: Container(
             width: 28, height: 28,
@@ -690,7 +690,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             final emp = _emps.firstWhere((e) => _uidOf(e) == eid?.toString(), orElse: () => {'name': '-'});
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: W.purpleL, borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: W.purpleL, borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Text(emp['name']?.toString() ?? '-', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.purple)),
             );
           }).toList()),
@@ -763,7 +763,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 Expanded(flex: 2, child: Text(hol['date'] ?? '', style: _mono(fontSize: 12, color: W.sub), textAlign: TextAlign.right)),
                 SizedBox(width: 80, child: Center(child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text(hol['type'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
                 ))),
                 Expanded(flex: 3, child: Text(hol['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.text), textAlign: TextAlign.right)),
@@ -803,7 +803,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               width: double.infinity,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
               child: DropdownButtonHideUnderline(child: DropdownButton<String>(
                 value: _holType,
                 isExpanded: true,
@@ -823,13 +823,13 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             child: SingleChildScrollView(child: Wrap(spacing: 6, runSpacing: 6, children: _emps.map((emp) {
               final uid = _uidOf(emp);
               final sel = _holEmpIds.contains(uid);
-              return GestureDetector(
+              return InkWell(
                 onTap: () => setState(() => sel ? _holEmpIds.remove(uid) : _holEmpIds.add(uid)),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: sel ? W.purpleL : W.white,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(DS.radiusMd),
                     border: Border.all(color: sel ? W.purple : W.border),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -899,8 +899,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           filled: true,
           fillColor: W.white,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
           isDense: true,
         ),
       ),
@@ -908,7 +908,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _iconBtn(IconData icon, Color iconColor, Color bg, VoidCallback onTap) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: Container(
         width: 28, height: 28,
@@ -919,13 +919,13 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _actionBtn(String label, Color bg, Color fg, {VoidCallback? onTap, Color? border}) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 11),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(DS.radiusMd),
           border: border != null ? Border.all(color: border) : null,
         ),
         child: Center(child: Text(label, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: fg))),

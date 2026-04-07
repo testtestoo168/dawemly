@@ -34,7 +34,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F8),
+      backgroundColor: C.bg,
       appBar: AppBar(
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -92,7 +92,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: C.priLight,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(DS.radiusMd),
                 ),
                 child: Center(
                   child: Text(
@@ -140,8 +140,8 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           decoration: BoxDecoration(
                             color: C.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: C.border),
+                            borderRadius: BorderRadius.circular(DS.radiusMd),
+                            boxShadow: DS.shadowSm,
                           ),
                           child: Column(
                             children: [
@@ -181,8 +181,8 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
                           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                           decoration: BoxDecoration(
                             color: C.white.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: C.border.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(DS.radiusMd),
+                            boxShadow: DS.shadowSm,
                           ),
                           child: Center(
                             child: Text(

@@ -191,8 +191,9 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     child: Text(t, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.text)),
   );
 
-  Widget _chip(String label, bool selected, VoidCallback onTap) => GestureDetector(
+  Widget _chip(String label, bool selected, VoidCallback onTap) => InkWell(
     onTap: onTap,
+    borderRadius: BorderRadius.circular(10),
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -206,11 +207,12 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
 
   Widget _dateCard(String label, DateTime? date, VoidCallback onTap) {
     final fmt = DateFormat('dd MMM yyyy', 'ar');
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(DS.radiusMd),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: date != null ? C.pri : C.border)),
+        decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowSm),
         child: Column(children: [
           Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
           const SizedBox(height: 6),

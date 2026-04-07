@@ -22,13 +22,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
-  // URS exact colors
-  static const _fg = Color(0xFF1A1A2E);
-  static const _muted = Color(0xFF64748B);
-  static const _border = Color(0xFFD1D5DB);
-  static const _card = Colors.white;
-  static const _secondary = Color(0xFFE8EDF2);
-  static const _primary = Color(0xFF0F3460);
+  // Colors via design system
+  static Color get _fg => W.text;
+  static Color get _muted => W.sub;
+  static Color get _border => W.border;
+  static Color get _card => W.card;
+  static Color get _secondary => W.div;
+  static Color get _primary => W.pri;
 
   // Chart colors
   static const _chartBlue = Color(0xFF1D4ED8);
@@ -116,10 +116,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
               childAspectRatio: isWide ? 2.6 : (isSmall ? 1.4 : 1.8),
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               children: [
-                _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف'),
-                _statCard(Icons.check_circle_rounded, 'الحاضرون', '$present', '$complete مكتمل'),
-                _statCard(Icons.cancel_rounded, 'الغائبون', '$absent', 'غائب'),
-                _statCard(Icons.pending_actions_rounded, 'طلبات معلقة', '$pendingReqs', 'طلب'),
+                _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف', W.pri),
+                _statCard(Icons.check_circle_rounded, 'الحاضرون', '$present', '$complete مكتمل', W.green),
+                _statCard(Icons.cancel_rounded, 'الغائبون', '$absent', 'غائب', W.red),
+                _statCard(Icons.pending_actions_rounded, 'طلبات معلقة', '$pendingReqs', 'طلب', W.orange),
               ],
             ),
           const SizedBox(height: 24),
@@ -180,10 +180,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   // ─── Stat Card — URS exact: icon left + info right ───
-  Widget _statCard(IconData icon, String label, String value, String change) {
+  Widget _statCard(IconData icon, String label, String value, String change, Color accent) {
     return Container(
       padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400 ? 12 : 20),
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.gradientCard(accent),
       child: Row(textDirection: TextDirection.rtl, children: [
         // Info right
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -197,8 +197,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // Icon left
         Container(
           width: MediaQuery.of(context).size.width < 400 ? 36 : 44, height: MediaQuery.of(context).size.width < 400 ? 36 : 44,
-          decoration: BoxDecoration(color: _secondary, borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: MediaQuery.of(context).size.width < 400 ? 18 : 20, color: _primary),
+          decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(DS.radiusMd)),
+          child: Icon(icon, size: MediaQuery.of(context).size.width < 400 ? 18 : 20, color: accent),
         ),
       ]),
     );
@@ -210,11 +210,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(DS.radiusMd),
         hoverColor: _secondary,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 12 : 20, vertical: MediaQuery.of(context).size.width < 400 ? 10 : 16),
-          decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+          decoration: DS.cardDecoration(),
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(icon, size: 18, color: _primary),
             const SizedBox(width: 8),
@@ -228,11 +228,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Helper: chart card wrapper ───
   Widget _chartWrapper({required String title, required IconData icon, required double height, required Widget child}) {
     return Container(
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(icon, size: 14, color: _muted),
             const SizedBox(width: 8),
@@ -635,11 +635,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
 
     return Container(
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(Icons.person_off_rounded, size: 14, color: _chartRed),
             const SizedBox(width: 8),
@@ -647,7 +647,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Text('${absentEmps.length}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: _chartRed)),
             ),
           ]),
@@ -685,7 +685,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ])),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text('غائب', style: _tj(10, weight: FontWeight.w500, color: _chartRed)),
                 ),
               ]),
@@ -703,11 +703,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Top Attendance — URS "الأكثر مبيعاً" style ───
   Widget _topAttendanceCard() {
     return Container(
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(Icons.local_fire_department_rounded, size: 14, color: _muted),
             const SizedBox(width: 8),
@@ -737,7 +737,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: W.green)),
                 ),
               ]),
@@ -777,12 +777,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
 
     return Container(
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         // Header with tabs — wraps on small screens
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: isSmall
             ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Row(textDirection: TextDirection.rtl, children: [
@@ -792,10 +792,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 const SizedBox(height: 8),
                 Row(textDirection: TextDirection.rtl, mainAxisAlignment: MainAxisAlignment.end, children: [
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
                   const SizedBox(width: 8),
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
                 ]),
               ])
@@ -805,10 +805,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
                 const Spacer(),
                 // Counters
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(6)),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
                 const SizedBox(width: 8),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
               ]),
         ),
@@ -858,7 +858,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 const SizedBox(width: 10),
                 Expanded(child: Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _muted))),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == 'مكتمل' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == 'مكتمل' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == 'مكتمل' ? const Color(0xFF166534) : _muted))),
               ]),
             );
@@ -896,7 +896,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
             )),
           ]),
@@ -918,11 +918,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
 
     return Container(
-      decoration: BoxDecoration(color: _card, border: Border.all(color: _border), borderRadius: BorderRadius.circular(6)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: Row(textDirection: TextDirection.rtl, children: [
             Expanded(child: Row(children: [
               Icon(Icons.assignment_rounded, size: 14, color: _muted),
@@ -930,8 +930,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Text('الطلبات المعلقة', style: _tj(15, weight: FontWeight.w600, color: _fg)),
             ])),
             Material(
-              color: _primary, borderRadius: BorderRadius.circular(6),
-              child: InkWell(onTap: () => widget.onNav('requests'), borderRadius: BorderRadius.circular(6),
+              color: _primary, borderRadius: BorderRadius.circular(DS.radiusMd),
+              child: InkWell(onTap: () => widget.onNav('requests'), borderRadius: BorderRadius.circular(DS.radiusMd),
                 child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Row(children: [const Icon(Icons.visibility_rounded, size: 12, color: Colors.white), const SizedBox(width: 4), Text('عرض الكل', style: _tj(12, weight: FontWeight.w500, color: Colors.white))]))),
             ),

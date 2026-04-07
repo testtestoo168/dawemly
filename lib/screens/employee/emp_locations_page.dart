@@ -90,7 +90,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: C.bg,
       appBar: AppBar(
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -162,9 +162,9 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
           center: LatLng(lat, lng),
           radius: radius,
           fillColor: isSelected
-              ? const Color(0xFF17B26A).withValues(alpha: 0.18)
+              ? C.green.withValues(alpha: 0.18)
               : const Color(0xFFFF9500).withValues(alpha: 0.10),
-          strokeColor: isSelected ? const Color(0xFF17B26A) : const Color(0xFFFF9500),
+          strokeColor: isSelected ? C.green : const Color(0xFFFF9500),
           strokeWidth: 2,
         ));
       }
@@ -218,18 +218,18 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
               : '${(dist / 1000).toStringAsFixed(1)} كم';
         }
 
-        return GestureDetector(
+        return InkWell(
           onTap: () => _animateToLocation(i),
+          borderRadius: BorderRadius.circular(DS.radiusMd),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
               color: C.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isSelected ? C.green : C.border, width: isSelected ? 2 : 1),
+              borderRadius: BorderRadius.circular(DS.radiusMd),
               boxShadow: isSelected
                   ? [BoxShadow(color: C.green.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 2))]
-                  : [],
+                  : DS.shadowSm,
             ),
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -245,7 +245,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: isInside ? C.greenL : const Color(0xFFFEE2E2),
+                          color: isInside ? C.greenL : C.redL,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -290,7 +290,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: isSelected ? C.greenL : const Color(0xFFF3F4F6),
+                    color: isSelected ? C.greenL : C.bg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.location_on_rounded, size: 20, color: isSelected ? C.green : C.sub),

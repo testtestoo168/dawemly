@@ -110,7 +110,7 @@ class _AdminVerifyState extends State<AdminVerify> {
           // ═══ Send Card — Grouped by Locations ═══
           Container(
             width: double.infinity, padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400 ? 14 : 22),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Column(children: [
               // Title row
               Row(children: [
@@ -125,7 +125,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 onTap: _sel.isEmpty || _sending ? null : () => _sendVerification(all),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 14 : 24, vertical: 10),
-                  decoration: BoxDecoration(color: _sending ? W.muted : _sel.isEmpty ? W.hint : W.pri, borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: _sending ? W.muted : _sel.isEmpty ? W.hint : W.pri, borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     if (_sending) ...[const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)), const SizedBox(width: 6), Text('جارٍ الإرسال...', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))]
                     else ...[const Icon(Icons.send, size: 14, color: Colors.white), const SizedBox(width: 6), Text('إرسال (${_sel.length})', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))],
@@ -153,7 +153,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+                  decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     // Location header
                     Row(children: [
@@ -167,12 +167,12 @@ class _AdminVerifyState extends State<AdminVerify> {
                         }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(color: allLocSelected ? W.pri.withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(6)),
+                          decoration: BoxDecoration(color: allLocSelected ? W.pri.withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(DS.radiusMd)),
                           child: Text(allLocSelected ? 'إلغاء' : 'الكل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: allLocSelected ? W.pri : W.sub)),
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: W.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: W.green.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)),
                         child: Text('${locEmployees.length}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.green))),
                       const Spacer(),
                       Flexible(child: Text(locName, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
@@ -212,7 +212,7 @@ class _AdminVerifyState extends State<AdminVerify> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               // Label row on its own line
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -300,7 +300,7 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     if (requests.isEmpty) return Container(
       width: double.infinity, padding: const EdgeInsets.all(50),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [Icon(Icons.cell_tower, size: 40, color: W.hint), SizedBox(height: 12), Text('لا توجد طلبات إثبات في هذا التاريخ', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))]),
     );
 
@@ -330,7 +330,7 @@ class _AdminVerifyState extends State<AdminVerify> {
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 12 : 18, vertical: 12),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isPending ? W.orangeBd : (isInRange ? W.greenBd : W.redBd))),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: isPending ? W.orangeBd : (isInRange ? W.greenBd : W.redBd))),
           child: Row(children: [
             Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),

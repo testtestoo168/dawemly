@@ -75,13 +75,13 @@ class _LoginPageState extends State<LoginPage> {
     _showMsg('تواصل مع المدير لإعادة تعيين كلمة المرور');
   }
 
-  void _showMsg(String msg) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _tj(13, color: Colors.white)), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))); }
+  void _showMsg(String msg) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _tj(13, color: Colors.white)), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))); }
 
   @override
   Widget build(BuildContext context) {
     final isWeb = MediaQuery.of(context).size.width > 800;
     return Scaffold(
-      backgroundColor: isWeb ? const Color(0xFFF0F2F5) : const Color(0xFFF5F7FA),
+      backgroundColor: isWeb ? C.bg : const Color(0xFFF5F7FA),
       body: isWeb ? _webLayout() : _mobileLayout(),
     );
   }

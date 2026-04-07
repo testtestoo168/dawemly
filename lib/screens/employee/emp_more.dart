@@ -85,7 +85,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: C.bg,
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -150,8 +150,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: C.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: C.border),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
+                boxShadow: DS.shadowSm,
               ),
               child: _loadingLoc
                 ? const Padding(padding: EdgeInsets.all(16), child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
@@ -184,8 +184,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: C.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: C.border),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
+                boxShadow: DS.shadowSm,
               ),
               padding: const EdgeInsets.all(16),
               child: _loadingLeave
@@ -229,8 +229,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: C.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: C.border),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
+                boxShadow: DS.shadowSm,
               ),
               child: Column(
                 children: [
@@ -282,8 +282,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: C.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: C.border),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
+                boxShadow: DS.shadowSm,
               ),
               child: _menuItem(
                 icon: Icons.settings_outlined,

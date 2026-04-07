@@ -127,12 +127,12 @@ class _AdminSettingsState extends State<AdminSettings> {
       }
       setState(() => _searchResults = results);
       if (results.isEmpty && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('لم يتم العثور على نتائج — جرّب كلمات أخرى', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('لم يتم العثور على نتائج — جرّب كلمات أخرى', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       }
     } catch (e) {
       setState(() => _searchResults = []);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في البحث: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في البحث: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       }
     }
     if (mounted) setState(() => _searching = false);
@@ -179,7 +179,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       setState(() => _saved = true);
       Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() => _saved = false); });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الإعدادات: $e', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الإعدادات: $e', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
     }
   }
 
@@ -277,7 +277,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           content: Text('تم حفظ رصيد الإجازات', style: GoogleFonts.tajawal()),
           backgroundColor: W.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
       }
     } catch (e) {
@@ -286,7 +286,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           content: Text('خطأ: $e', style: GoogleFonts.tajawal()),
           backgroundColor: W.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
       }
     }
@@ -311,7 +311,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     final isMobile = MediaQuery.of(context).size.width < 500;
     return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : (isMobile ? 10 : 14)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       // Save button only (title is in AppBar)
-      Align(alignment: Alignment.centerLeft, child: ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+      Align(alignment: Alignment.centerLeft, child: ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
       const SizedBox(height: 14),
 
       // Sub-tabs — scrollable horizontally on mobile
@@ -389,8 +389,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       _addBtn('إضافة فترة', () => setState(() => _showAddShift = true)),
     ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_addBtn('إضافة فترة', () => setState(() => _showAddShift = true)), Flexible(child: Text('حدد فترات العمل — كل فترة بوقت بداية ونهاية', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)))]),
     const SizedBox(height: 14),
-    ...List.generate(_shifts.length, (i) { final sh = _shifts[i]; final color = sh['color'] as Color; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 14 : 22), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: sh['active'] == true ? color.withOpacity(0.3) : W.border)), child: Column(children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(mainAxisSize: MainAxisSize.min, children: [Switch(value: sh['active'] == true, activeColor: W.green, onChanged: (v) => setState(() => _shifts[i]['active'] = v)), InkWell(onTap: () => setState(() => _shifts.removeAt(i)), child: Icon(Icons.delete_outline, size: 16, color: W.red))]), Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(sh['name'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 8), Container(width: isMobile ? 36 : 44, height: isMobile ? 36 : 44, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Icon(Icons.access_time, size: isMobile ? 16 : 20, color: color))]))]),
+    ...List.generate(_shifts.length, (i) { final sh = _shifts[i]; final color = sh['color'] as Color; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 14 : 22), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: sh['active'] == true ? color.withOpacity(0.3) : W.border)), child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(mainAxisSize: MainAxisSize.min, children: [Switch(value: sh['active'] == true, activeColor: W.green, onChanged: (v) => setState(() => _shifts[i]['active'] = v)), InkWell(onTap: () => setState(() => _shifts.removeAt(i)), child: Icon(Icons.delete_outline, size: 16, color: W.red))]), Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(sh['name'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 8), Container(width: isMobile ? 36 : 44, height: isMobile ? 36 : 44, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.access_time, size: isMobile ? 16 : 20, color: color))]))]),
       const SizedBox(height: 14),
       Row(children: [Expanded(child: _timeBox('البداية', sh['start'] as String, color)), Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('→', style: TextStyle(fontSize: 18, color: W.hint))), Expanded(child: _timeBox('النهاية', sh['end'] as String, color))]),
     ])); }),
@@ -474,7 +474,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         if (_searchResults.isNotEmpty) Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 4),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: Offset(0, 4))]),
+          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), boxShadow: DS.shadowMd),
           child: Column(children: [
             ..._searchResults.map((r) => InkWell(
               onTap: () => _selectSearchResult(r),
@@ -500,7 +500,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       // ─── Google Map ───
       Container(
         height: isMobile ? 220 : 300, width: double.infinity,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
         clipBehavior: Clip.hardEdge,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: _pickedLatLng ?? const LatLng(24.7741, 46.7386), zoom: 15),
@@ -526,7 +526,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       // ─── Radius Slider ───
       Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
         child: Column(children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: W.pri.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
@@ -574,7 +574,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       const SizedBox(height: 14),
       Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+        decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Row(children: [
             Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: W.pri.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
@@ -611,7 +611,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       final active = loc['active'] ?? true;
       final radius = loc['radius'] ?? 200;
       final assignedEmps = ((loc['assignedEmployees'] ?? loc['assigned_employees']) as List?)?.cast<String>() ?? [];
-      return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 12 : 18), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: active ? Color(0xFFABEFC6) : W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 12 : 18), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: active ? Color(0xFFABEFC6) : W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
             InkWell(onTap: () async { await ApiService.post('admin.php?action=delete_location', {'id': locId}); _loadSettings(); }, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(4)), child: Icon(Icons.delete_outline, size: 14, color: W.red))),
@@ -621,7 +621,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             SizedBox(width: 44, child: Switch(value: active, activeColor: W.green, onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'active': v}); _loadSettings(); })),
           ]),
           const Spacer(),
-          Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text('${(loc['lat'] ?? 0).toStringAsFixed(4)}, ${(loc['lng'] ?? 0).toStringAsFixed(4)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted))])), SizedBox(width: 8), Container(width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, decoration: BoxDecoration(color: active ? Color(0xFFECFDF3) : W.bg, borderRadius: BorderRadius.circular(6)), child: Icon(Icons.location_on, size: 14, color: active ? W.green : W.muted))])),
+          Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text('${(loc['lat'] ?? 0).toStringAsFixed(4)}, ${(loc['lng'] ?? 0).toStringAsFixed(4)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted))])), SizedBox(width: 8), Container(width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, decoration: BoxDecoration(color: active ? Color(0xFFECFDF3) : W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.location_on, size: 14, color: active ? W.green : W.muted))])),
         ]),
         const SizedBox(height: 8),
         Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)),
@@ -679,7 +679,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         decoration: BoxDecoration(
           color: const Color(0xFFECFDF5),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(DS.radiusMd),
           border: Border.all(color: const Color(0xFF6EE7B7)),
         ),
         child: Row(children: [
@@ -689,7 +689,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             Text('لا يمكن لأي موظف فتح حسابه على جهازين في نفس الوقت — يجب تسجيل الخروج أو إنهاء الجلسة من هنا.', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: const Color(0xFF047857), height: 1.6), textAlign: TextAlign.right),
           ])),
           const SizedBox(width: 10),
-          Container(width: isMobile ? 34 : 40, height: isMobile ? 34 : 40, decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(6)),
+          Container(width: isMobile ? 34 : 40, height: isMobile ? 34 : 40, decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Icon(Icons.shield_rounded, size: isMobile ? 16 : 20, color: const Color(0xFF059669))),
         ]),
       ),
@@ -698,7 +698,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       if (isMobile) ...[
         Container(
           height: 38,
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(radius: DS.radiusSm),
           child: TextField(
             onChanged: (v) => setState(() => _devSearch = v),
             textAlign: TextAlign.right,
@@ -736,7 +736,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         const SizedBox(width: 10),
         Expanded(child: Container(
           height: 38,
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(radius: DS.radiusSm),
           child: TextField(
             onChanged: (v) => setState(() => _devSearch = v),
             textAlign: TextAlign.right,
@@ -755,7 +755,7 @@ class _AdminSettingsState extends State<AdminSettings> {
 
       // ── Employee list ──
       Container(
-        decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+        decoration: DS.cardDecoration(),
         child: filtered.isEmpty
           ? Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [
               Icon(Icons.devices_rounded, size: 40, color: W.hint),
@@ -841,19 +841,19 @@ class _AdminSettingsState extends State<AdminSettings> {
                       ],
                       const SizedBox(height: 8),
                       Wrap(spacing: 6, runSpacing: 4, alignment: WrapAlignment.start, children: [
-                        if (hasSession) GestureDetector(
+                        if (hasSession) InkWell(
                           onTap: () async {
                             await ApiService.post('admin.php?action=delete_session', {'uid': uid});
                             _loadSettings();
                             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text('تم إنهاء جلسة $name', style: GoogleFonts.tajawal(color: Colors.white)),
                               backgroundColor: W.green, behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                             ));
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.redBd)),
+                            decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.redBd)),
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
                               Icon(Icons.logout_rounded, size: 11, color: W.red),
                               const SizedBox(width: 3),
@@ -861,7 +861,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                             ]),
                           ),
                         ),
-                        GestureDetector(
+                        InkWell(
                           onTap: () async {
                             final newVal = !multi;
                             setState(() {
@@ -874,7 +874,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: multi ? Color(0xFFECFDF5) : W.bg,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(DS.radiusMd),
                               border: Border.all(color: multi ? Color(0xFF6EE7B7) : W.border),
                             ),
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -892,14 +892,14 @@ class _AdminSettingsState extends State<AdminSettings> {
                   // ── Actions ──
                   Column(mainAxisSize: MainAxisSize.min, children: [
                     if (hasSession)
-                      GestureDetector(
+                      InkWell(
                         onTap: () async {
                           await ApiService.post('admin.php?action=delete_session', {'uid': uid});
                           _loadSettings();
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text('تم إنهاء جلسة $name', style: GoogleFonts.tajawal(color: Colors.white)),
                             backgroundColor: W.green, behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                           ));
                         },
                         child: Container(
@@ -913,7 +913,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                         ),
                       ),
                     if (hasSession) const SizedBox(height: 6),
-                    GestureDetector(
+                    InkWell(
                         onTap: () async {
                           final newVal = !multi;
                           setState(() {
@@ -996,7 +996,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     final isMobile = MediaQuery.of(context).size.width < 500;
     return Expanded(child: Container(
       padding: EdgeInsets.all(isMobile ? 10 : 14),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Container(width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
           child: Icon(icon, size: isMobile ? 12 : 14, color: color)),
@@ -1009,11 +1009,11 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   Widget _devFilterTab(String val, String label) {
     final on = _devFilter == val;
-    return GestureDetector(
+    return InkWell(
       onTap: () => setState(() => _devFilter = val),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: on ? W.pri : Colors.transparent, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: on ? W.pri : Colors.transparent, borderRadius: BorderRadius.circular(DS.radiusMd)),
         child: Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: on ? FontWeight.w700 : FontWeight.w400, color: on ? Colors.white : W.sub)),
       ),
     );
@@ -1083,7 +1083,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             padding: EdgeInsets.all(isMobile ? 14 : 22),
             decoration: BoxDecoration(
               color: W.white,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(DS.radiusMd),
               border: Border.all(color: W.border),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -1195,7 +1195,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
           child: Icon(Icons.edit, size: 14, color: color),
         ),
       ),
@@ -1224,7 +1224,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       const SizedBox(width: 6),
       Container(
         width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)),
         child: Icon(icon, size: isMobile ? 14 : 16, color: color),
       ),
     ]);
@@ -1243,7 +1243,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.pri),
-            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), suffixText: 'h'),
+            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), suffixText: 'h'),
             onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 24) setState(() => _generalH = val); },
           )),
           Text('ساعات/يوم', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
@@ -1258,7 +1258,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.orange),
-            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), prefixText: '×'),
+            decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), prefixText: '×'),
             onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 5) setState(() => _overtimeRate = val); },
           )),
           Text('من الراتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
@@ -1303,7 +1303,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: W.red),
-          decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), suffixText: 'د'),
+          decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), suffixText: 'د'),
           onChanged: (v) { final val = int.tryParse(v); if (val != null && val >= 0 && val <= 120) setState(() => _lateGraceMinutes = val); },
         )),
         Text('سماحية التأخير (بالدقائق)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
@@ -1311,7 +1311,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       const SizedBox(height: 12),
       Container(
         width: double.infinity, padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
         child: Text('مثال: لو السماحية 15 دقيقة والدوام يبدأ 8:00 — الموظف اللي يجي 8:15 أو قبل مش متأخر، بس 8:16 يتحسب متأخر', style: GoogleFonts.tajawal(fontSize: 11, color: W.red, height: 1.6), textAlign: TextAlign.right),
       ),
     ]));
@@ -1349,7 +1349,7 @@ class _AdminSettingsState extends State<AdminSettings> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: hasOverride ? Color(0xFFF4F3FF) : W.bg,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(DS.radiusMd),
                 border: Border.all(color: hasOverride ? Color(0xFF7F56D9).withOpacity(0.3) : W.border),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -1367,7 +1367,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: hasOverride ? Color(0xFF7F56D9).withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: hasOverride ? Color(0xFF7F56D9).withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(DS.radiusMd)),
                       child: Text(hasOverride ? 'إلغاء التخصيص' : 'تخصيص', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: hasOverride ? Color(0xFF7F56D9) : W.sub)),
                     ),
                   ),
@@ -1410,11 +1410,11 @@ class _AdminSettingsState extends State<AdminSettings> {
                   InkWell(
                     onTap: () async {
                       await ApiService.post('face.php?action=reset', {'uid': uid});
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه لـ ${emp['name']}', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه لـ ${emp['name']}', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.redBd)),
+                      decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.redBd)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Text('إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
                         const SizedBox(width: 4),
@@ -1471,9 +1471,9 @@ class _AdminSettingsState extends State<AdminSettings> {
     isMobile ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Text('افتح البصمة لموظف محدد في وقت معين', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
       const SizedBox(height: 8),
-      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
+      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
     ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
+      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
       Flexible(child: Text('افتح البصمة لموظف محدد في وقت معين', style: GoogleFonts.tajawal(fontSize: 14, color: W.sub))),
     ]),
     const SizedBox(height: 14),
@@ -1488,7 +1488,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       const SizedBox(height: 12),
       Row(children: [ElevatedButton(onPressed: () { setState(() { _customAtt.add({'id': DateTime.now().millisecondsSinceEpoch, 'empName': 'موظف', 'date': _attDate.text, 'start': _attStart.text, 'end': _attEnd.text, 'reason': _attReason.text, 'status': 'مفعّل'}); _attDate.clear(); _attStart.clear(); _attEnd.clear(); _attReason.clear(); _showAddAtt = false; }); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0BA5EC), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))), child: Text('✓ فتح البصمة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600))), const SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddAtt = false))]),
     ])),
-    ..._customAtt.map((a) => Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 16), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Row(children: [
+    ..._customAtt.map((a) => Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 16), decoration: DS.cardDecoration(), child: Row(children: [
       Row(mainAxisSize: MainAxisSize.min, children: [InkWell(onTap: () => setState(() => _customAtt.removeWhere((x) => x['id'] == a['id'])), child: Icon(Icons.delete_outline, size: 14, color: W.red)), SizedBox(width: 6), Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Color(0xFFECFDF3), borderRadius: BorderRadius.circular(20)), child: Text(a['status'] as String, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.green)))]),
       const Spacer(),
       Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(a['empName'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 6), Icon(Icons.lock_open, size: 14, color: Color(0xFF0BA5EC))]), Text('${a['date']} — من ${a['start']} إلى ${a['end']}', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.sub), overflow: TextOverflow.ellipsis), Text('السبب: ${a['reason']}', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted), overflow: TextOverflow.ellipsis)])),
@@ -1497,14 +1497,14 @@ class _AdminSettingsState extends State<AdminSettings> {
   ]); }
 
   // ═══════════ Shared Widgets ═══════════
-  Widget _card({Widget? child, Color? border}) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(margin: EdgeInsets.only(bottom: isMobile ? 10 : 14), padding: EdgeInsets.all(isMobile ? 14 : 22), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: border ?? W.border, width: border != null ? 2 : 1)), child: child); }
-  Widget _cardHeader(String title, IconData icon, Color color) { final isMobile = MediaQuery.of(context).size.width < 500; return Padding(padding: EdgeInsets.only(bottom: isMobile ? 10 : 14), child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [Flexible(child: Text(title, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 15, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 8), Container(width: isMobile ? 34 : 40, height: isMobile ? 34 : 40, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: isMobile ? 16 : 18, color: color))])); }
-  Widget _timeBox(String label, String time, Color color) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(padding: EdgeInsets.all(isMobile ? 8 : 12), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)), child: Column(children: [Text(label, style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)), SizedBox(height: 4), Text(time, style: GoogleFonts.ibmPlexMono(fontSize: isMobile ? 14 : 18, fontWeight: FontWeight.w700, color: color))])); }
+  Widget _card({Widget? child, Color? border}) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(margin: EdgeInsets.only(bottom: isMobile ? 10 : 14), padding: EdgeInsets.all(isMobile ? 14 : 22), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: border ?? W.border, width: border != null ? 2 : 1)), child: child); }
+  Widget _cardHeader(String title, IconData icon, Color color) { final isMobile = MediaQuery.of(context).size.width < 500; return Padding(padding: EdgeInsets.only(bottom: isMobile ? 10 : 14), child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [Flexible(child: Text(title, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 15, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 8), Container(width: isMobile ? 34 : 40, height: isMobile ? 34 : 40, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(icon, size: isMobile ? 16 : 18, color: color))])); }
+  Widget _timeBox(String label, String time, Color color) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(padding: EdgeInsets.all(isMobile ? 8 : 12), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Column(children: [Text(label, style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)), SizedBox(height: 4), Text(time, style: GoogleFonts.ibmPlexMono(fontSize: isMobile ? 14 : 18, fontWeight: FontWeight.w700, color: color))])); }
   Widget _input(TextEditingController ctrl, String label, String hint, {bool isLtr = false}) => Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)), SizedBox(height: 4), TextField(controller: ctrl, textAlign: isLtr ? TextAlign.center : TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10)))]);
-  Widget _addBtn(String label, VoidCallback onTap) => ElevatedButton.icon(onPressed: onTap, icon: Icon(Icons.add, size: 14), label: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri, style: BorderStyle.solid), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+  Widget _addBtn(String label, VoidCallback onTap) => ElevatedButton.icon(onPressed: onTap, icon: Icon(Icons.add, size: 14), label: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri, style: BorderStyle.solid), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
   Widget _greenBtn(String label, VoidCallback onTap) => ElevatedButton(onPressed: onTap, style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))), child: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)));
   Widget _cancelBtn(VoidCallback onTap) => TextButton(onPressed: onTap, child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub)));
-  Widget _toggleCard(String title, String desc, IconData icon, Color color, bool value, Function(bool) onChanged) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 18), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Row(children: [Switch(value: value, activeColor: W.green, onChanged: onChanged), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(title, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text(desc, style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.muted), overflow: TextOverflow.ellipsis, maxLines: 2)])), SizedBox(width: isMobile ? 8 : 12), Container(width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: isMobile ? 16 : 20, color: color))])); }
+  Widget _toggleCard(String title, String desc, IconData icon, Color color, bool value, Function(bool) onChanged) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 18), decoration: DS.cardDecoration(), child: Row(children: [Switch(value: value, activeColor: W.green, onChanged: onChanged), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(title, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text(desc, style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.muted), overflow: TextOverflow.ellipsis, maxLines: 2)])), SizedBox(width: isMobile ? 8 : 12), Container(width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(icon, size: isMobile ? 16 : 20, color: color))])); }
   Widget _secToggle(String title, String desc, bool value, Function(bool) onChanged) => Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))), child: Row(children: [Switch(value: value, activeColor: W.green, onChanged: onChanged), const SizedBox(width: 4), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(title, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text(desc, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis, maxLines: 2)]))]));
   Widget _sliderSetting(String label, double value, double min, double max, int divisions, Color color, Function(double) onChanged) => Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub), overflow: TextOverflow.ellipsis), Row(children: [Text('${value.round()}', style: GoogleFonts.ibmPlexMono(fontSize: 16, fontWeight: FontWeight.w700, color: color)), const SizedBox(width: 4), Expanded(child: Slider(value: value, min: min, max: max, divisions: divisions, activeColor: color, onChanged: onChanged))])]));
 }

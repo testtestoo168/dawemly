@@ -240,7 +240,7 @@ class _AdminReportsState extends State<AdminReports> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('⚠ لتصدير PDF بالعربي، ضع ملف Tajawal-Regular.ttf في assets/fonts/', style: GoogleFonts.tajawal()),
           backgroundColor: W.orange, behavior: SnackBarBehavior.floating, duration: Duration(seconds: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
       }
     } catch (e) {
@@ -263,10 +263,10 @@ class _AdminReportsState extends State<AdminReports> {
           Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.spaceBetween, children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
               ElevatedButton.icon(onPressed: _exporting ? null : _exportCSV, icon: const Icon(Icons.download, size: 15), label: Text('Excel/CSV', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.white, foregroundColor: W.text, side: BorderSide(color: W.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
+                style: ElevatedButton.styleFrom(backgroundColor: W.white, foregroundColor: W.text, side: BorderSide(color: W.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
               const SizedBox(width: 8),
               ElevatedButton.icon(onPressed: _exporting ? null : _exportPDF, icon: const Icon(Icons.picture_as_pdf, size: 15), label: Text('PDF', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)))),
+                style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
             ]),
             Text('التقارير', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
           ]),
@@ -275,7 +275,7 @@ class _AdminReportsState extends State<AdminReports> {
           // Filters row
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Column(children: [
               // Month selector
               Row(children: [
@@ -337,11 +337,11 @@ class _AdminReportsState extends State<AdminReports> {
           if (_loading || snap.connectionState == ConnectionState.waiting)
             const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(strokeWidth: 2)))
           else if (data.isEmpty)
-            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: DS.cardDecoration(),
               child: Center(child: Column(children: [Icon(Icons.bar_chart, size: 48, color: W.hint), SizedBox(height: 12), Text('لا توجد بيانات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
           else Container(
             width: double.infinity,
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
@@ -378,7 +378,7 @@ class _AdminReportsState extends State<AdminReports> {
 
   Widget _stat(String label, String val, Color color) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+    decoration: DS.cardDecoration(),
     child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Text(val, style: _mono(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
       Text(label, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),

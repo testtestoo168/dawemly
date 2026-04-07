@@ -106,11 +106,12 @@ class _AdminDevicesState extends State<AdminDevices> {
 
           // ══════ HEADER ══════
           Row(children: [
-            GestureDetector(
+            InkWell(
               onTap: _load,
+              borderRadius: BorderRadius.circular(DS.radiusSm),
               child: Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusSm), boxShadow: DS.shadowSm),
                 child: Icon(Icons.refresh_rounded, size: 16, color: W.sub),
               ),
             ),
@@ -140,7 +141,7 @@ class _AdminDevicesState extends State<AdminDevices> {
             Expanded(
               child: Container(
                 height: 38,
-                decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
+                decoration: DS.cardDecoration(radius: DS.radiusSm),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
                   textAlign: TextAlign.right,
@@ -171,15 +172,15 @@ class _AdminDevicesState extends State<AdminDevices> {
 
           // ══════ DEVICES LIST ══════
           Container(
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: DS.cardDecoration(),
             child: Column(children: [
               // Table header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-                  border: Border(bottom: BorderSide(color: C.div)),
+                decoration: BoxDecoration(
+                  color: W.div,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(DS.radiusMd)),
+                  border: Border(bottom: BorderSide(color: W.div)),
                 ),
                 child: Row(children: [
                   Expanded(flex: 2, child: Text('الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
@@ -240,7 +241,7 @@ class _AdminDevicesState extends State<AdminDevices> {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: isWide ? 14 : 12),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: C.div))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: W.div))),
       child: isWide ? _wideRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg)
                     : _mobileRow(emp, uid, isOnline, isCheckedIn, hasCheckOut, multiAllowed, platform, model, brand, osVersion, appVersion, pColor, pIcon, pLabel, name, initials, statusLabel, statusColor, statusBg),
     );
@@ -256,7 +257,7 @@ class _AdminDevicesState extends State<AdminDevices> {
         width: 44, height: 44,
         decoration: BoxDecoration(
           color: pColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(DS.radiusMd),
           border: Border.all(color: pColor.withValues(alpha: 0.2)),
         ),
         child: Icon(pIcon, size: 22, color: pColor),
@@ -313,7 +314,7 @@ class _AdminDevicesState extends State<AdminDevices> {
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('تم فصل ${u['name']}', style: _tj(13, color: Colors.white)),
               backgroundColor: W.green, behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
             ));
             _load();
           }),
@@ -352,7 +353,7 @@ class _AdminDevicesState extends State<AdminDevices> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: pColor.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(6), border: Border.all(color: pColor.withValues(alpha: 0.2))),
+          decoration: BoxDecoration(color: pColor.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: pColor.withValues(alpha: 0.2))),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _actionBtn(multi ? 'جهاز واحد' : 'متعدد', multi ? Icons.phone_android_rounded : Icons.devices_rounded, multi ? W.orange : W.pri,
@@ -389,26 +390,31 @@ class _AdminDevicesState extends State<AdminDevices> {
   );
 
   Widget _actionBtn(String label, IconData icon, Color color, VoidCallback onTap) =>
-    GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(7), border: Border.all(color: color.withValues(alpha: 0.25))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: _tj(10, w: FontWeight.w600, color: color)),
-        ]),
+    Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(DS.radiusSm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: _tj(10, w: FontWeight.w600, color: color)),
+          ]),
+        ),
       ),
     );
 
   Widget _filterTab(String val, String label) {
     final on = _filter == val;
-    return GestureDetector(
+    return InkWell(
       onTap: () => setState(() => _filter = val),
+      borderRadius: BorderRadius.circular(DS.radiusMd),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(color: on ? W.pri : Colors.transparent, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: on ? W.pri : Colors.transparent, borderRadius: BorderRadius.circular(DS.radiusMd)),
         child: Text(label, style: _tj(11, w: on ? FontWeight.w700 : FontWeight.w400, color: on ? Colors.white : W.sub)),
       ),
     );
@@ -417,9 +423,9 @@ class _AdminDevicesState extends State<AdminDevices> {
   Widget _statCard(String label, String val, Color color, Color bg, IconData icon) =>
     Expanded(child: Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.gradientCard(color),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Container(width: 32, height: 32, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(9)),
+        Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9)),
           child: Icon(icon, size: 15, color: color)),
         const SizedBox(height: 8),
         Text(val, style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: W.text)),

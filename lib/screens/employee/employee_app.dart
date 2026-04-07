@@ -74,9 +74,9 @@ class _EmployeeAppState extends State<EmployeeApp> {
         style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
         textDirection: TextDirection.rtl,
       ),
-      backgroundColor: isApproved ? const Color(0xFF12B76A) : const Color(0xFFF04438),
+      backgroundColor: isApproved ? C.green : C.red,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusSm)),
       duration: const Duration(seconds: 4),
     ));
   }
@@ -126,9 +126,10 @@ class _EmployeeAppState extends State<EmployeeApp> {
   Widget _navItem(int idx, IconData icon, IconData activeIcon, String label) {
     final on = _i == idx;
     return Expanded(
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => setState(() => _i = idx),
-        behavior: HitTestBehavior.opaque,
+        splashColor: C.pri.withOpacity(0.08),
+        highlightColor: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -160,9 +161,10 @@ class _EmployeeAppState extends State<EmployeeApp> {
   Widget _centerNavItem(int idx) {
     final on = _i == idx;
     return Expanded(
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => setState(() => _i = idx),
-        behavior: HitTestBehavior.opaque,
+        splashColor: C.pri.withOpacity(0.08),
+        highlightColor: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

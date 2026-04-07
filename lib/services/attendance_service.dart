@@ -41,11 +41,11 @@ class AttendanceService {
     }
   }
 
-  // ─── Get current location — FAST PATH ───
-  // Strategy: try lastKnownPosition first (instant, from cache). If it's recent
-  // and accurate enough, return it immediately. Otherwise fall back to a single
-  // getCurrentPosition call with a hard 5-second timeout. This cuts the typical
-  // check-in wait from 6-18 seconds down to under 1 second in most cases.
+  // ─── Get current location — HIGH ACCURACY ───
+  // Strategy: try lastKnownPosition first (instant cache). Accept ONLY if very
+  // fresh (< 5 seconds) and very accurate (< 30m). Otherwise get a fresh fix
+  // with high accuracy and 8-second timeout. This ensures the position is
+  // reliable for geofence checks while still being fast.
   Future<({Position? position, bool isMocked})> getCurrentLocation() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return (position: null, isMocked: false);
@@ -56,34 +56,44 @@ class AttendanceService {
     }
     if (perm == LocationPermission.deniedForever) return (position: null, isMocked: false);
 
-    // 1) Fast path — check last known position (instant, no GPS warmup)
+    // 1) Fast path — accept cached fix ONLY if very fresh and accurate
     try {
       final last = await Geolocator.getLastKnownPosition();
       if (last != null) {
         final ageMs = DateTime.now().millisecondsSinceEpoch - last.timestamp.millisecondsSinceEpoch;
-        // Accept cached fix if it's < 30 seconds old and within ~80m accuracy
-        if (ageMs < 30000 && last.accuracy <= 80) {
+        if (ageMs < 5000 && last.accuracy <= 30) {
           return (position: last, isMocked: last.isMocked);
         }
       }
     } catch (_) {}
 
-    // 2) Fresh fix with hard timeout (no second "best accuracy" pass — not worth the wait)
+    // 2) Fresh high-accuracy fix with 8-second timeout
     try {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
+          accuracy: LocationAccuracy.best,
+          timeLimit: Duration(seconds: 8),
         ),
       );
       return (position: pos, isMocked: pos.isMocked);
     } catch (_) {
-      // Timed out or error — use whatever last known we have as a last resort
+      // 3) Fallback: try high (not best) accuracy with shorter timeout
       try {
-        final fallback = await Geolocator.getLastKnownPosition();
-        if (fallback != null) return (position: fallback, isMocked: fallback.isMocked);
-      } catch (_) {}
-      return (position: null, isMocked: false);
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+        return (position: pos, isMocked: pos.isMocked);
+      } catch (_) {
+        // Last resort — any cached position
+        try {
+          final fallback = await Geolocator.getLastKnownPosition();
+          if (fallback != null) return (position: fallback, isMocked: fallback.isMocked);
+        } catch (_) {}
+        return (position: null, isMocked: false);
+      }
     }
   }
 

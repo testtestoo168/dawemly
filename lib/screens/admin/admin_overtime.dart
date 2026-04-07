@@ -113,7 +113,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Row(children: [
             InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
             const Spacer(),
@@ -179,7 +179,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   // ────────────────────────────────────────────────────────
   Widget _webOvertimeTable(List<Map<String, dynamic>> withOT) {
     return Container(
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         // Header
         Container(
@@ -239,7 +239,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
                   else
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                       child: Text('ملغي', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.red)),
                     ),
                 ])),
@@ -289,10 +289,10 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   Widget _webActionBtn(IconData icon, String label, Color color, Color bg, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(DS.radiusMd),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.2))),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: color.withValues(alpha: 0.2))),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 13, color: color),
           const SizedBox(width: 4),
@@ -352,7 +352,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Column(children: [
             Align(alignment: Alignment.centerRight, child: Text('توزيع الحالات', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 12),
@@ -396,7 +396,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Column(children: [
             Align(alignment: Alignment.centerRight, child: Text('أعلى 5 موظفين', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 16),
@@ -467,7 +467,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Column(children: [
             Align(alignment: Alignment.centerRight, child: Text('ترتيب الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 12),
@@ -532,7 +532,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   Widget _emptyState() {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Center(child: Column(children: [
         Icon(Icons.more_time, size: 36, color: W.hint),
         const SizedBox(height: 10),
@@ -546,7 +546,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   // ────────────────────────────────────────────────────────
   Widget _allEmployeesTable(List<Map<String, dynamic>> records, bool isMobile) {
     return Container(
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
@@ -607,7 +607,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 12 : 16),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: otCancelled ? W.red.withValues(alpha: 0.3) : W.border)),
+      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: otCancelled ? W.red.withValues(alpha: 0.3) : W.border)),
       child: Column(children: [
         // Top: OT badge + name on the right
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -616,12 +616,12 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             flex: 0,
             child: Wrap(spacing: 6, runSpacing: 6, children: [
               InkWell(onTap: () => _editOvertimeDialog(docId, name, emp),
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(6)),
+                child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.orange), const SizedBox(width: 4), Text('تعديل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))]))),
               if (!otCancelled) InkWell(onTap: () => _cancelOvertimeDialog(docId, name),
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+                child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])))
-              else Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(6)),
+              else Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('ملغي', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])),
             ]),
           ),
@@ -633,7 +633,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           ])),
           const SizedBox(width: 8),
           // OT badge
-          Container(padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12, vertical: 6), decoration: BoxDecoration(color: otCancelled ? const Color(0xFFFEF3F2) : const Color(0xFFFFFAEB), borderRadius: BorderRadius.circular(6)),
+          Container(padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12, vertical: 6), decoration: BoxDecoration(color: otCancelled ? const Color(0xFFFEF3F2) : const Color(0xFFFFFAEB), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Column(children: [
               Text(otCancelled ? 'ملغي' : '+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: otCancelled ? W.red : W.orange)),
               Text('أوفرتايم', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
@@ -641,7 +641,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         ]),
         if (otReason.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6)),
+          Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Flexible(child: Text(otReason, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub), textAlign: TextAlign.right)),
               const SizedBox(width: 6), Icon(Icons.comment, size: 12, color: W.muted),
@@ -710,12 +710,12 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 _loadAll();
               }
             },
             icon: const Icon(Icons.save, size: 16), label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
@@ -763,12 +763,12 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 _loadAll();
               }
             },
             icon: const Icon(Icons.cancel, size: 16), label: Text('تأكيد الإلغاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('رجوع', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
@@ -776,8 +776,8 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   }
 
   Widget _stat(IconData icon, String label, String value, Color color, Color bg, String sub) {
-    return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Container(width: 34, height: 34, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)),
+    return Container(padding: const EdgeInsets.all(14), decoration: DS.gradientCard(color), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Container(width: 34, height: 34, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(icon, size: 16, color: color)),
       const SizedBox(height: 8),
       Text(value, style: _mono(fontSize: 20, fontWeight: FontWeight.w800, color: W.text)),
       const SizedBox(height: 4),

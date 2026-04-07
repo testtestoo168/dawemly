@@ -150,7 +150,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     // ─── Custom Work Schedule ───
                     Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+                      decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                         Row(children: [
                           Switch(value: customSchedule, activeColor: W.green, onChanged: (v) => setDState(() => customSchedule = v)),
@@ -222,7 +222,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                             if (ctx.mounted) setDState(() => loading = false);
                           }
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+                        style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                         child: loading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : Text(existing == null ? '✓ إضافة المستخدم' : '✓ حفظ التعديلات', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
@@ -283,7 +283,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             onPressed: () => _showAddEditDialog(),
             icon: const Icon(Icons.person_add, size: 16),
             label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+            style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
           ),
         ),
         const SizedBox(height: 20),
@@ -340,8 +340,8 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 hintStyle: GoogleFonts.tajawal(color: W.hint),
                 prefixIcon: Icon(Icons.search, size: 18, color: W.muted),
                 filled: true, fillColor: W.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
@@ -352,7 +352,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
         // Table / Cards
         Container(
           width: double.infinity,
-          decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+          decoration: DS.cardDecoration(),
           child: Builder(builder: (context) {
             if (_loading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
             final filtered = _users.where((r) {
@@ -540,7 +540,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   },
                   icon: const Icon(Icons.edit, size: 16),
                   label: Text('تعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(foregroundColor: W.pri, side: BorderSide(color: W.pri), padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+                  style: OutlinedButton.styleFrom(foregroundColor: W.pri, side: BorderSide(color: W.pri), padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: OutlinedButton.icon(
@@ -552,7 +552,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   },
                   icon: const Icon(Icons.face, size: 16),
                   label: Text('بصمة الوجه', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                 )),
               ]),
             ]),
@@ -585,7 +585,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   Widget _statBox(IconData icon, String label, String value, Color color, Color bg) {
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(value, style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
@@ -608,8 +608,8 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   Widget _actionBtn(IconData icon, Color color, Color bg, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.3))), child: Icon(icon, size: 12, color: color)),
+      borderRadius: BorderRadius.circular(DS.radiusMd),
+      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: color.withOpacity(0.3))), child: Icon(icon, size: 12, color: color)),
     );
   }
 }

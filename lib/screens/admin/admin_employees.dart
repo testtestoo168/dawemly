@@ -120,7 +120,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           const SizedBox(height: 18),
 
           if (filtered.isEmpty)
-            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: DS.cardDecoration(),
               child: Center(child: Column(children: [Icon(Icons.people_outline, size: 48, color: W.hint), SizedBox(height: 12), Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
           else
             ...filtered.map((e) => _empCard(e)),
@@ -145,7 +145,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+      decoration: DS.cardDecoration(),
       padding: EdgeInsets.all(isSmall ? 12 : 18),
       child: Column(children: [
         // Top row: avatar + name on right, status badge
@@ -221,7 +221,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           child: Container(
             width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('${selectedTime.hour > 12 ? selectedTime.hour - 12 : (selectedTime.hour == 0 ? 12 : selectedTime.hour)}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.hour >= 12 ? 'م' : 'ص'}',
                 style: _mono(fontSize: 20, fontWeight: FontWeight.w700, color: W.pri)),
@@ -242,7 +242,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           icon: const Icon(Icons.login, size: 18),
           label: Text('تسجيل دخول', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
         )),
         const SizedBox(height: 10),
 
@@ -254,7 +254,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
           },
           icon: const Icon(Icons.logout, size: 18),
           label: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
         )),
 
         const SizedBox(height: 14),
@@ -281,7 +281,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     });
     await _audit('بصمة دخول إدارية', empName, 'تسجيل دخول بواسطة $adminName');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل دخول $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       _load();
     }
   }
@@ -297,7 +297,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     });
     await _audit('بصمة خروج إدارية', empName, 'تسجيل خروج بواسطة $adminName');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تسجيل خروج $empName بواسطة الأدمن', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       _load();
     }
   }
@@ -370,7 +370,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 return ListView(padding: const EdgeInsets.all(14), children: [
                   // Stats
                   Container(
-                    decoration: BoxDecoration(color: W.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+                    decoration: DS.cardDecoration(),
                     padding: const EdgeInsets.all(10),
                     child: Row(children: [
                       _stat('إجمالي ساعات', _fmtWorkedTime(totalMonthMin), W.orange),
@@ -402,7 +402,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                       final isExpanded = expandedDateKey == dateKey;
                       final wasByAdmin = r['punchedByAdmin'] == true || r['punched_by_admin'] == 1 || r['punched_by_admin'] == true;
 
-                      return GestureDetector(
+                      return InkWell(
                         onTap: () async {
                           if (isExpanded) { ss(() { expandedDateKey = null; expandedPunches = null; }); return; }
                           ss(() { expandedDateKey = dateKey; expandedPunches = null; loadingPunches = true; });
@@ -412,11 +412,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(color: W.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: isExpanded ? W.pri.withOpacity(0.4) : W.border)),
+                          decoration: BoxDecoration(color: W.card, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: isExpanded ? W.pri.withOpacity(0.4) : W.border)),
                           child: Column(children: [
                             Padding(padding: const EdgeInsets.all(12), child: Row(children: [
                               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
                                   child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: stColor))),
                                 const SizedBox(height: 3),
                                 Text('خروج: ${_fmtTs(lastOut)}', style: _mono(fontSize: 9, color: W.muted)),
@@ -516,7 +516,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
               Expanded(child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     // Edit button per punch
@@ -583,7 +583,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     TimeOfDay selectedTime = TimeOfDay(hour: currentTime.hour, minute: currentTime.minute);
 
     showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, ss) { final pw = MediaQuery.of(ctx).size.width; return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
         width: pw < 380 ? pw - 40 : 340, padding: EdgeInsets.all(pw < 400 ? 14 : 20),
@@ -606,7 +606,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             },
             child: Container(
               width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text('${selectedTime.hour > 12 ? selectedTime.hour - 12 : (selectedTime.hour == 0 ? 12 : selectedTime.hour)}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.hour >= 12 ? 'م' : 'ص'}',
                   style: _mono(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
@@ -638,11 +638,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 await _audit('تعديل بصمة فردية', empName, 'تعديل وقت $label من ${_fmtTs(time)} إلى ${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}');
                 
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل وقت $label لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل وقت $label لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
               },
               icon: const Icon(Icons.save, size: 14),
               label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+              style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
             )),
           ]),
         ]),
@@ -739,11 +739,11 @@ class _AdminEmployeesState extends State<AdminEmployees> {
             await _audit('تعديل بصمة يدوي', empName, 'تعديل يوم $dateKey — حضور: ${ciCtrl.text} خروج: ${coCtrl.text} دقائق: ${minCtrl.text}');
 
             if (ctx.mounted) Navigator.pop(ctx);
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل بيانات $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))));
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل بيانات $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
           },
           icon: const Icon(Icons.save, size: 16),
           label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
         )),
         const SizedBox(height: 6),
         Text('التعديل اليدوي يُسجّل في سجل التدقيق', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
@@ -766,7 +766,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
   Widget _infoChip(IconData icon, String label, String value, Color color) => Container(
     padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(6)),
+    decoration: BoxDecoration(color: color.withOpacity(0.04), borderRadius: BorderRadius.circular(DS.radiusMd)),
     child: Column(children: [
       Icon(icon, size: 16, color: color),
       const SizedBox(height: 4),
@@ -775,8 +775,8 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     ]),
   );
 
-  Widget _searchBox() { final sw = MediaQuery.of(context).size.width; return SizedBox(width: sw < 400 ? sw - 40 : 260, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: W.border)), prefixIcon: Icon(Icons.search, size: 16, color: W.muted)))); }
-  Widget _drop(String v, List<String> items, ValueChanged<String> cb, String all) => Container(padding: EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: v, isDense: true, style: GoogleFonts.tajawal(fontSize: 13, color: W.text), items: items.map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? all : s))).toList(), onChanged: (x) { if (x != null) cb(x); })));
+  Widget _searchBox() { final sw = MediaQuery.of(context).size.width; return SizedBox(width: sw < 400 ? sw - 40 : 260, child: TextField(onChanged: (v) => setState(() => _search = v), textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: 'بحث...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 13), filled: true, fillColor: W.white, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), prefixIcon: Icon(Icons.search, size: 16, color: W.muted)))); }
+  Widget _drop(String v, List<String> items, ValueChanged<String> cb, String all) => Container(padding: EdgeInsets.symmetric(horizontal: 16), decoration: DS.cardDecoration(), child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: v, isDense: true, style: GoogleFonts.tajawal(fontSize: 13, color: W.text), items: items.map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? all : s))).toList(), onChanged: (x) { if (x != null) cb(x); })));
 
   Widget _timeField(TextEditingController ctrl, String label, String hint, IconData icon, Color color) => Column(
     crossAxisAlignment: CrossAxisAlignment.end,

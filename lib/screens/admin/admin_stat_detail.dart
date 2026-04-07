@@ -129,11 +129,11 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: W.border)),
+                        decoration: DS.cardDecoration(),
                         padding: const EdgeInsets.all(14),
                         child: Row(children: [
                           Container(width: 44, height: 44,
-                            decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                            decoration: BoxDecoration(color: widget.color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)),
                             child: Center(child: Text(initials, style: _tj(15, weight: FontWeight.w700, color: widget.color)))),
                           const SizedBox(width: 12),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

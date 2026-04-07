@@ -11,8 +11,8 @@ class EmpNewRequestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      {'name': 'طلب إذن', 'desc': 'انصراف مبكر أو تأخير عن الحضور', 'color': const Color(0xFFF79009), 'bg': const Color(0xFFFFFAEB), 'icon': Icons.access_time, 'type': 'permission'},
-      {'name': 'طلب إجازة', 'desc': 'سنوية، مرضية، طارئة، أو بدون راتب', 'color': const Color(0xFF2E90FA), 'bg': const Color(0xFFEFF8FF), 'icon': Icons.beach_access, 'type': 'leave'},
+      {'name': 'طلب إذن', 'desc': 'انصراف مبكر أو تأخير عن الحضور', 'color': C.orange, 'bg': C.orangeL, 'icon': Icons.access_time, 'type': 'permission'},
+      {'name': 'طلب إجازة', 'desc': 'سنوية، مرضية، طارئة، أو بدون راتب', 'color': C.teal, 'bg': C.priLight, 'icon': Icons.beach_access, 'type': 'leave'},
     ];
 
     return Scaffold(
@@ -33,9 +33,8 @@ class EmpNewRequestPage extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               color: C.card,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: C.border),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+              borderRadius: BorderRadius.circular(DS.radiusMd),
+              boxShadow: DS.shadowSm,
             ),
             child: InkWell(
               onTap: () {
@@ -45,7 +44,7 @@ class EmpNewRequestPage extends StatelessWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => PermissionRequestPage(user: user)));
                 }
               },
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(DS.radiusMd),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                 child: Row(children: [
@@ -59,7 +58,7 @@ class EmpNewRequestPage extends StatelessWidget {
                   const SizedBox(width: 14),
                   Container(
                     width: 44, height: 44,
-                    decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Icon(item['icon'] as IconData, size: 22, color: item['color'] as Color),
                   ),
                 ]),
