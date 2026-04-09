@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -74,6 +75,7 @@ class _AdminSettingsState extends State<AdminSettings> {
   GoogleMapController? _mapCtrl;
   bool _searching = false;
   List<Map<String, dynamic>> _searchResults = [];
+  Timer? _searchDebounce;
   // Employee assignment for location
   Set<String> _locSelectedEmps = {};
 
@@ -104,15 +106,15 @@ class _AdminSettingsState extends State<AdminSettings> {
     try {
       final query = Uri.encodeComponent(_locSearchCtrl.text.trim());
 
-      Uri searchUri;
+      Map<String, dynamic> tsData;
       if (kIsWeb) {
-        searchUri = Uri.parse('${ApiService.baseUrl}/places.php?query=$query');
+        // Use ApiService.get to include auth token
+        tsData = await ApiService.get('places.php?query=$query');
       } else {
-        searchUri = Uri.parse('https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&language=ar&key=$_mapsApiKey');
+        final searchUri = Uri.parse('https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&language=ar&key=$_mapsApiKey');
+        final tsResponse = await http.get(searchUri);
+        tsData = jsonDecode(tsResponse.body);
       }
-
-      final tsResponse = await http.get(searchUri);
-      final tsData = jsonDecode(tsResponse.body);
       
       final results = <Map<String, dynamic>>[];
       for (final place in (tsData['results'] as List? ?? []).take(8)) {
@@ -458,7 +460,14 @@ class _AdminSettingsState extends State<AdminSettings> {
             controller: _locSearchCtrl,
             textAlign: TextAlign.right,
             style: GoogleFonts.tajawal(fontSize: 13),
-            onChanged: (v) {},
+            onChanged: (v) {
+              _searchDebounce?.cancel();
+              if (v.trim().length >= 2) {
+                _searchDebounce = Timer(const Duration(milliseconds: 500), _searchLocation);
+              } else {
+                setState(() => _searchResults = []);
+              }
+            },
             onSubmitted: (_) => _searchLocation(),
             decoration: InputDecoration(
               hintText: 'اكتب اسم المكان... مثال: مدارس المروج',
