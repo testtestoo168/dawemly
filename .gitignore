@@ -15,3 +15,11 @@ ios/.symlinks/
 *.png
 !assets/**
 !app/assets/**
+
+# Secrets — never commit
+api/.env
+api/firebase-service-account.json
+api/uploads/
+
+# Logs
+api/php_errors.log

@@ -7,6 +7,45 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:318243336496:android:ed36aec6b8b88fd3d018f5",
+        "android_client_info": {
+          "package_name": "com.dawemly.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "318243336496-ak6p259aucb20p26083v888fvsa9eo06.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCMAOziL_EkKxrl5l4odRjjAB3L49Fork"
+        },
+        {
+          "current_key": "AIzaSyCZqpOfOBB0wjZkec5f8MLnTKlus0Y9V20"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "318243336496-ak6p259aucb20p26083v888fvsa9eo06.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "318243336496-evbo61akhqi4dfc6o38t33a20vgsu8up.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rasdApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:318243336496:android:31d46ba1f46a7fe9d018f5",
         "android_client_info": {
           "package_name": "com.example.rasd_app"
@@ -19,6 +58,9 @@
         }
       ],
       "api_key": [
+        {
+          "current_key": "AIzaSyCCMAOziL_EkKxrl5l4odRjjAB3L49Fork"
+        },
         {
           "current_key": "AIzaSyCZqpOfOBB0wjZkec5f8MLnTKlus0Y9V20"
         }

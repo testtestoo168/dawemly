@@ -1,9 +1,18 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://187.124.177.100/attendance/api';
+  // On web: use same origin as the page (avoids self-signed cert issues)
+  // On mobile: use HTTPS directly
+  static String get baseUrl {
+    if (kIsWeb) {
+      return Uri.base.origin + '/attendance/api';
+    }
+    return 'https://187.124.177.100/attendance/api';
+  }
   static String? _token;
   static Map<String, dynamic>? _currentUser;
 
@@ -17,14 +26,28 @@ class ApiService {
   // Callback for 401 — set by AuthGate to trigger auto-logout
   static void Function()? onUnauthorized;
 
+  // Org feature flags (loaded from superadmin config via get_settings)
+  static Map<String, dynamic> orgFeatures = {};
+
+  /// Check if an org feature is enabled. Returns true if not set (default allow).
+  static bool hasFeature(String key) {
+    final v = orgFeatures[key];
+    return v == null || v == 1 || v == true || v == '1';
+  }
+
   // ─── Token Management ───
-  static Future<void> loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
+  /// Synchronous load from an already-fetched SharedPreferences (no IO wait)
+  static void loadTokenSync(SharedPreferences prefs) {
     _token = prefs.getString('api_token');
     final userStr = prefs.getString('current_user');
     if (userStr != null) {
       _currentUser = jsonDecode(userStr);
     }
+  }
+
+  static Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    loadTokenSync(prefs);
   }
 
   static Future<void> saveToken(String token, Map<String, dynamic> user) async {
@@ -52,6 +75,18 @@ class ApiService {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString('current_user', jsonEncode(user));
     });
+  }
+
+  // App signature secret (must match server's API_SECRET_KEY env)
+  static const _appSecret = 'dawemly_app_secret_2026';
+
+  /// Generate HMAC signature headers for sensitive endpoints
+  static Map<String, String> _appSigHeaders(String action) {
+    final ts = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+    final sig = Hmac(sha256, utf8.encode(_appSecret))
+        .convert(utf8.encode('$ts.$action'))
+        .toString();
+    return {'X-App-Sig': sig, 'X-App-Ts': ts};
   }
 
   // ─── Headers ───
@@ -113,8 +148,14 @@ class ApiService {
   ) async {
     try {
       final uri = Uri.parse('$baseUrl/$endpoint');
+      final headers = Map<String, String>.from(_headers);
+      // Add app signature for attendance endpoints (anti-spoofing)
+      if (endpoint.contains('attendance.php')) {
+        final action = Uri.parse(endpoint).queryParameters['action'] ?? '';
+        headers.addAll(_appSigHeaders(action));
+      }
       final response = await _client
-          .post(uri, headers: _headers, body: jsonEncode(body))
+          .post(uri, headers: headers, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {

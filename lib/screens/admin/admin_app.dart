@@ -36,6 +36,8 @@ class _AdminAppState extends State<AdminApp> {
   Timer? _timer;
   int _mTab = 0;
 
+  // Org feature flags are stored in ApiService.orgFeatures (global access)
+
   // URS exact sidebar colors
   static const _sidebarBg = Color(0xFF0F3460);
   static const _sidebarHover = Color(0xFF1A4A7A);
@@ -44,37 +46,52 @@ class _AdminAppState extends State<AdminApp> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
-  // Sidebar sections
-  static const _navSections = [
-    _NavSection('الرئيسية', [
-      _NI('dashboard', 'لوحة التحكم', Icons.speed_rounded),
-    ]),
-    _NavSection('الموظفين', [
-      _NI('employees', 'الموظفين', Icons.people_outline_rounded),
-      _NI('usermgmt', 'إدارة المستخدمين', Icons.person_add_alt_1_outlined),
-      _NI('roles', 'الصلاحيات', Icons.vpn_key_outlined),
-    ]),
-    _NavSection('الحضور والانصراف', [
-      _NI('verify', 'إثبات الحالة', Icons.wifi_tethering_outlined),
-      _NI('overtime', 'الأوفرتايم', Icons.more_time_outlined),
-      _NI('schedules', 'الجداول والإجازات', Icons.calendar_month_outlined),
-      _NI('requests', 'الطلبات', Icons.assignment_outlined),
-      _NI('salary', 'الرواتب', Icons.payments_outlined),
-    ]),
-    _NavSection('التقارير والمراقبة', [
-      _NI('reports', 'التقارير', Icons.bar_chart_outlined),
-      _NI('notifications', 'الإشعارات', Icons.notifications_outlined),
-      _NI('audit', 'سجل التدقيق', Icons.history_outlined),
-    ]),
-    _NavSection('النظام', [
-      _NI('settings', 'الإعدادات', Icons.settings_outlined),
-    ]),
-  ];
+  // Sidebar sections — filtered by org features
+  List<_NavSection> get _navSections {
+    return [
+      const _NavSection('الرئيسية', [
+        _NI('dashboard', 'لوحة التحكم', Icons.speed_rounded),
+      ]),
+      const _NavSection('الموظفين', [
+        _NI('employees', 'الموظفين', Icons.people_outline_rounded),
+        _NI('usermgmt', 'إدارة المستخدمين', Icons.person_add_alt_1_outlined),
+        _NI('roles', 'الصلاحيات', Icons.vpn_key_outlined),
+      ]),
+      _NavSection('الحضور والانصراف', [
+        if (_feat('allow_verification')) const _NI('verify', 'إثبات الحالة', Icons.wifi_tethering_outlined),
+        if (_feat('allow_overtime')) const _NI('overtime', 'الأوفرتايم', Icons.more_time_outlined),
+        if (_feat('allow_schedules')) const _NI('schedules', 'الجداول والإجازات', Icons.calendar_month_outlined),
+        const _NI('requests', 'الطلبات', Icons.assignment_outlined),
+        if (_feat('allow_salary_calc')) const _NI('salary', 'الرواتب', Icons.payments_outlined),
+      ]),
+      const _NavSection('التقارير والمراقبة', [
+        _NI('reports', 'التقارير', Icons.bar_chart_outlined),
+        _NI('notifications', 'الإشعارات', Icons.notifications_outlined),
+        _NI('audit', 'سجل التدقيق', Icons.history_outlined),
+      ]),
+      const _NavSection('النظام', [
+        _NI('settings', 'الإعدادات', Icons.settings_outlined),
+      ]),
+    ].where((s) => s.items.isNotEmpty).toList();
+  }
 
   List<_NI> get _allItems => _navSections.expand((s) => s.items).toList();
 
   @override
-  void initState() { super.initState(); _tick(); _timer = Timer.periodic(const Duration(minutes: 1), (_) { _tick(); if (_mTab == 0) _loadMobileHome(); }); }
+  void initState() { super.initState(); _tick(); _loadOrgFeatures(); _timer = Timer.periodic(const Duration(minutes: 1), (_) { _tick(); if (_mTab == 0) _loadMobileHome(); }); }
+
+  void _loadOrgFeatures() async {
+    try {
+      final res = await ApiService.get('admin.php?action=get_settings');
+      if (res['success'] == true && mounted) {
+        final settings = res['settings'] as Map<String, dynamic>? ?? {};
+        ApiService.orgFeatures = (settings['org_features'] as Map<String, dynamic>?) ?? {};
+        setState(() {}); // rebuild nav with new features
+      }
+    } catch (_) {}
+  }
+
+  bool _feat(String key) => ApiService.hasFeature(key);
   @override void dispose() { _timer?.cancel(); super.dispose(); }
   void _tick() { final n = ServerTimeService().now; final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
 
@@ -188,11 +205,11 @@ class _AdminAppState extends State<AdminApp> {
         _moreSectionTitle('الحضور والانصراف'),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.wifi_tethering_outlined, W.teal, Color(0xFFE0F2FE), 'إثبات الحالة', () => _openMobilePage('verify')),
-          _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
-          _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
+          if (_feat('allow_verification')) _MoreMenuItem(Icons.wifi_tethering_outlined, W.teal, Color(0xFFE0F2FE), 'إثبات الحالة', () => _openMobilePage('verify')),
+          if (_feat('allow_overtime')) _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
+          if (_feat('allow_schedules')) _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
           _MoreMenuItem(Icons.assignment_outlined, W.orange, W.orangeL, 'الطلبات', () => _openMobilePage('requests')),
-          _MoreMenuItem(Icons.payments_outlined, W.green, W.greenL, 'الرواتب', () => _openMobilePage('salary')),
+          if (_feat('allow_salary_calc')) _MoreMenuItem(Icons.payments_outlined, W.green, W.greenL, 'الرواتب', () => _openMobilePage('salary')),
         ]),
 
         const SizedBox(height: 24),

@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_android/geolocator_android.dart';
+import 'package:geolocator_apple/geolocator_apple.dart';
 import 'package:local_auth/local_auth.dart';
 import 'api_service.dart';
 
@@ -41,11 +43,58 @@ class AttendanceService {
     }
   }
 
+  // ─── Platform-optimized location settings ───
+  static LocationSettings bestSettings({Duration timeout = const Duration(seconds: 10)}) {
+    if (kIsWeb) {
+      return LocationSettings(accuracy: LocationAccuracy.best, timeLimit: timeout);
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        // FusedLocationProvider combines GPS + WiFi + Cell for fastest accurate fix
+        forceLocationManager: false,
+        // Request updates every 1 second for maximum freshness
+        intervalDuration: const Duration(seconds: 1),
+        timeLimit: timeout,
+      );
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.best,
+        activityType: ActivityType.other,
+        // Don't pause — keep GPS hot for instant reads
+        pauseLocationUpdatesAutomatically: false,
+        timeLimit: timeout,
+      );
+    }
+    return LocationSettings(accuracy: LocationAccuracy.best, timeLimit: timeout);
+  }
+
+  static LocationSettings streamSettings() {
+    if (kIsWeb) {
+      return const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 3);
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        forceLocationManager: false,
+        intervalDuration: const Duration(seconds: 2),
+        // Update every 2 meters for precise tracking
+        distanceFilter: 2,
+      );
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.best,
+        activityType: ActivityType.other,
+        distanceFilter: 2,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    }
+    return const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 2);
+  }
+
   // ─── Get current location — HIGH ACCURACY ───
-  // Strategy: try lastKnownPosition first (instant cache). Accept ONLY if very
-  // fresh (< 5 seconds) and very accurate (< 30m). Otherwise get a fresh fix
-  // with high accuracy and 8-second timeout. This ensures the position is
-  // reliable for geofence checks while still being fast.
   Future<({Position? position, bool isMocked})> getCurrentLocation() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return (position: null, isMocked: false);
@@ -61,39 +110,27 @@ class AttendanceService {
       final last = await Geolocator.getLastKnownPosition();
       if (last != null) {
         final ageMs = DateTime.now().millisecondsSinceEpoch - last.timestamp.millisecondsSinceEpoch;
-        if (ageMs < 5000 && last.accuracy <= 30) {
+        if (ageMs < 3000 && last.accuracy <= 15) {
           return (position: last, isMocked: last.isMocked);
         }
       }
     } catch (_) {}
 
-    // 2) Fresh high-accuracy fix with 8-second timeout
+    // 2) Fresh fix with platform-optimized settings (10s timeout)
+    try {
+      final pos = await Geolocator.getCurrentPosition(locationSettings: bestSettings());
+      if (pos.accuracy <= 25) return (position: pos, isMocked: pos.isMocked);
+      // Got a fix but accuracy is poor — try once more
+    } catch (_) {}
+
+    // 3) Second attempt (6s timeout)
     try {
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 8),
-        ),
+        locationSettings: bestSettings(timeout: const Duration(seconds: 6)),
       );
       return (position: pos, isMocked: pos.isMocked);
     } catch (_) {
-      // 3) Fallback: try high (not best) accuracy with shorter timeout
-      try {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 5),
-          ),
-        );
-        return (position: pos, isMocked: pos.isMocked);
-      } catch (_) {
-        // Last resort — any cached position
-        try {
-          final fallback = await Geolocator.getLastKnownPosition();
-          if (fallback != null) return (position: fallback, isMocked: fallback.isMocked);
-        } catch (_) {}
-        return (position: null, isMocked: false);
-      }
+      return (position: null, isMocked: false);
     }
   }
 

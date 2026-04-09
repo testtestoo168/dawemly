@@ -57,13 +57,34 @@ class AuthService {
 
   // ─── Logout ───
   Future<void> logout() async {
-    await ApiService.post('auth.php?action=logout', {});
+    final user = ApiService.currentUser;
+    if (user != null && user['role'] == 'superadmin') {
+      // Superadmin doesn't have a logout endpoint — just clear token
+    } else {
+      await ApiService.post('auth.php?action=logout', {});
+    }
     await ApiService.clearToken();
   }
 
   // ─── Get current user ───
   Future<Map<String, dynamic>?> getCurrentUser() async {
     if (!ApiService.isLoggedIn) return null;
+
+    // Check if stored user is superadmin — use superadmin endpoint
+    final stored = ApiService.currentUser;
+    if (stored != null && stored['role'] == 'superadmin') {
+      final result = await ApiService.get('superadmin.php?action=me');
+      if (result['success'] == true) {
+        final user = result['user'] as Map<String, dynamic>?;
+        if (user != null) {
+          user['role'] = 'superadmin'; // ensure role is preserved
+          ApiService.updateCurrentUser(user);
+          return user;
+        }
+      }
+      return null;
+    }
+
     final result = await ApiService.get('auth.php?action=me');
     if (result['success'] == true) {
       final user = result['user'] as Map<String, dynamic>?;

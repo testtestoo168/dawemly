@@ -470,10 +470,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     return DataRow(cells: [
                       DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
                         _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
-                        const SizedBox(width: 4),
-                        _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
-                        }),
+                        if (ApiService.hasFeature('allow_face_auth')) ...[
+                          const SizedBox(width: 4),
+                          _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
+                          }),
+                        ],
                         const SizedBox(width: 4),
                         _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
                           await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
@@ -525,10 +527,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     child: Row(children: [
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         _actionBtn(Icons.edit, W.pri, W.priLight, () => _showAddEditDialog(existing: r, docId: uid)),
-                        const SizedBox(width: 4),
-                        _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
-                        }),
+                        if (ApiService.hasFeature('allow_face_auth')) ...[
+                          const SizedBox(width: 4),
+                          _actionBtn(Icons.face, const Color(0xFF7F56D9), const Color(0xFFF4F3FF), () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: r)));
+                          }),
+                        ],
                         const SizedBox(width: 4),
                         _actionBtn(active ? Icons.block : Icons.check_circle, active ? W.orange : W.green, active ? Color(0xFFFFFAEB) : Color(0xFFECFDF3), () async {
                           await ApiService.post('users.php?action=toggle_active', {'uid': uid, 'active': !active});
@@ -631,18 +635,20 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   label: Text('تعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(foregroundColor: W.pri, side: BorderSide(color: W.pri), padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                 )),
-                const SizedBox(width: 10),
-                Expanded(child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    final emp = Map<String, dynamic>.from(r);
-                    emp['_id'] = docId;
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
-                  },
-                  icon: const Icon(Icons.face, size: 16),
-                  label: Text('بصمة الوجه', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
-                )),
+                if (ApiService.hasFeature('allow_face_auth')) ...[
+                  const SizedBox(width: 10),
+                  Expanded(child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      final emp = Map<String, dynamic>.from(r);
+                      emp['_id'] = docId;
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
+                    },
+                    icon: const Icon(Icons.face, size: 16),
+                    label: Text('بصمة الوجه', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
+                  )),
+                ],
               ]),
             ]),
           )),
@@ -702,7 +708,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(DS.radiusMd),
-      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: color.withOpacity(0.3))), child: Icon(icon, size: 12, color: color)),
+      child: Container(width: 28, height: 28, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)), child: Icon(icon, size: 12, color: W.sub)),
     );
   }
 }

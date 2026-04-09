@@ -158,24 +158,34 @@ class EmpHomePageState extends State<EmpHomePage> {
     try {
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
-      // Get initial position with high accuracy
+      // Get initial position with platform-optimized best accuracy
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 8),
-        ),
+        locationSettings: AttendanceService.bestSettings(),
       );
       if (mounted) setState(() => _livePosition = pos);
-      // Stream updates with high accuracy, update every 5 meters
+      // Stream with platform-optimized settings (2m filter, fastest interval)
       _locationStreamSub = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          distanceFilter: 5,
-        ),
+        locationSettings: AttendanceService.streamSettings(),
       ).listen((p) {
-        if (mounted) setState(() => _livePosition = p);
+        // Always accept better accuracy, or any update if we have nothing
+        if (_livePosition == null || p.accuracy <= _livePosition!.accuracy || p.accuracy <= 20) {
+          if (mounted) setState(() => _livePosition = p);
+        }
       });
     } catch (_) {}
+  }
+
+  /// Get best available position: use live stream if fresh+accurate, else get new fix
+  Future<({Position? position, bool isMocked})> _getBestPosition() async {
+    // Use live position if fresh (< 3s) and accurate (≤ 20m)
+    if (_livePosition != null) {
+      final ageMs = DateTime.now().millisecondsSinceEpoch - _livePosition!.timestamp.millisecondsSinceEpoch;
+      if (ageMs < 3000 && _livePosition!.accuracy <= 20) {
+        return (position: _livePosition!, isMocked: _livePosition!.isMocked);
+      }
+    }
+    // Otherwise get a fresh fix
+    return await _attService.getCurrentLocation();
   }
 
   @override
@@ -254,17 +264,8 @@ class EmpHomePageState extends State<EmpHomePage> {
       final uid = widget.user['uid'] ?? '';
       final result = await ApiService.get('admin.php?action=get_locations', cacheTtl: const Duration(minutes: 5));
       if (result['success'] == true) {
-        final allLocs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
-        final locs = allLocs.where((loc) {
-          final active = loc['active'];
-          if (active == false || active == 0) return false;
-          final assigned = (loc['assignedEmployees'] as List?)?.cast<String>() ??
-              (loc['assigned_employees'] as List?)?.cast<String>() ?? [];
-          final excluded = (loc['excludedEmployees'] as List?)?.cast<String>() ??
-              (loc['excluded_employees'] as List?)?.cast<String>() ?? [];
-          if (excluded.contains(uid)) return false;
-          return assigned.isEmpty || assigned.contains(uid);
-        }).toList();
+        // Server already filters: employees only see assigned locations
+        final locs = (result['locations'] as List? ?? []).cast<Map<String, dynamic>>();
         if (mounted) {
           setState(() {
             _allLocations = locs;
@@ -336,7 +337,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     // device because GPS warmup runs while the user taps their finger.
     final loc = _selectedLocation;
     final bool showLocCheck = loc != null && loc.isNotEmpty;
-    final locFuture = showLocCheck ? _attService.getCurrentLocation() : null;
+    final locFuture = showLocCheck ? _getBestPosition() : null;
 
     // ─── Step 1: Biometric (instant dialog, while GPS warms up in background) ───
     if (requireBiometric && !faceRequired) {
@@ -388,29 +389,21 @@ class EmpHomePageState extends State<EmpHomePage> {
       savedLat = pos.latitude;
       savedLng = pos.longitude;
       savedAccuracy = pos.accuracy;
+      if (mounted) Navigator.pop(context);
+      // Reject if accuracy is too poor (matches server threshold of 30m)
+      if (pos.accuracy > 30) {
+        _showResultDialog(false, 'دقة GPS منخفضة', 'دقة الموقع ${pos.accuracy.round()} متر — انتظر في مكان مفتوح حتى تتحسن الإشارة ثم حاول مرة أخرى');
+        return;
+      }
       final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
       final adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-      // Factor in GPS accuracy: reject only if clearly outside range
-      final effectiveDistance = (distance - pos.accuracy).clamp(0, double.infinity);
+      // Same formula as server: distance + accuracy must be within radius
+      final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        if (mounted) Navigator.pop(context);
         _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? 'الموقع المحدد');
         return;
-      }
-      if (mounted) Navigator.pop(context);
-      // Warn if GPS accuracy is poor (allowed but unreliable)
-      if (pos.accuracy > 80) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('دقة GPS منخفضة (${pos.accuracy.round()}م) — قد يُرفض الطلب',
-              style: GoogleFonts.tajawal()),
-            backgroundColor: C.orange,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ));
-        }
       }
     }
 
@@ -477,7 +470,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     // ─── SPEED: start GPS fetch in parallel with biometric prompt ───
     final loc2 = _selectedLocation;
     final bool showLocCheck2 = loc2 != null && loc2.isNotEmpty;
-    final locFuture2 = showLocCheck2 ? _attService.getCurrentLocation() : null;
+    final locFuture2 = showLocCheck2 ? _getBestPosition() : null;
 
     // ─── Step 1: Biometric (while GPS warms up in background) ───
     if (requireBiometric && !faceRequired) {
@@ -525,28 +518,21 @@ class EmpHomePageState extends State<EmpHomePage> {
       savedLat = pos.latitude;
       savedLng = pos.longitude;
       savedAccuracy = pos.accuracy;
+      if (mounted) Navigator.pop(context);
+      // Reject if accuracy is too poor (matches server threshold of 30m)
+      if (pos.accuracy > 30) {
+        _showResultDialog(false, 'دقة GPS منخفضة', 'دقة الموقع ${pos.accuracy.round()} متر — انتظر في مكان مفتوح حتى تتحسن الإشارة ثم حاول مرة أخرى');
+        return;
+      }
       final adminLat = (loc2['lat'] as num?)?.toDouble() ?? 0;
       final adminLng = (loc2['lng'] as num?)?.toDouble() ?? 0;
       final radius = (loc2['radius'] as num?)?.toDouble() ?? 300;
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-      final effectiveDistance = (distance - pos.accuracy).clamp(0, double.infinity);
+      // Same formula as server: distance + accuracy must be within radius
+      final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        if (mounted) Navigator.pop(context);
         _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? 'الموقع المحدد');
         return;
-      }
-      if (mounted) Navigator.pop(context);
-      // Warn if GPS accuracy is poor (allowed but unreliable)
-      if (pos.accuracy > 80) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('دقة GPS منخفضة (${pos.accuracy.round()}م) — قد يُرفض الطلب',
-              style: GoogleFonts.tajawal()),
-            backgroundColor: C.orange,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ));
-        }
       }
     }
 
@@ -856,7 +842,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             double? distance;
             if (adminLat != null && adminLng != null && empLat != null && empLng != null) {
               distance = Geolocator.distanceBetween(empLat, empLng, adminLat, adminLng);
-              isInRange = (distance - (_livePosition?.accuracy ?? 0)).clamp(0, double.infinity) <= radius;
+              isInRange = (distance + (_livePosition?.accuracy ?? 0)) <= radius;
             }
 
             // Show range status
@@ -1000,13 +986,24 @@ class EmpHomePageState extends State<EmpHomePage> {
     final centerLat = authLat ?? empLat ?? 24.7136;
     final centerLng = authLng ?? empLng ?? 46.6753;
 
+    // Determine if employee is inside zone
+    bool? insideZone;
+    if (empLat != null && empLng != null && authLat != null && authLng != null) {
+      final dist = Geolocator.distanceBetween(empLat, empLng, authLat, authLng);
+      insideZone = (dist + (_livePosition?.accuracy ?? 0)) <= authRadius;
+    }
+
+    final zoneColor = insideZone == true ? C.green : C.red;
+
     final markers = <Marker>{};
     if (empLat != null && empLng != null) {
       markers.add(Marker(
         markerId: const MarkerId('employee'),
         position: LatLng(empLat, empLng),
         infoWindow: const InfoWindow(title: 'موقعي الحالي'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          insideZone == true ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed,
+        ),
       ));
     }
     if (authLat != null && authLng != null) {
@@ -1014,7 +1011,9 @@ class EmpHomePageState extends State<EmpHomePage> {
         markerId: const MarkerId('auth'),
         position: LatLng(authLat, authLng),
         infoWindow: InfoWindow(title: authName),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          insideZone == true ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed,
+        ),
       ));
     }
 
@@ -1024,17 +1023,10 @@ class EmpHomePageState extends State<EmpHomePage> {
         circleId: const CircleId('authZone'),
         center: LatLng(authLat, authLng),
         radius: authRadius,
-        fillColor: C.orange.withValues(alpha: 0.15),
-        strokeColor: C.orange,
+        fillColor: zoneColor.withValues(alpha: 0.12),
+        strokeColor: zoneColor,
         strokeWidth: 2,
       ));
-    }
-
-    // Determine if employee is inside zone
-    bool? insideZone;
-    if (empLat != null && empLng != null && authLat != null && authLng != null) {
-      final dist = Geolocator.distanceBetween(empLat, empLng, authLat, authLng);
-      insideZone = dist <= authRadius;
     }
 
     return Padding(
@@ -1222,7 +1214,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   void _doVerificationResponse(String uid, {dynamic verificationId}) async {
     _showLoadingDialog('جارٍ إثبات الحالة...', 'جاري تحديد موقعك وحساب المسافة', C.orange);
     try {
-      final locResultV = await _attService.getCurrentLocation();
+      final locResultV = await _getBestPosition();
       final pos = locResultV.position;
       if (pos == null) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS'); return; }
       if (locResultV.isMocked) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع'); return; }
@@ -1254,7 +1246,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       }
 
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
-      final inRange = distance <= radius;
+      final inRange = (distance + pos.accuracy) <= radius;
 
       // Respond to verification via API
       try {

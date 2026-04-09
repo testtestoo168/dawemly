@@ -187,7 +187,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final att = e['_att'] as Map<String, dynamic>?;
     final ci = _fmtTs(att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in']);
     final co = _fmtTs(att?['lastCheckOut'] ?? att?['last_check_out'] ?? att?['checkOut'] ?? att?['check_out']);
-    final totalMin = (att?['totalWorkedMinutes'] as int?) ?? (att?['total_worked_minutes'] as int?) ?? 0;
+    final totalMin = ((att?['totalWorkedMinutes'] ?? att?['total_worked_minutes']) as num?)?.toInt() ?? 0;
     final isCheckedIn = e['_isCheckedIn'] == true;
     final stColor = status == 'مكتمل' ? W.green : status == 'حاضر' ? W.green : W.red;
     final byAdmin = att?['punchedByAdmin'] == true || att?['punched_by_admin'] == 1 || att?['punched_by_admin'] == true;
@@ -413,7 +413,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 records.sort((a, b) => (b['dateKey'] ?? b['date_key'] ?? '').compareTo(a['dateKey'] ?? a['date_key'] ?? ''));
 
                 int totalMonthMin = 0;
-                for (final r in records) totalMonthMin += ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as int?) ?? 0;
+                for (final r in records) totalMonthMin += ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as num?)?.toInt() ?? 0;
                 final present = records.where((r) => (r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in']) != null).length;
 
                 return ListView(padding: const EdgeInsets.all(14), children: [
@@ -445,8 +445,8 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                       final firstIn = r['firstCheckIn'] ?? r['first_check_in'] ?? r['checkIn'] ?? r['check_in'];
                       final lastOut = r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out'];
                       final hasOut = lastOut != null;
-                      final totalMin = ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as int?) ?? 0;
-                      final sessions = ((r['sessions'] ?? 0) as int?) ?? 1;
+                      final totalMin = ((r['totalWorkedMinutes'] ?? r['total_worked_minutes']) as num?)?.toInt() ?? 0;
+                      final sessions = ((r['sessions'] ?? 0) as num?)?.toInt() ?? 1;
                       final stColor = hasOut ? W.green : W.pri;
                       final isExpanded = expandedDateKey == dateKey;
                       final wasByAdmin = r['punchedByAdmin'] == true || r['punched_by_admin'] == 1 || r['punched_by_admin'] == true;
@@ -753,7 +753,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   void _editDayDialog(String uid, String empName, String dateKey, Map<String, dynamic> record) {
     final ciCtrl = TextEditingController();
     final coCtrl = TextEditingController();
-    final minCtrl = TextEditingController(text: '${(record['totalWorkedMinutes'] as int?) ?? (record['total_worked_minutes'] as int?) ?? 0}');
+    final minCtrl = TextEditingController(text: '${((record['totalWorkedMinutes'] ?? record['total_worked_minutes']) as num?)?.toInt() ?? 0}');
 
     showDialog(context: context, builder: (ctx) { final ew = MediaQuery.of(ctx).size.width; return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),

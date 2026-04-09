@@ -30,6 +30,7 @@ class _AdminReportsState extends State<AdminReports> {
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _allRecords = [];
   bool _loading = true;
+  Future<List<Map<String, dynamic>>>? _reportFuture;
 
   // Pagination
   int _page = 0;
@@ -65,16 +66,24 @@ class _AdminReportsState extends State<AdminReports> {
         _allUsers = list.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
         _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
       }
-      final recRes = await ApiService.get('attendance.php?action=all_records', params: {
+      // Fetch records filtered by month and employee (server-side)
+      final params = <String, String>{
         'limit': _pageSize.toString(),
         'offset': (_page * _pageSize).toString(),
-      });
+        'month': _selMonth.toString(),
+        'year': _selYear.toString(),
+      };
+      if (_selectedUid != 'الكل') params['uid'] = _selectedUid;
+      final recRes = await ApiService.get('attendance.php?action=all_records', params: params);
       if (recRes['success'] == true) {
         _allRecords = (recRes['records'] as List? ?? []).cast<Map<String, dynamic>>();
         _totalRecords = int.tryParse('${recRes['total'] ?? ''}') ?? _allRecords.length;
       }
     } catch (_) {}
-    if (mounted) setState(() => _loading = false);
+    if (mounted) {
+      _reportFuture = _buildReportData();
+      setState(() => _loading = false);
+    }
   }
 
   DateTime? _parseTs(dynamic v) {
@@ -263,7 +272,7 @@ class _AdminReportsState extends State<AdminReports> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loading ? null : _buildReportData(),
+      future: _reportFuture,
       builder: (context, snap) {
         final data = snap.data ?? [];
 
@@ -271,11 +280,13 @@ class _AdminReportsState extends State<AdminReports> {
           // Header
           Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.spaceBetween, children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
-              ElevatedButton.icon(onPressed: _exporting ? null : _exportCSV, icon: const Icon(Icons.download, size: 15), label: Text('Excel/CSV', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.white, foregroundColor: W.text, side: BorderSide(color: W.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(onPressed: _exporting ? null : _exportPDF, icon: const Icon(Icons.picture_as_pdf, size: 15), label: Text('PDF', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
+              if (ApiService.hasFeature('allow_reports_excel'))
+                ElevatedButton.icon(onPressed: _exporting ? null : _exportCSV, icon: const Icon(Icons.download, size: 15), label: Text('Excel/CSV', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(backgroundColor: W.white, foregroundColor: W.text, side: BorderSide(color: W.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
+              if (ApiService.hasFeature('allow_reports_excel') && ApiService.hasFeature('allow_reports_pdf')) const SizedBox(width: 8),
+              if (ApiService.hasFeature('allow_reports_pdf'))
+                ElevatedButton.icon(onPressed: _exporting ? null : _exportPDF, icon: const Icon(Icons.picture_as_pdf, size: 15), label: Text('PDF', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
             ]),
             Text('التقارير', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
           ]),
@@ -288,11 +299,11 @@ class _AdminReportsState extends State<AdminReports> {
             child: Column(children: [
               // Month selector
               Row(children: [
-                InkWell(onTap: () => setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } _page = 0; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
+                InkWell(onTap: () { setState(() { _selMonth--; if (_selMonth < 1) { _selMonth = 12; _selYear--; } _page = 0; }); _loadAll(); }, child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_right, size: 18, color: W.sub))),
                 const Spacer(),
                 Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
                 const Spacer(),
-                InkWell(onTap: () => setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } _page = 0; }), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
+                InkWell(onTap: () { setState(() { _selMonth++; if (_selMonth > 12) { _selMonth = 1; _selYear++; } _page = 0; }); _loadAll(); }, child: Container(width: 32, height: 32, decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)), child: Icon(Icons.chevron_left, size: 18, color: W.sub))),
               ]),
               const SizedBox(height: 10),
               Container(height: 1, color: W.div),
@@ -311,7 +322,7 @@ class _AdminReportsState extends State<AdminReports> {
                     DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
                     ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
-                  onChanged: (v) => setState(() { _selectedUid = v ?? 'الكل'; _page = 0; }),
+                  onChanged: (v) { setState(() { _selectedUid = v ?? 'الكل'; _page = 0; }); _loadAll(); },
                 )),
                 const SizedBox(width: 10),
                 Text('الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub)),

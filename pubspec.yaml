@@ -1,7 +1,7 @@
 name: rasd_app
 description: "داوِملي — نظام إدارة الحضور والانصراف"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.7.0
@@ -20,6 +20,9 @@ dependencies:
 
   # Auth & Biometrics
   local_auth: ^2.3.0
+
+  # Crypto (HMAC signing for anti-spoofing)
+  crypto: ^3.0.3
   
   # Location
   geolocator: ^13.0.2

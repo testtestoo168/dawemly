@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dawemly - Super Admin</title>
+  <link rel="icon" type="image/png" href="/attendance/app/assets/assets/app_icon_192.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Tajawal',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+    .mono{font-family:'IBM Plex Mono',monospace}
+    a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}
+
+    /* LOGIN */
+    .login-bg{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#e8e8e8}
+    .login-box{background:#fff;border:1px solid #ccc;padding:40px 36px;width:400px;max-width:95vw}
+    .login-box h2{text-align:center;margin-bottom:6px;font-size:20px}
+    .login-box .sub{text-align:center;color:#666;font-size:13px;margin-bottom:24px}
+    .fg{margin-bottom:14px}
+    .fg label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:#444}
+    .fg input,.fg select,.fg textarea{width:100%;padding:8px 10px;border:1px solid #bbb;font-size:14px;font-family:inherit;outline:none;background:#fff}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#2563eb}
+    .fg textarea{resize:vertical;min-height:50px}
+    .btn{padding:10px 18px;border:1px solid #999;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#333}
+    .btn:hover{background:#f0f0f0}
+    .btn-blue{background:#2563eb;color:#fff;border-color:#2563eb}.btn-blue:hover{background:#1d4ed8}
+    .btn-red{color:#dc2626;border-color:#dc2626}.btn-red:hover{background:#fef2f2}
+    .btn-green{color:#16a34a;border-color:#16a34a}.btn-green:hover{background:#f0fdf4}
+    .btn-full{width:100%;padding:12px}
+    .err-box{background:#fef2f2;color:#dc2626;padding:8px 12px;font-size:13px;margin-bottom:12px;border:1px solid #fca5a5;display:none}
+    .err-box.show{display:block}
+    .ok-box{background:#f0fdf4;color:#16a34a;padding:8px 12px;font-size:13px;margin-bottom:12px;border:1px solid #86efac;display:none}
+    .ok-box.show{display:block}
+
+    /* LAYOUT */
+    .app{display:none}.app.show{display:block}
+    .header{background:#fff;border-bottom:2px solid #333;padding:12px 24px;display:flex;align-items:center;gap:16px}
+    .header img{width:32px;height:32px;border-radius:6px}
+    .header h1{font-size:18px;font-weight:800;flex:1}
+    .header .user-name{font-size:13px;color:#666;margin-left:12px}
+    .header .btn{font-size:12px;padding:6px 12px}
+    .nav{background:#fff;border-bottom:1px solid #ddd;padding:0 24px;display:flex;gap:0}
+    .nav a{padding:12px 20px;font-size:13px;font-weight:600;color:#666;cursor:pointer;border-bottom:2px solid transparent;text-decoration:none}
+    .nav a:hover{color:#333;background:#f9f9f9}
+    .nav a.active{color:#2563eb;border-bottom-color:#2563eb}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+
+    /* CARDS & TABLE */
+    .card{background:#fff;border:1px solid #ddd;margin-bottom:16px}
+    .card-head{padding:12px 16px;border-bottom:1px solid #eee;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+    .card-body{padding:16px}
+    .stats-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+    .stat-box{flex:1;min-width:160px;padding:16px;text-align:center}
+    .stat-box .num{font-size:28px;font-weight:800;margin-bottom:2px}
+    .stat-box .lbl{font-size:12px;color:#666}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:right;padding:8px 12px;font-size:12px;color:#666;border-bottom:2px solid #ddd;font-weight:700;background:#fafafa}
+    td{padding:10px 12px;font-size:13px;border-bottom:1px solid #eee}
+    tr:hover td{background:#f9f9f9}
+    .badge{display:inline-block;padding:2px 10px;font-size:11px;font-weight:600;border:1px solid}
+    .badge-green{color:#16a34a;border-color:#86efac;background:#f0fdf4}
+    .badge-red{color:#dc2626;border-color:#fca5a5;background:#fef2f2}
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .toolbar input{padding:7px 10px;border:1px solid #bbb;font-size:13px;width:220px;font-family:inherit;outline:none}
+    .toolbar input:focus{border-color:#2563eb}
+
+    /* ALERTS */
+    .alert-banner{padding:10px 16px;margin-bottom:12px;font-size:13px;font-weight:600;border:1px solid}
+    .alert-warn{background:#fffbeb;color:#b45309;border-color:#fcd34d}
+    .alert-danger{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
+
+    /* MODAL */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:center;z-index:100;padding-top:40px;overflow-y:auto}
+    .overlay.show{display:flex}
+    .modal{background:#fff;border:1px solid #ccc;width:600px;max-width:95vw;margin-bottom:40px}
+    .modal-head{padding:14px 18px;border-bottom:1px solid #ddd;font-weight:800;font-size:16px;display:flex;align-items:center}
+    .modal-head .close{margin-right:auto;cursor:pointer;font-size:18px;color:#999;background:none;border:none}
+    .modal-body{padding:18px}
+    .modal-foot{padding:12px 18px;border-top:1px solid #ddd;display:flex;gap:8px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+    /* FEATURE TOGGLES */
+    .section-lbl{font-size:13px;font-weight:700;color:#2563eb;margin:16px 0 8px;padding-top:12px;border-top:1px solid #eee}
+    .section-lbl:first-child{border-top:none;margin-top:0}
+    .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+    .feat-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #ddd;cursor:pointer;font-size:12px;font-weight:600;user-select:none;transition:.15s}
+    .feat-item.on{background:#f0fdf4;border-color:#86efac;color:#16a34a}
+    .feat-item.off{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
+    .feat-item:hover{opacity:.85}
+
+    .log-row{padding:10px 14px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:12px;font-size:13px}
+    .log-row .time{margin-right:auto;font-size:11px;color:#999}
+    .empty{text-align:center;padding:30px;color:#999;font-size:13px}
+    .loading{text-align:center;padding:30px;color:#999}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-bg" id="loginScreen">
+  <div class="login-box">
+    <h2>Dawemly</h2>
+    <div class="sub">لوحة تحكم المدير الأعلى</div>
+    <div class="err-box" id="loginErr"></div>
+    <form onsubmit="return doLogin(event)">
+      <div class="fg"><label>البريد الإلكتروني</label><input type="email" id="email" required></div>
+      <div class="fg"><label>كلمة المرور</label><input type="password" id="password" required></div>
+      <button class="btn btn-blue btn-full" type="submit" id="loginBtn">تسجيل الدخول</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="header">
+    <img src="/attendance/app/assets/assets/app_icon_192.png" alt="">
+    <h1>Dawemly — Super Admin</h1>
+    <span class="user-name" id="userName"></span>
+    <button class="btn btn-red" onclick="doLogout()">خروج</button>
+  </div>
+  <div class="nav" id="nav">
+    <a data-p="dashboard" class="active" onclick="go('dashboard')">الرئيسية</a>
+    <a data-p="orgs" onclick="go('orgs')">المؤسسات</a>
+    <a data-p="audit" onclick="go('audit')">سجل العمليات</a>
+  </div>
+  <div class="wrap" id="page"></div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+const API='/attendance/api/superadmin.php';
+let TK=localStorage.getItem('sa_token'),ME=null;
+
+// ── AUTH ──
+async function doLogin(e){e.preventDefault();const b=document.getElementById('loginBtn'),er=document.getElementById('loginErr');
+  er.classList.remove('show');b.disabled=true;b.textContent='...';
+  try{const r=await rpc('login','POST',{email:gv('email'),password:gv('password')},1);
+    if(r.success){TK=r.token;ME=r.user;localStorage.setItem('sa_token',TK);boot();}
+    else{er.textContent=r.error||'خطأ';er.classList.add('show');}
+  }catch(x){er.textContent='خطأ اتصال';er.classList.add('show');}
+  b.disabled=false;b.textContent='تسجيل الدخول';return false;}
+function doLogout(){TK=null;ME=null;localStorage.removeItem('sa_token');document.getElementById('app').classList.remove('show');document.getElementById('loginScreen').style.display='';}
+
+async function rpc(a,m='GET',body=null,noAuth=0){
+  const o={method:m,headers:{}};if(!noAuth&&TK)o.headers.Authorization='Bearer '+TK;
+  if(body){o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}
+  const r=await(await fetch(API+'?action='+a,o)).json();
+  if(r.error&&(r.error.includes('منتهية')||r.error.includes('غير مصرح'))){doLogout();throw 0;}return r;}
+async function get(a){return(await fetch(API+'?action='+a,{headers:{Authorization:'Bearer '+TK}})).json();}
+
+function boot(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').classList.add('show');
+  document.getElementById('userName').textContent=ME?.name||'';go('dashboard');}
+async function init(){if(!TK)return;try{const r=await rpc('me');if(r.success){ME=r.user;boot();}else doLogout();}catch(_){doLogout();}}
+
+// ── NAV ──
+function go(p){document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.p===p));
+  const c=document.getElementById('page');c.innerHTML='<div class="loading">جاري التحميل...</div>';
+  ({dashboard:pgDash,orgs:pgOrgs,audit:pgAudit})[p]?.(c);}
+
+// ══════════════════════════════
+// DASHBOARD
+// ══════════════════════════════
+async function pgDash(c){
+  const r=await rpc('stats');if(!r.success){c.innerHTML='<div class="empty">خطأ</div>';return;}const s=r.stats;
+  c.innerHTML=`
+    <div class="stats-row">
+      ${sb('المؤسسات',s.total_organizations)}${sb('النشطة',s.active_organizations)}${sb('الموظفين',s.total_employees)}
+      ${sb('حضور اليوم',s.today_attendance)}${sb('الإيراد الشهري',s.mrr+' ر.س')}${sb('جديد هذا الشهر',s.new_this_month)}
+    </div>
+    ${s.expired_subscriptions>0?'<div class="alert-banner alert-danger">⚠ '+s.expired_subscriptions+' مؤسسة اشتراكها منتهي</div>':''}
+    <div style="display:flex;gap:12px">
+      <div style="flex:1" class="card"><div class="card-head">اشتراكات قربت تنتهي</div><div class="card-body">
+        ${(s.expiring_soon||[]).map(o=>'<div style="padding:4px 0"><b>'+E(o.name)+'</b> — تنتهي: '+o.subscription_end+'</div>').join('')||'<div class="empty">لا توجد</div>'}
+      </div></div>
+      <div style="flex:1" class="card"><div class="card-head">وصلت الحد الأقصى</div><div class="card-body">
+        ${(s.at_capacity||[]).map(o=>'<div style="padding:4px 0"><b>'+E(o.name)+'</b> — '+o.current_employees+'/'+o.max_employees+'</div>').join('')||'<div class="empty">لا توجد</div>'}
+      </div></div>
+    </div>`;}
+function sb(l,v){return'<div class="card stat-box"><div class="num mono">'+v+'</div><div class="lbl">'+l+'</div></div>';}
+
+// ══════════════════════════════
+// ORGANIZATIONS
+// ══════════════════════════════
+async function pgOrgs(c){
+  const r=await rpc('organizations');if(!r.success)return;const orgs=r.organizations||[];
+  c.innerHTML=`<div class="toolbar">
+    <input placeholder="بحث..." oninput="document.querySelectorAll('#otb tr').forEach(r=>r.style.display=r.dataset.n.includes(this.value.toLowerCase())?'':'none')">
+    <div style="flex:1"></div>
+    <button class="btn btn-blue" onclick="mNewOrg()">+ مؤسسة جديدة</button>
+    <button class="btn" onclick="go('orgs')">تحديث</button>
+  </div>
+  <div class="card"><table><thead><tr><th>المؤسسة</th><th>الموظفين</th><th>المديرين</th><th>الفروع</th><th>الاشتراك</th><th>الحالة</th><th style="width:200px">إجراءات</th></tr></thead>
+  <tbody id="otb">${orgs.map(o=>{const a=o.active==1;return`<tr data-n="${E(o.name).toLowerCase()}">
+    <td><b>${E(o.name)}</b></td><td>${o.current_employees||0}/${o.max_employees}</td><td>${o.current_admins||0}</td><td>${o.current_branches||0}</td>
+    <td>${o.subscription_end||'—'}</td><td><span class="badge ${a?'badge-green':'badge-red'}">${a?'نشط':'معطل'}</span></td>
+    <td><button class="btn" onclick="viewOrg(${o.id})">تفاصيل</button> <button class="btn" onclick="mEditOrg(${o.id})">تعديل</button> <button class="btn ${a?'btn-red':'btn-green'}" onclick="togOrg(${o.id})">${a?'تعطيل':'تفعيل'}</button></td>
+  </tr>`;}).join('')}</tbody></table></div>`;}
+
+async function togOrg(id){if(!confirm('متأكد؟'))return;await rpc('toggle_org','POST',{id});go('orgs');}
+
+async function viewOrg(id){
+  const r=await get('org_details&id='+id);if(!r.success)return;
+  const o=r.organization,us=r.users||[],br=r.branches||[],admins=us.filter(u=>u.role==='admin'),emps=us.filter(u=>u.role==='employee');
+  const c=document.getElementById('page');
+  // Features display
+  const feats=[['allow_face_auth','بصمة الوجه'],['allow_reports_pdf','تقارير PDF'],['allow_reports_excel','تقارير Excel'],
+    ['allow_leave_balance','رصيد الإجازات'],['allow_salary_calc','حساب الرواتب'],['allow_overtime','الأوفرتايم'],
+    ['allow_verification','إثبات الحالة'],['allow_schedules','الجداول']];
+  c.innerHTML=`
+    <div class="toolbar"><button class="btn" onclick="go('orgs')">← رجوع</button> <button class="btn" onclick="mEditOrg(${o.id})">تعديل</button> <button class="btn btn-red" onclick="delOrg(${o.id},'${E(o.name)}')">حذف</button></div>
+    <div class="card"><div class="card-head">${E(o.name)}</div><div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+        <div><b>البريد:</b> ${E(o.email||'-')}</div><div><b>الهاتف:</b> ${E(o.phone||'-')}</div>
+        <div><b>العنوان:</b> ${E(o.address||'-')}</div><div><b>الحد:</b> ${o.max_employees} موظف / ${o.max_branches||1} فرع / ${o.max_locations||3} موقع</div>
+        <div><b>الاشتراك:</b> ${o.subscription_start||'-'} → ${o.subscription_end||'-'}</div>
+        <div><b>الحالة:</b> <span class="badge ${o.active==1?'badge-green':'badge-red'}">${o.active==1?'نشط':'معطل'}</span></div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+        ${feats.map(([k,l])=>'<span class="badge '+(o[k]==1?'badge-green':'badge-red')+'">'+l+(o[k]==1?' ✓':' ✗')+'</span>').join('')}
+      </div>
+    </div></div>
+    <div class="card"><div class="card-head">المديرون (${admins.length})</div><div class="card-body">
+      ${admins.length?'<table><thead><tr><th>الاسم</th><th>البريد</th><th>آخر دخول</th><th>إجراء</th></tr></thead><tbody>'+
+        admins.map(a=>'<tr><td>'+E(a.name)+'</td><td style="direction:ltr">'+E(a.email||'')+'</td><td>'+
+        (a.last_login_at||'-')+'</td><td><button class="btn" onclick="mResetPass(\''+a.uid+'\',\''+E(a.name)+'\')">تغيير كلمة السر</button></td></tr>').join('')+
+        '</tbody></table>':'<div class="empty">لا يوجد</div>'}
+    </div></div>
+    <div class="card"><div class="card-head">الموظفون (${emps.length})</div><div class="card-body">
+      ${emps.length?'<table><thead><tr><th>الاسم</th><th>البريد</th><th>القسم</th><th>الحالة</th></tr></thead><tbody>'+
+        emps.map(u=>'<tr><td>'+E(u.name)+'</td><td style="direction:ltr">'+E(u.email||'')+'</td><td>'+E(u.dept||'-')+'</td><td>'+(u.active==1?'نشط':'معطل')+'</td></tr>').join('')+
+        '</tbody></table>':'<div class="empty">لا يوجد</div>'}
+    </div></div>
+    <div class="card"><div class="card-head">الفروع (${br.length})</div><div class="card-body">
+      ${br.map(b=>'<div style="padding:4px 0;border-bottom:1px solid #eee">'+E(b.name)+'</div>').join('')||'<div class="empty">لا توجد</div>'}
+    </div></div>`;}
+
+async function delOrg(id,name){if(!confirm('حذف "'+name+'"؟ لا يمكن التراجع!'))return;
+  const r=await rpc('delete_org','POST',{id});if(r.success){alert('تم الحذف');go('orgs');}else alert(r.error);}
+
+// ── FEATURES CONFIG ──
+const ALL_FEATURES = [
+  {section:'الموظفون',items:[
+    {k:'allow_face_auth',l:'تسجيل بصمة الوجه'},
+  ]},
+  {section:'الحضور والانصراف',items:[
+    {k:'allow_verification',l:'إثبات الحالة (التحقق من الموقع)'},
+    {k:'allow_overtime',l:'حساب الأوفرتايم'},
+    {k:'allow_schedules',l:'الجداول والفترات'},
+    {k:'allow_leave_balance',l:'رصيد الإجازات'},
+  ]},
+  {section:'التقارير',items:[
+    {k:'allow_reports_pdf',l:'تصدير تقارير PDF'},
+    {k:'allow_reports_excel',l:'تصدير تقارير Excel'},
+  ]},
+  {section:'الرواتب',items:[
+    {k:'allow_salary_calc',l:'حساب الرواتب والخصومات'},
+  ]},
+];
+
+function featHTML(vals={}){
+  let h='';
+  for(const sec of ALL_FEATURES){
+    h+=`<div class="section-lbl">${sec.section}</div><div class="feat-grid">`;
+    for(const f of sec.items){
+      const on=vals[f.k]!=null?(vals[f.k]==1||vals[f.k]==true):true;
+      h+=`<div class="feat-item ${on?'on':'off'}" data-key="${f.k}" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+        <span>${on?'✓':'✗'}</span> ${f.l}</div>`;
+    }
+    h+='</div>';
+  }
+  return h;
+}
+function getFeats(){const v={};document.querySelectorAll('.feat-item').forEach(el=>{v[el.dataset.key]=el.classList.contains('on')?1:0;});return v;}
+
+// ── NEW ORG MODAL ──
+function mNewOrg(){
+  openM('إنشاء مؤسسة جديدة',`
+    <div class="row2"><div class="fg"><label>اسم المؤسسة *</label><input id="f_name"></div><div class="fg"><label>بالإنجليزية</label><input id="f_name_en" dir="ltr"></div></div>
+    <div class="row2"><div class="fg"><label>البريد</label><input id="f_email" dir="ltr"></div><div class="fg"><label>الهاتف</label><input id="f_phone" dir="ltr"></div></div>
+    <div class="fg"><label>العنوان</label><input id="f_address"></div>
+    <div class="section-lbl">الحدود</div>
+    <div class="row3"><div class="fg"><label>عدد الموظفين</label><input id="f_max" type="number" value="50"></div>
+    <div class="fg"><label>عدد الفروع</label><input id="f_branches" type="number" value="1"></div>
+    <div class="fg"><label>عدد المواقع</label><input id="f_locations" type="number" value="3"></div></div>
+    <div class="row2"><div class="fg"><label>نطاق GPS (متر)</label><input id="f_radius" type="number" value="500"></div>
+    <div class="fg"><label>نهاية الاشتراك</label><input id="f_sub_end" type="date"></div></div>
+    ${featHTML({})}
+    <div class="section-lbl">بيانات مدير المؤسسة</div>
+    <div class="fg"><label>اسم المدير</label><input id="f_admin_name" value="مدير النظام"></div>
+    <div class="row2"><div class="fg"><label>بريد المدير *</label><input id="f_admin_email" dir="ltr"></div><div class="fg"><label>كلمة المرور *</label><input id="f_admin_pass" dir="ltr"></div></div>
+    <div class="err-box" id="f_err"></div>
+  `,async()=>{
+    const er=document.getElementById('f_err');er.classList.remove('show');
+    const b={name:gv('f_name'),name_en:gv('f_name_en'),email:gv('f_email'),phone:gv('f_phone'),address:gv('f_address'),
+      max_employees:+gv('f_max')||50,max_branches:+gv('f_branches')||1,max_locations:+gv('f_locations')||3,max_radius:+gv('f_radius')||500,
+      subscription_end:gv('f_sub_end')||null,admin_name:gv('f_admin_name'),admin_email:gv('f_admin_email'),admin_password:gv('f_admin_pass'),...getFeats()};
+    if(!b.name){er.textContent='اسم المؤسسة مطلوب';er.classList.add('show');return;}
+    if(!b.admin_email||!b.admin_password){er.textContent='بريد وكلمة مرور المدير مطلوبين';er.classList.add('show');return;}
+    const r=await rpc('save_organization','POST',b);
+    if(r.success){closeM();alert('تم الإنشاء!');go('orgs');}else{er.textContent=r.error;er.classList.add('show');}
+  });}
+
+// ── EDIT ORG MODAL ──
+async function mEditOrg(id){
+  const r=await get('org_details&id='+id);if(!r.success)return;const o=r.organization;
+  openM('تعديل: '+E(o.name),`
+    <div class="row2"><div class="fg"><label>اسم المؤسسة</label><input id="f_name" value="${E(o.name)}"></div><div class="fg"><label>بالإنجليزية</label><input id="f_name_en" value="${E(o.name_en||'')}" dir="ltr"></div></div>
+    <div class="row2"><div class="fg"><label>البريد</label><input id="f_email" value="${E(o.email||'')}" dir="ltr"></div><div class="fg"><label>الهاتف</label><input id="f_phone" value="${E(o.phone||'')}" dir="ltr"></div></div>
+    <div class="fg"><label>العنوان</label><input id="f_address" value="${E(o.address||'')}"></div>
+    <div class="section-lbl">الحدود</div>
+    <div class="row3"><div class="fg"><label>عدد الموظفين</label><input id="f_max" type="number" value="${o.max_employees||50}"></div>
+    <div class="fg"><label>عدد الفروع</label><input id="f_branches" type="number" value="${o.max_branches||1}"></div>
+    <div class="fg"><label>عدد المواقع</label><input id="f_locations" type="number" value="${o.max_locations||3}"></div></div>
+    <div class="row2"><div class="fg"><label>نطاق GPS (متر)</label><input id="f_radius" type="number" value="${o.max_radius||500}"></div>
+    <div class="fg"><label>نهاية الاشتراك</label><input id="f_sub_end" type="date" value="${o.subscription_end||''}"></div></div>
+    ${featHTML(o)}
+    <div class="err-box" id="f_err"></div>
+  `,async()=>{
+    const er=document.getElementById('f_err');er.classList.remove('show');
+    const b={id,name:gv('f_name'),name_en:gv('f_name_en'),email:gv('f_email'),phone:gv('f_phone'),address:gv('f_address'),
+      max_employees:+gv('f_max')||50,max_branches:+gv('f_branches')||1,max_locations:+gv('f_locations')||3,max_radius:+gv('f_radius')||500,
+      subscription_end:gv('f_sub_end')||null,...getFeats()};
+    const r=await rpc('save_organization','POST',b);
+    if(r.success){closeM();alert('تم الحفظ');go('orgs');}else{er.textContent=r.error;er.classList.add('show');}
+  });}
+
+// ── RESET PASSWORD ──
+function mResetPass(uid,name){
+  openM('تغيير كلمة سر: '+name,`
+    <div class="fg"><label>كلمة المرور الجديدة (8+ أحرف)</label><input id="f_pass" dir="ltr"></div>
+    <div class="err-box" id="f_err"></div>
+  `,async()=>{
+    const er=document.getElementById('f_err');er.classList.remove('show');
+    const pw=gv('f_pass');if(pw.length<8){er.textContent='8 أحرف على الأقل';er.classList.add('show');return;}
+    const r=await rpc('reset_admin_password','POST',{uid,new_password:pw});
+    if(r.success){closeM();alert('تم التغيير — الجلسات السابقة ألغيت');}else{er.textContent=r.error;er.classList.add('show');}
+  });}
+
+// ══════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════
+async function pgAudit(c){
+  const r=await rpc('audit_log');if(!r.success)return;const logs=r.logs||[];
+  if(!logs.length){c.innerHTML='<div class="empty">لا توجد عمليات</div>';return;}
+  c.innerHTML='<div class="card">'+logs.map(l=>`<div class="log-row">
+    <b>${E(l.details||l.action)}</b><span style="color:#999;font-size:12px">${E(l.target||'')}</span>
+    <span class="time">${l.created_at||''}</span></div>`).join('')+'</div>';}
+
+// ── UTILS ──
+function E(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function gv(id){return(document.getElementById(id)?.value||'').trim();}
+let _saveFn;
+function openM(title,body,saveFn){_saveFn=saveFn;
+  document.getElementById('modal').innerHTML=`<div class="modal-head">${title}<button class="close" onclick="closeM()">✕</button></div>
+  <div class="modal-body">${body}</div><div class="modal-foot"><button class="btn btn-blue" onclick="_saveFn()">حفظ</button><button class="btn" onclick="closeM()">إلغاء</button></div>`;
+  document.getElementById('overlay').classList.add('show');}
+function closeM(){document.getElementById('overlay').classList.remove('show');}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeM();});
+
+init();
+</script>
+</body>
+</html>

@@ -292,17 +292,17 @@ class _AdminSettingsState extends State<AdminSettings> {
     }
   }
 
-  final _tabs = const [
-    {'k': 'shifts', 'l': 'فترات العمل', 'icon': Icons.layers},
-    {'k': 'locations', 'l': 'المواقع', 'icon': Icons.location_on},
-    {'k': 'leaves', 'l': 'الإجازات', 'icon': Icons.event_busy},
-    {'k': 'overtime', 'l': 'الأوفرتايم', 'icon': Icons.more_time},
-    {'k': 'late', 'l': 'التأخير', 'icon': Icons.timer_off},
-    {'k': 'auth', 'l': 'المصادقة', 'icon': Icons.shield},
-    {'k': 'security', 'l': 'الأمان', 'icon': Icons.lock},
-    {'k': 'appearance', 'l': 'المظهر', 'icon': Icons.desktop_windows},
-    {'k': 'custom', 'l': 'بصمة مخصصة', 'icon': Icons.lock_open},
-    {'k': 'devicesec', 'l': 'أمان الأجهزة', 'icon': Icons.phone_android},
+  List<Map<String, dynamic>> get _tabs => [
+    const {'k': 'shifts', 'l': 'فترات العمل', 'icon': Icons.layers},
+    const {'k': 'locations', 'l': 'المواقع', 'icon': Icons.location_on},
+    if (ApiService.hasFeature('allow_leave_balance')) const {'k': 'leaves', 'l': 'الإجازات', 'icon': Icons.event_busy},
+    if (ApiService.hasFeature('allow_overtime')) const {'k': 'overtime', 'l': 'الأوفرتايم', 'icon': Icons.more_time},
+    const {'k': 'late', 'l': 'التأخير', 'icon': Icons.timer_off},
+    const {'k': 'auth', 'l': 'المصادقة', 'icon': Icons.shield},
+    const {'k': 'security', 'l': 'الأمان', 'icon': Icons.lock},
+    const {'k': 'appearance', 'l': 'المظهر', 'icon': Icons.desktop_windows},
+    const {'k': 'custom', 'l': 'بصمة مخصصة', 'icon': Icons.lock_open},
+    const {'k': 'devicesec', 'l': 'أمان الأجهزة', 'icon': Icons.phone_android},
   ];
 
   @override
@@ -1325,7 +1325,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       Text('هذه الإعدادات تُطبّق على جميع الموظفين — يمكنك تخصيص موظف معين من الأسفل', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
       const SizedBox(height: 10),
     ])),
-    _toggleCard('التعرف على الوجه', 'التحقق من هوية الموظف عبر الكاميرا', Icons.face, W.pri, _authFace, (v) => setState(() => _authFace = v)),
+    if (ApiService.hasFeature('allow_face_auth'))
+      _toggleCard('التعرف على الوجه', 'التحقق من هوية الموظف عبر الكاميرا', Icons.face, W.pri, _authFace, (v) => setState(() => _authFace = v)),
     _toggleCard('البصمة الرقمية', 'بصمة الإصبع عبر الجهاز', Icons.fingerprint, W.green, _authFinger, (v) => setState(() => _authFinger = v)),
     _toggleCard('التحقق من الموقع', 'التأكد من التواجد في نطاق العمل', Icons.location_on, W.orange, _authLoc, (v) => setState(() => _authLoc = v)),
     const SizedBox(height: 20),

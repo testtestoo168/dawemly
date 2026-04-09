@@ -19,6 +19,14 @@ class _AdminSalaryState extends State<AdminSalary> {
   bool _loading = true;
   bool _showSettings = false;
 
+  // Persistent controllers for settings panel
+  final _overtimeCtrl = TextEditingController();
+  final _graceCtrl = TextEditingController();
+  final _hoursCtrl = TextEditingController();
+  List<TextEditingController> _lateCtrls = [];
+  List<TextEditingController> _absentCtrls = [];
+  bool _settingsCtrlsInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,12 +36,33 @@ class _AdminSalaryState extends State<AdminSalary> {
     _loadAll();
   }
 
+  @override
+  void dispose() {
+    _overtimeCtrl.dispose();
+    _graceCtrl.dispose();
+    _hoursCtrl.dispose();
+    for (final c in _lateCtrls) c.dispose();
+    for (final c in _absentCtrls) c.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadAll() async {
     setState(() => _loading = true);
     try {
       final settingsRes = await ApiService.get('salary.php?action=get_settings');
       if (settingsRes['success'] == true && mounted) {
         _settings = settingsRes['settings'] as Map<String, dynamic>? ?? {};
+        // Initialize controllers once from loaded settings
+        if (!_settingsCtrlsInitialized) {
+          _overtimeCtrl.text = '${_settings['overtime_rate'] ?? 1.5}';
+          _graceCtrl.text = '${_settings['late_grace_minutes'] ?? 15}';
+          _hoursCtrl.text = '${_settings['standard_hours'] ?? 8}';
+          final existingLate = (_settings['late_deductions'] as List?)?.cast<dynamic>() ?? [50, 100, 150, 200];
+          final existingAbsent = (_settings['absent_deductions'] as List?)?.cast<dynamic>() ?? [100, 150, 200, 300];
+          _lateCtrls = List.generate(4, (i) => TextEditingController(text: i < existingLate.length ? '${existingLate[i]}' : ''));
+          _absentCtrls = List.generate(4, (i) => TextEditingController(text: i < existingAbsent.length ? '${existingAbsent[i]}' : ''));
+          _settingsCtrlsInitialized = true;
+        }
       }
       final allRes = await ApiService.get('salary.php?action=all', params: {
         'month': '$_selMonth',
@@ -228,15 +257,11 @@ class _AdminSalaryState extends State<AdminSalary> {
 
   // ─── Settings panel ───
   Widget _buildSettingsPanel() {
-    final overtimeCtrl = TextEditingController(text: '${_settings['overtime_rate'] ?? 1.5}');
-    final graceCtrl = TextEditingController(text: '${_settings['late_grace_minutes'] ?? 15}');
-    final hoursCtrl = TextEditingController(text: '${_settings['standard_hours'] ?? 8}');
-
-    // Per-occurrence deductions (4 fields each, 4th repeats)
-    final existingLate = (_settings['late_deductions'] as List?)?.cast<dynamic>() ?? [50, 100, 150, 200];
-    final existingAbsent = (_settings['absent_deductions'] as List?)?.cast<dynamic>() ?? [100, 150, 200, 300];
-    final lateCtrls = List.generate(4, (i) => TextEditingController(text: i < existingLate.length ? '${existingLate[i]}' : ''));
-    final absentCtrls = List.generate(4, (i) => TextEditingController(text: i < existingAbsent.length ? '${existingAbsent[i]}' : ''));
+    final overtimeCtrl = _overtimeCtrl;
+    final graceCtrl = _graceCtrl;
+    final hoursCtrl = _hoursCtrl;
+    final lateCtrls = _lateCtrls;
+    final absentCtrls = _absentCtrls;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -531,8 +556,8 @@ class _AdminSalaryState extends State<AdminSalary> {
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () async {
-                  final lateList = lateControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).where((v) => v > 0).toList();
-                  final absentList = absentControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).where((v) => v > 0).toList();
+                  final lateList = lateControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).toList();
+                  final absentList = absentControllers.map((c) => double.tryParse(c.text.trim()) ?? 0).toList();
                   await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'late_deductions': lateList, 'absent_deductions': absentList});
                   if (ctx.mounted) Navigator.pop(ctx);
                   _loadAll();

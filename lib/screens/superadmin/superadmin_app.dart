@@ -8,6 +8,7 @@ import '../../services/server_time_service.dart';
 import 'sa_dashboard.dart';
 import 'sa_organizations.dart';
 import 'sa_plans.dart';
+import 'sa_audit_log.dart';
 
 class SuperadminApp extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -34,6 +35,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
     _NI('dashboard', 'إحصائيات', Icons.speed_rounded),
     _NI('organizations', 'المؤسسات', Icons.business_rounded),
     _NI('plans', 'الباقات', Icons.card_membership_rounded),
+    _NI('audit', 'سجل العمليات', Icons.history_rounded),
   ];
 
   @override
@@ -63,6 +65,8 @@ class _SuperadminAppState extends State<SuperadminApp> {
         return const SaOrganizations();
       case 'plans':
         return const SaPlans();
+      case 'audit':
+        return const SaAuditLog();
       default:
         return const SaDashboard();
     }

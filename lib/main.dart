@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -26,17 +27,27 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
+/// Shared prefs instance — loaded once, reused everywhere
+late final SharedPreferences prefs;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Run critical init in parallel for fastest startup
-  await Future.wait([
-    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+  // Run ALL critical init in parallel
+  final results = await Future.wait([
+    SharedPreferences.getInstance(),
+    Firebase.apps.isEmpty ? Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform) : Future.value(),
     initializeDateFormatting('ar', null),
-    ApiService.loadToken(),
   ]);
+  prefs = results[0] as SharedPreferences;
 
-  // Non-blocking: sync server time + setup FCM in background
+  // Load token from the already-fetched prefs (synchronous, no IO)
+  ApiService.loadTokenSync(prefs);
+
+  // Use bundled fonts only — never download from network
+  GoogleFonts.config.allowRuntimeFetching = false;
+
+  // Non-blocking background tasks
   ServerTimeService().startPeriodicSync();
   _setupFcm();
 
@@ -112,17 +123,28 @@ class _RasdAppState extends State<RasdApp> {
   }
 
   void _loadDisplaySettings() async {
+    if (!ApiService.isLoggedIn) return;
+    // Read cached settings first (instant)
+    final cached = prefs.getString('display_settings');
+    if (cached != null) {
+      _applySettings(jsonDecode(cached) as Map<String, dynamic>);
+    }
+    // Then refresh from API in background
     try {
       final res = await ApiService.get('admin.php?action=get_settings');
       final settings = res['settings'] as Map<String, dynamic>? ?? {};
-      if (mounted) {
-        setState(() {
-          _fontSize = settings['fontSize'] ?? 'medium';
-          final dm = settings['darkMode'];
-          _darkMode = dm == true || dm == 1 || dm == '1' || dm == 'true';
-        });
-      }
+      prefs.setString('display_settings', jsonEncode(settings));
+      _applySettings(settings);
     } catch (_) {}
+  }
+
+  void _applySettings(Map<String, dynamic> settings) {
+    if (!mounted) return;
+    setState(() {
+      _fontSize = settings['fontSize'] ?? 'medium';
+      final dm = settings['darkMode'];
+      _darkMode = dm == true || dm == 1 || dm == '1' || dm == 'true';
+    });
   }
 
   double get _fontScale {
@@ -192,11 +214,10 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    // Register auto-logout callback for 401 responses
     ApiService.onUnauthorized = () {
       if (mounted) setState(() => _user = null);
     };
-    _checkExistingSession();
+    _fastStart();
   }
 
   @override
@@ -205,24 +226,35 @@ class _AuthGateState extends State<AuthGate> {
     super.dispose();
   }
 
-  void _checkExistingSession() async {
-    // Load onboarding status
-    final prefs = await SharedPreferences.getInstance();
+  void _fastStart() {
+    // Use the global prefs (already loaded in main) — zero IO wait
     _onboardingDone = prefs.getBool('onboarding_done') ?? false;
 
-    if (ApiService.isLoggedIn) {
-      try {
-        final user = await AuthService().getCurrentUser();
-        if (user != null && mounted) {
-          setState(() { _user = user; _loading = false; });
-          AuthService.refreshFcmToken();
-          return;
-        }
-      } catch (_) {}
-      // Token expired or invalid
-      await ApiService.clearToken();
+    if (ApiService.isLoggedIn && ApiService.currentUser != null) {
+      // Show cached user IMMEDIATELY — no API wait
+      _user = ApiService.currentUser;
+      _loading = false;
+      // Verify session in background (if expired, auto-logout fires)
+      _verifySessionInBackground();
+    } else {
+      _loading = false;
     }
-    if (mounted) setState(() => _loading = false);
+  }
+
+  void _verifySessionInBackground() async {
+    try {
+      final user = await AuthService().getCurrentUser();
+      if (user != null && mounted) {
+        setState(() => _user = user);
+        AuthService.refreshFcmToken();
+      } else {
+        // Token expired
+        await ApiService.clearToken();
+        if (mounted) setState(() => _user = null);
+      }
+    } catch (_) {
+      // Network error — keep cached user, don't logout
+    }
   }
 
   void _onLogin(Map<String, dynamic> user) {
@@ -296,6 +328,7 @@ class _AuthGateState extends State<AuthGate> {
     if (_onboardingDone != true && !_showOnboarding && !isWeb) {
       // First time employee — show onboarding
       return OnboardingScreen(onComplete: () {
+        SharedPreferences.getInstance().then((p) => p.setBool('onboarding_done', true));
         if (mounted) setState(() => _onboardingDone = true);
       });
     }
