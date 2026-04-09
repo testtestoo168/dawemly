@@ -34,6 +34,7 @@ class DeviceInfoService {
           'deviceModel': '${androidInfo.brand} ${androidInfo.model}',
           'osVersion': 'Android ${androidInfo.version.release}',
           'deviceBrand': androidInfo.brand,
+          'deviceId': androidInfo.id,
         };
       } catch (_) {}
 
@@ -45,6 +46,7 @@ class DeviceInfoService {
           'deviceModel': '${iosInfo.name} (${iosInfo.model})',
           'osVersion': '${iosInfo.systemName} ${iosInfo.systemVersion}',
           'deviceBrand': 'Apple',
+          'deviceId': iosInfo.identifierForVendor ?? '',
         };
       } catch (_) {}
 

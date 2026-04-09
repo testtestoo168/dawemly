@@ -17,6 +17,7 @@ class AuthService {
       'device_model': deviceDetails['deviceModel'] ?? '',
       'os_version': deviceDetails['osVersion'] ?? '',
       'device_brand': deviceDetails['deviceBrand'] ?? '',
+      'device_id': deviceDetails['deviceId'] ?? '',
     });
 
     if (result['success'] == true) {
