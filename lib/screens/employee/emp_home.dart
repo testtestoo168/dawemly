@@ -153,34 +153,46 @@ class EmpHomePageState extends State<EmpHomePage> {
     } catch (_) {}
   }
 
+  bool _gpsReady = false;
+
   void _startLiveLocation() async {
     if (kIsWeb) return;
     try {
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return;
-      // Get initial position with platform-optimized best accuracy
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return;
+
+      // Try last known first (instant) — so UI shows something immediately
+      try {
+        final last = await Geolocator.getLastKnownPosition();
+        if (last != null && mounted) {
+          setState(() { _livePosition = last; _gpsReady = true; });
+        }
+      } catch (_) {}
+
+      // Then get fresh accurate position
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: AttendanceService.bestSettings(),
       );
-      if (mounted) setState(() => _livePosition = pos);
-      // Stream with platform-optimized settings (2m filter, fastest interval)
+      if (mounted) setState(() { _livePosition = pos; _gpsReady = true; });
+
+      // Stream continuous updates
       _locationStreamSub = Geolocator.getPositionStream(
         locationSettings: AttendanceService.streamSettings(),
       ).listen((p) {
-        // Always accept better accuracy, or any update if we have nothing
-        if (_livePosition == null || p.accuracy <= _livePosition!.accuracy || p.accuracy <= 20) {
-          if (mounted) setState(() => _livePosition = p);
-        }
+        if (mounted) setState(() { _livePosition = p; _gpsReady = true; });
       });
     } catch (_) {}
   }
 
-  /// Get best available position: use live stream if fresh+accurate, else get new fix
+  /// Get best available position for check-in/out
   Future<({Position? position, bool isMocked})> _getBestPosition() async {
-    // Use live position if fresh (< 3s) and accurate (≤ 20m)
+    // Use live position if available and not too old (< 30s)
     if (_livePosition != null) {
       final ageMs = DateTime.now().millisecondsSinceEpoch - _livePosition!.timestamp.millisecondsSinceEpoch;
-      if (ageMs < 3000 && _livePosition!.accuracy <= 20) {
+      if (ageMs < 30000) {
         return (position: _livePosition!, isMocked: _livePosition!.isMocked);
       }
     }
@@ -838,14 +850,37 @@ class EmpHomePageState extends State<EmpHomePage> {
             final empLat = _livePosition?.latitude;
             final empLng = _livePosition?.longitude;
 
-            bool isInRange = true; // default allow if no location set
+            // GPS not ready yet — show loading
+            if (adminLat != null && !_gpsReady) {
+              return Column(children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: C.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: C.orange)),
+                    const SizedBox(width: 8),
+                    Text('جارٍ تحديد موقعك...', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: Opacity(
+                  opacity: 0.4,
+                  child: isCurrentlyCheckedIn
+                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, () {})
+                    : _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
+                )),
+              ]);
+            }
+
+            bool isInRange = true;
             double? distance;
             if (adminLat != null && adminLng != null && empLat != null && empLng != null) {
               distance = Geolocator.distanceBetween(empLat, empLng, adminLat, adminLng);
               isInRange = (distance + (_livePosition?.accuracy ?? 0)) <= radius;
             }
 
-            // Show range status
+            // Outside range
             if (adminLat != null && distance != null && !isInRange)
               return Column(children: [
                 Container(
