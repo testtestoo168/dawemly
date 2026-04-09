@@ -5,13 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // On web: use same origin as the page (avoids self-signed cert issues)
-  // On mobile: use HTTPS directly
+  // On web: use same origin as the page
+  // On mobile: use HTTP (server uses Cloudflare Tunnel for HTTPS)
   static String get baseUrl {
     if (kIsWeb) {
       return Uri.base.origin + '/attendance/api';
     }
-    return 'https://187.124.177.100/attendance/api';
+    return 'http://187.124.177.100/attendance/api';
   }
   static String? _token;
   static Map<String, dynamic>? _currentUser;
