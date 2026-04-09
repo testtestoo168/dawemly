@@ -30,13 +30,23 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Shared prefs instance — loaded once, reused everywhere
 late final SharedPreferences prefs;
 
+Future<void> _initFirebase() async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    }
+  } catch (_) {
+    // Already initialized (Android auto-init via google-services.json)
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Run ALL critical init in parallel
   final results = await Future.wait([
     SharedPreferences.getInstance(),
-    Firebase.apps.isEmpty ? Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform) : Future.value(),
+    _initFirebase(),
     initializeDateFormatting('ar', null),
   ]);
   prefs = results[0] as SharedPreferences;
