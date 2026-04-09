@@ -256,8 +256,16 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           setDState(() => loading = true);
                           final nav = Navigator.of(ctx);
                           try {
+                            Map<String, dynamic> result;
                             if (existing == null) {
-                              await ApiService.post('users.php?action=create', {
+                              if (passCtrl.text.isEmpty) {
+                                if (ctx.mounted) {
+                                  setDState(() => loading = false);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('كلمة المرور مطلوبة', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                }
+                                return;
+                              }
+                              result = await ApiService.post('users.php?action=create', {
                                 'name': nameCtrl.text.trim(), 'email': emailCtrl.text.trim(),
                                 'password': passCtrl.text, 'phone': phoneCtrl.text.trim(),
                                 'dept': dept, 'role': userRole, 'jobTitle': roleCtrl.text.trim(),
@@ -265,9 +273,16 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                                 'workStart': workStart, 'workEnd': workEnd,
                                 'scheduleType': scheduleType, 'scheduleUntil': scheduleUntil,
                               });
+                              if (result['success'] != true) {
+                                if (ctx.mounted) {
+                                  setDState(() => loading = false);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? 'فشل إضافة المستخدم', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                }
+                                return;
+                              }
                               await _audit('إضافة مستخدم', '${nameCtrl.text.trim()} (${emailCtrl.text.trim()})', 'تم إضافة مستخدم جديد — القسم: $dept — الصلاحية: $userRole', 'create');
                             } else {
-                              await ApiService.post('users.php?action=update', {
+                              result = await ApiService.post('users.php?action=update', {
                                 'uid': existing['uid'] ?? docId,
                                 'name': nameCtrl.text.trim(), 'email': emailCtrl.text.trim(),
                                 'phone': phoneCtrl.text.trim(), 'dept': dept, 'role': userRole,
@@ -275,11 +290,22 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                                 'customSchedule': customSchedule, 'workStart': workStart,
                                 'workEnd': workEnd, 'scheduleType': scheduleType, 'scheduleUntil': scheduleUntil,
                               });
+                              if (result['success'] != true) {
+                                if (ctx.mounted) {
+                                  setDState(() => loading = false);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? 'فشل تعديل المستخدم', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                }
+                                return;
+                              }
                               await _audit('تعديل مستخدم', nameCtrl.text.trim(), 'تم تعديل بيانات المستخدم — القسم: $dept — الصلاحية: $userRole', 'edit');
                             }
                             if (mounted) nav.pop();
+                            _load();
                           } catch (e) {
-                            if (ctx.mounted) setDState(() => loading = false);
+                            if (ctx.mounted) {
+                              setDState(() => loading = false);
+                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('خطأ: $e', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
