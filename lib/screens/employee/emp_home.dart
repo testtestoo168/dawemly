@@ -54,6 +54,7 @@ class EmpHomePageState extends State<EmpHomePage> {
   // Verification polling
   Timer? _verifyPollTimer;
   bool _verifyDialogShowing = false;
+  final Set<dynamic> _respondedVerificationIds = {};
 
   // Cached auth requirements (loaded once on init)
   bool _cachedRequireBiometric = true;
@@ -142,7 +143,8 @@ class EmpHomePageState extends State<EmpHomePage> {
         final verifications = (result['verifications'] as List? ?? []).cast<Map<String, dynamic>>();
         final pending = verifications.where((v) =>
           (v['uid'] == uid) &&
-          (v['status'] == 'pending')
+          (v['status'] == 'pending') &&
+          !_respondedVerificationIds.contains(v['id'])
         ).toList();
         if (pending.isNotEmpty && mounted && !_verifyDialogShowing) {
           _verifyDialogShowing = true;
@@ -1283,7 +1285,8 @@ class EmpHomePageState extends State<EmpHomePage> {
       final distance = Geolocator.distanceBetween(pos.latitude, pos.longitude, adminLat, adminLng);
       final inRange = (distance + pos.accuracy) <= radius;
 
-      // Respond to verification via API
+      // Respond to verification via API + mark as responded so it won't repeat
+      _respondedVerificationIds.add(verificationId);
       try {
         await ApiService.post('admin.php?action=respond_verification', {
           'id': verificationId,
