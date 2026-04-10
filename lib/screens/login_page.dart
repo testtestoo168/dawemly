@@ -82,11 +82,11 @@ class _LoginPageState extends State<LoginPage> {
         widget.onLogin(user);
       } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
     } catch (e) {
-      // Pass API error message directly — it already has device-specific info
       String msg = e.toString().replaceAll('Exception: ', '');
-      // Only replace with generic message if it's a technical error
       if (msg.contains('SocketException') || msg.contains('TimeoutException') || msg.contains('HandshakeException')) {
         msg = L.tr('err_network');
+      } else {
+        msg = L.serverText(msg);
       }
       setState(() { _error = msg; _loading = false; });
     }
