@@ -207,6 +207,12 @@ class ApiService {
       return {'success': false, 'error': L.tr('session_expired'), 'unauthorized': true};
     }
     if (response.statusCode == 403) {
+      try {
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic> && data['error'] != null) {
+          return {'success': false, 'error': data['error']};
+        }
+      } catch (_) {}
       return {'success': false, 'error': L.tr('unauthorized')};
     }
     if (response.statusCode >= 500) {
