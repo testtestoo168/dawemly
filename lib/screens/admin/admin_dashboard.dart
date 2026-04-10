@@ -143,7 +143,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
           // ═══ CHARTS + TOP LIST — fl_chart professional ═══
           if (isWide)
-            Row(crossAxisAlignment: CrossAxisAlignment.start, textDirection: TextDirection.rtl, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, textDirection: L.textDirection, children: [
               // Bar Chart — 2fr
               Expanded(flex: 2, child: _barChartCard(250)),
               const SizedBox(width: 20),
@@ -185,7 +185,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Container(
       padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400 ? 12 : 20),
       decoration: DS.gradientCard(accent),
-      child: Row(textDirection: TextDirection.rtl, children: [
+      child: Row(textDirection: L.textDirection, children: [
         // Info right
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(label, style: _tj(11, color: _muted), overflow: TextOverflow.ellipsis, maxLines: 1),
@@ -216,7 +216,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 12 : 20, vertical: MediaQuery.of(context).size.width < 400 ? 10 : 16),
           decoration: DS.cardDecoration(),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Icon(icon, size: 18, color: _primary),
             const SizedBox(width: 8),
             Expanded(child: Text(label, style: _tj(13, weight: FontWeight.w600, color: _fg), overflow: TextOverflow.ellipsis)),
@@ -234,7 +234,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Icon(icon, size: 14, color: _muted),
             const SizedBox(width: 8),
             Text(title, style: _tj(15, weight: FontWeight.w600, color: _fg)),
@@ -406,7 +406,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Padding(
           padding: const EdgeInsets.only(bottom: 14, left: 16, right: 16),
           child: Row(
-            textDirection: TextDirection.rtl,
+            textDirection: L.textDirection,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _legendDot(_chartGreen, L.tr('present_n', args: {'n': present.toString()})),
@@ -422,7 +422,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _legendDot(Color color, String label) {
-    return Row(textDirection: TextDirection.rtl, mainAxisSize: MainAxisSize.min, children: [
+    return Row(textDirection: L.textDirection, mainAxisSize: MainAxisSize.min, children: [
       Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
       const SizedBox(width: 5),
       Text(label, style: _tj(11, color: _muted)),
@@ -641,7 +641,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Icon(Icons.person_off_rounded, size: 14, color: _chartRed),
             const SizedBox(width: 8),
             Text(L.tr('absent_today'), style: _tj(15, weight: FontWeight.w600, color: _fg)),
@@ -670,7 +670,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-              child: Row(textDirection: TextDirection.rtl, children: [
+              child: Row(textDirection: L.textDirection, children: [
                 Stack(children: [
                   Container(width: 36, height: 36,
                     decoration: const BoxDecoration(color: Color(0xFFFEF3F2), shape: BoxShape.circle),
@@ -709,7 +709,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Icon(Icons.local_fire_department_rounded, size: 14, color: _muted),
             const SizedBox(width: 8),
             Text(L.tr('latest_attendance'), style: _tj(15, weight: FontWeight.w600, color: _fg)),
@@ -725,7 +725,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-              child: Row(textDirection: TextDirection.rtl, children: [
+              child: Row(textDirection: L.textDirection, children: [
                 // Avatar with green/grey dot
                 Stack(children: [
                   Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFEEF2FF), shape: BoxShape.circle),
@@ -786,13 +786,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
           child: isSmall
             ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Row(textDirection: TextDirection.rtl, children: [
+                Row(textDirection: L.textDirection, children: [
                   Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
                   const SizedBox(width: 8),
                   Text(L.tr('n_employee', args: {'n': allUsers.length.toString()}), style: _tj(12, color: _muted)),
                 ]),
                 const SizedBox(height: 8),
-                Row(textDirection: TextDirection.rtl, mainAxisAlignment: MainAxisAlignment.end, children: [
+                Row(textDirection: L.textDirection, mainAxisAlignment: MainAxisAlignment.end, children: [
                   Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Text('${inList.length} IN', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)))),
                   const SizedBox(width: 8),
@@ -800,7 +800,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: Text('${outList.length} OUT', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFB42318)))),
                 ]),
               ])
-            : Row(textDirection: TextDirection.rtl, children: [
+            : Row(textDirection: L.textDirection, children: [
                 Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
                 const SizedBox(width: 8),
                 Text(L.tr('n_employee', args: {'n': allUsers.length.toString()}), style: _tj(12, color: _muted)),
@@ -817,7 +817,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // IN list
         if (inList.isNotEmpty) ...[
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFF0FDF4),
-            child: Text(L.tr('present_now'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
+            child: Text(L.tr('present_now'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: L.textDirection)),
           ...inList.map((u) {
             final att = u['_att'] as Map<String, dynamic>?;
             final checkInTime = att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in'];
@@ -825,7 +825,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-              child: Row(textDirection: TextDirection.rtl, children: [
+              child: Row(textDirection: L.textDirection, children: [
                 Stack(children: [
                   Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
                     child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: const Color(0xFF175CD3))))),
@@ -844,14 +844,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // OUT list
         if (outList.isNotEmpty) ...[
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFFEF3F2),
-            child: Text(L.tr('not_available'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: TextDirection.rtl)),
+            child: Text(L.tr('not_available'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: L.textDirection)),
           ...outList.take(10).map((u) {
             final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : L.tr('pm');
             final st = u['_status'] ?? L.tr('absent');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-              child: Row(textDirection: TextDirection.rtl, children: [
+              child: Row(textDirection: L.textDirection, children: [
                 Stack(children: [
                   Container(width: 36, height: 36, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), shape: BoxShape.circle),
                     child: Center(child: Text(av, style: _tj(12, weight: FontWeight.w700, color: _muted)))),
@@ -877,7 +877,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     Widget tableHeader = Container(
       color: _secondary,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(textDirection: TextDirection.rtl, children: [
+      child: Row(textDirection: L.textDirection, children: [
         Expanded(flex: 2, child: Text(L.tr('employee_filter'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
         Expanded(flex: 2, child: Text(L.tr('request_type'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
         Expanded(child: Text(L.tr('status'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
@@ -892,7 +892,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg))),
             Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
             Expanded(child: Container(
@@ -924,7 +924,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             Expanded(child: Row(children: [
               Icon(Icons.assignment_rounded, size: 14, color: _muted),
               const SizedBox(width: 8),

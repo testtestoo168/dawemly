@@ -80,7 +80,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Row(textDirection: TextDirection.rtl, children: [
+    return Row(textDirection: L.textDirection, children: [
       // ─── Orgs list ───
       SizedBox(
         width: _selectedOrg != null ? 420 : double.infinity,

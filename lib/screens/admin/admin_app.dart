@@ -650,7 +650,7 @@ class _AdminAppState extends State<AdminApp> {
   Widget _web() {
     final sideW = _sc ? 60.0 : 250.0;
 
-    return Scaffold(body: Row(textDirection: TextDirection.rtl, children: [
+    return Scaffold(body: Row(textDirection: L.textDirection, children: [
       // ─── Sidebar ───
       AnimatedContainer(
         duration: const Duration(milliseconds: 250), curve: Curves.easeInOut,
@@ -713,7 +713,7 @@ class _AdminAppState extends State<AdminApp> {
         Container(
           height: 56, padding: const EdgeInsets.symmetric(horizontal: 24),
           decoration: BoxDecoration(color: Colors.white, border: Border.all(color: W.border)),
-          child: Row(textDirection: TextDirection.rtl, children: [
+          child: Row(textDirection: L.textDirection, children: [
             InkWell(
               onTap: () => setState(() => _sc = !_sc),
               borderRadius: BorderRadius.circular(DS.radiusMd),

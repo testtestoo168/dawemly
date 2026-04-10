@@ -83,7 +83,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
       content: Text(
         isApproved ? L.tr('your_request_approved') : L.tr('your_request_rejected'),
         style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
-        textDirection: TextDirection.rtl,
+        textDirection: L.textDirection,
       ),
       backgroundColor: isApproved ? C.green : C.red,
       behavior: SnackBarBehavior.floating,
