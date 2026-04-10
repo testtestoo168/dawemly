@@ -5,7 +5,7 @@ import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../l10n/app_locale.dart';
-import '../main.dart' show RasdApp;
+import '../main.dart' show RasdApp, prefs;
 
 class LoginPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onLogin;
@@ -48,9 +48,10 @@ class _LoginPageState extends State<LoginPage> {
   void _biometricLogin() async {
     setState(() { _loading = true; _error = null; });
     try {
-      // Biometric requires an active session — user must log in with email first
-      final currentUser = ApiService.currentUser;
-      if (currentUser == null) {
+      // Check if we have saved credentials from a previous login
+      final savedEmail = prefs.getString('bio_email');
+      final savedPass = prefs.getString('bio_pass');
+      if (savedEmail == null || savedPass == null) {
         setState(() { _error = L.tr('err_biometric_email_first'); _loading = false; });
         return;
       }
@@ -59,8 +60,14 @@ class _LoginPageState extends State<LoginPage> {
       if (!canCheck && !isSupported) { setState(() { _error = L.tr('err_biometric_not_supported'); _loading = false; }); return; }
       final authenticated = await _localAuth.authenticate(localizedReason: L.tr('biometric_login_reason'), options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false));
       if (!authenticated) { setState(() { _error = L.tr('err_biometric_failed'); _loading = false; }); return; }
-      widget.onLogin(currentUser);
-    } catch (e) { setState(() { _error = L.tr('err_biometric_fallback'); _loading = false; }); }
+      // Use saved credentials to login via API
+      final user = await _auth.loginWithEmail(savedEmail, savedPass);
+      if (user != null) { widget.onLogin(user); } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
+    } catch (e) {
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (msg.contains('SocketException') || msg.contains('TimeoutException')) msg = L.tr('err_network');
+      setState(() { _error = msg; _loading = false; });
+    }
   }
 
   void _emailLogin() async {
@@ -68,7 +75,12 @@ class _LoginPageState extends State<LoginPage> {
     setState(() { _loading = true; _error = null; });
     try {
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
-      if (user != null) { widget.onLogin(user); } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
+      if (user != null) {
+        // Save credentials for biometric quick-login
+        prefs.setString('bio_email', _emailCtrl.text.trim());
+        prefs.setString('bio_pass', _passCtrl.text);
+        widget.onLogin(user);
+      } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
     } catch (e) {
       // Pass API error message directly — it already has device-specific info
       String msg = e.toString().replaceAll('Exception: ', '');
