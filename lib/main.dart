@@ -54,6 +54,14 @@ void main() async {
   // Load token from the already-fetched prefs (synchronous, no IO)
   ApiService.loadTokenSync(prefs);
 
+  // Lock to portrait only on mobile
+  if (!kIsWeb) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
   // Use bundled fonts only — never download from network
   GoogleFonts.config.allowRuntimeFetching = false;
 
