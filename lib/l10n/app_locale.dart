@@ -1370,7 +1370,7 @@ class L {
     'mob_attendance': 'Attendance',
     'mob_requests': 'Requests',
     'mob_notifications': 'Notifications',
-    'mob_more': 'More',
+    'mob_more': 'More\n ',
     'mob_current_org': 'Current Organization',
 
     // ─── Admin Dashboard ───
@@ -1856,7 +1856,7 @@ class L {
     'create_new_request': 'Create New Request',
     'submit_new_request': 'Submit New Request',
     'create_from_new_btn': 'Create a new request from the "New Request" button',
-    'my_requests': 'My Requests',
+    'my_requests': 'My\nRequests',
     'verifying_location': 'Verifying location...',
     'checking_in': 'Checking in...',
     'checking_out': 'Checking out...',
