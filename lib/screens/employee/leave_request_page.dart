@@ -75,7 +75,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         uid: widget.user['uid'] ?? '',
         empId: widget.user['empId'] ?? '',
         name: widget.user['name'] ?? '',
-        leaveType: _leaveType,
+        leaveType: L.toServerValue(_leaveType),
         startDate: _startDate!,
         endDate: _endDate!,
         reason: _reasonCtrl.text.trim(),

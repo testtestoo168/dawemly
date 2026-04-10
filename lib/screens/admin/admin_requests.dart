@@ -52,13 +52,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
-  void _handleRequest(String docId, String action) async {
+  /// isApprove: true = approve, false = reject
+  void _handleRequest(String docId, bool isApprove) async {
+    // Always send Arabic status to server (server expects Arabic)
+    final serverStatus = isApprove ? 'تم الموافقة' : 'مرفوض';
     final noteCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
-        title: Text(action == L.tr('approved') ? L.tr('approve_request') : L.tr('reject_request'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+        title: Text(isApprove ? L.tr('approve_request') : L.tr('reject_request'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(L.tr('are_you_sure'), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
           const SizedBox(height: 12),
@@ -78,7 +81,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.sub))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(L.tr('confirm'), style: GoogleFonts.tajawal(color: action == L.tr('approved') ? W.green : W.red, fontWeight: FontWeight.w700)),
+            child: Text(L.tr('confirm'), style: GoogleFonts.tajawal(color: isApprove ? W.green : W.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -87,15 +90,15 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     if (confirmed == true) {
       await ApiService.post('requests.php?action=update_status', {
         'id': docId,
-        'status': action,
+        'status': serverStatus,
         'admin_note': noteCtrl.text.trim(),
         'adminName': widget.user['name'] ?? L.tr('system_admin'),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(action == L.tr('approved') ? L.tr('request_approved') : L.tr('request_rejected'), style: GoogleFonts.tajawal()),
-          backgroundColor: action == L.tr('approved') ? W.green : W.red,
+          content: Text(isApprove ? L.tr('request_approved') : L.tr('request_rejected'), style: GoogleFonts.tajawal()),
+          backgroundColor: isApprove ? W.green : W.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
@@ -123,9 +126,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           unselectedLabelColor: W.sub,
           labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600),
           tabs: [
-            Tab(text: L.tr('pending_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('pending')).length.toString()}), height: 36),
-            Tab(text: L.tr('approved_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('approved') || r['status'] == 'approved').length.toString()}), height: 36),
-            Tab(text: L.tr('rejected_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('rejected') || r['status'] == 'rejected').length.toString()}), height: 36),
+            Tab(text: L.tr('pending_tab_count', args: {'n': _requests.where((r) => _isPending(r['status'])).length.toString()}), height: 36),
+            Tab(text: L.tr('approved_tab_count', args: {'n': _requests.where((r) => _isApproved(r['status'])).length.toString()}), height: 36),
+            Tab(text: L.tr('rejected_tab_count', args: {'n': _requests.where((r) => _isRejected(r['status'])).length.toString()}), height: 36),
           ],
         ),
       ),
@@ -145,12 +148,21 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     ]);
   }
 
+  // Status comparison helpers — handle Arabic source, English, and translated values
+  static bool _isPending(dynamic s) => s == 'تحت الإجراء' || s == 'pending' || s == L.tr('pending');
+  static bool _isApproved(dynamic s) => s == 'تم الموافقة' || s == 'موافق' || s == 'approved' || s == L.tr('approved');
+  static bool _isRejected(dynamic s) => s == 'مرفوض' || s == 'rejected' || s == L.tr('rejected');
+  static bool _isLeave(Map<String, dynamic> r) {
+    final t = r['request_type'] ?? r['requestType'] ?? '';
+    return t == 'إجازة' || t == L.tr('leave_request');
+  }
+
   Widget _buildList(String statusFilter, {bool showActions = false}) {
     var docs = _requests.where((r) {
       final s = r['status'] ?? '';
-      if (statusFilter == L.tr('pending')) return s == L.tr('pending') || s == 'pending';
-      if (statusFilter == L.tr('approved')) return s == L.tr('approved') || s == 'approved';
-      if (statusFilter == L.tr('rejected')) return s == L.tr('rejected') || s == 'rejected';
+      if (statusFilter == L.tr('pending')) return _isPending(s);
+      if (statusFilter == L.tr('approved')) return _isApproved(s);
+      if (statusFilter == L.tr('rejected')) return _isRejected(s);
       return s == statusFilter;
     }).toList();
     docs.sort((a, b) {
@@ -182,16 +194,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   Widget _requestCard(Map<String, dynamic> r, String docId, bool showActions) {
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 400;
-    final isLeave = (r['request_type'] ?? r['requestType']) == L.tr('leave_request');
+    final isLeave = _isLeave(r);
     final typeColor = isLeave ? const Color(0xFF2E90FA) : W.orange;
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
 
     String desc = '';
     if (isLeave) {
-      desc = '${r['leave_type'] ?? r['leaveType'] ?? ''} — ${r['days'] ?? 0} ${L.tr('day_unit')}\n${L.tr('from')} ${_fmtDate(r['start_date'] ?? r['startDate'])} ${L.tr('to')} ${_fmtDate(r['end_date'] ?? r['endDate'])}';
+      desc = '${L.serverText(r['leave_type'] ?? r['leaveType'] ?? '')} — ${r['days'] ?? 0} ${L.tr('day_unit')}\n${L.tr('from')} ${_fmtDate(r['start_date'] ?? r['startDate'])} ${L.tr('to')} ${_fmtDate(r['end_date'] ?? r['endDate'])}';
     } else {
       final hours = (r['hours'] as num?)?.toStringAsFixed(1);
-      desc = '${r['perm_type'] ?? r['permType'] ?? ''}${hours != null ? ' — $hours ${L.tr('hour')}' : ''}\n${L.tr('from')} ${r['from_time'] ?? r['fromTime'] ?? ''} ${L.tr('to')} ${r['to_time'] ?? r['toTime'] ?? ''}';
+      desc = '${L.serverText(r['perm_type'] ?? r['permType'] ?? '')}${hours != null ? ' — $hours ${L.tr('hour')}' : ''}\n${L.tr('from')} ${r['from_time'] ?? r['fromTime'] ?? ''} ${L.tr('to')} ${r['to_time'] ?? r['toTime'] ?? ''}';
     }
 
     return Container(
@@ -202,7 +214,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         Row(children: [
           if (showActions) ...[
             InkWell(
-              onTap: () => _handleRequest(docId, L.tr('rejected')),
+              onTap: () => _handleRequest(docId, false),
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFFECDCA))),
@@ -211,7 +223,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             ),
             const SizedBox(width: 6),
             InkWell(
-              onTap: () => _handleRequest(docId, L.tr('approved')),
+              onTap: () => _handleRequest(docId, true),
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFABEFC6))),
@@ -223,14 +235,14 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             Container(
               padding: EdgeInsets.symmetric(horizontal: isSmall ? 6 : 10, vertical: 3),
               decoration: BoxDecoration(
-                color: r['status'] == L.tr('approved') ? W.greenL : W.redL,
+                color: _isApproved(r['status']) ? W.greenL : W.redL,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: r['status'] == L.tr('approved') ? W.greenBd : W.redBd),
+                border: Border.all(color: _isApproved(r['status']) ? W.greenBd : W.redBd),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 10 : 11, fontWeight: FontWeight.w600, color: r['status'] == L.tr('approved') ? W.green : W.red)),
+                Text(L.serverText(r['status'] ?? ''), style: GoogleFonts.tajawal(fontSize: isSmall ? 10 : 11, fontWeight: FontWeight.w600, color: _isApproved(r['status']) ? W.green : W.red)),
                 const SizedBox(width: 3),
-                Icon(r['status'] == L.tr('approved') ? Icons.check_circle : Icons.cancel, size: 13, color: r['status'] == L.tr('approved') ? W.green : W.red),
+                Icon(_isApproved(r['status']) ? Icons.check_circle : Icons.cancel, size: 13, color: _isApproved(r['status']) ? W.green : W.red),
               ]),
             ),
           ],
@@ -249,7 +261,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         const SizedBox(height: 10),
         Container(width: double.infinity, height: 1, color: W.div),
         const SizedBox(height: 10),
-        Text('${r['request_type'] ?? r['requestType'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+        Text(L.serverText(r['request_type'] ?? r['requestType'] ?? ''), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
         const SizedBox(height: 4),
         Text(desc, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub, height: 1.5)),
         if ((r['reason'] ?? '').isNotEmpty) ...[

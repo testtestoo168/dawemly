@@ -267,14 +267,14 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
                       const SizedBox(height: 6),
                       // Title
                       Text(
-                        n['title'] ?? '',
+                        L.serverText(n['title'] ?? ''),
                         style: _tj(14, weight: read ? FontWeight.w500 : FontWeight.w700, color: C.text),
                         textAlign: TextAlign.right,
                       ),
                       const SizedBox(height: 3),
                       // Body
                       Text(
-                        n['body'] ?? '',
+                        L.serverText(n['body'] ?? ''),
                         style: _tj(12, color: C.sub),
                         textAlign: TextAlign.right,
                       ),

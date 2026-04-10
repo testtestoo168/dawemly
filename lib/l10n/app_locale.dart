@@ -1146,6 +1146,19 @@ class L {
     'n_km': '{n} كم',
     // Language
     'language': 'اللغة',
+
+    // ─── Server-sent notification content ───
+    'srv_verify_request_title': 'طلب إثبات حالة',
+    'srv_verify_request_body': 'يرجى إثبات تواجدك في نطاق العمل الآن',
+    'srv_leave_request_new': 'طلب إجازة جديد',
+    'srv_perm_request_new': 'طلب إذن جديد',
+    'srv_request_approved': 'تمت الموافقة على طلبك ✓',
+    'srv_request_rejected': 'تم رفض طلبك ✗',
+    'srv_request_type_leave': 'إجازة',
+    'srv_request_type_perm': 'إذن',
+    'srv_status_pending': 'تحت الإجراء',
+    'srv_status_approved': 'تم الموافقة',
+    'srv_status_rejected': 'مرفوض',
   };
 
   // ═══════════════════════════════════════════════════════
@@ -2257,6 +2270,19 @@ class L {
     'n_km': '{n} km',
     // Language
     'language': 'Language',
+
+    // ─── Server-sent notification content ───
+    'srv_verify_request_title': 'Verification Request',
+    'srv_verify_request_body': 'Please verify your presence in the work zone now',
+    'srv_leave_request_new': 'New Leave Request',
+    'srv_perm_request_new': 'New Permission Request',
+    'srv_request_approved': 'Your request has been approved ✓',
+    'srv_request_rejected': 'Your request has been rejected ✗',
+    'srv_request_type_leave': 'Leave',
+    'srv_request_type_perm': 'Permission',
+    'srv_status_pending': 'Pending',
+    'srv_status_approved': 'Approved',
+    'srv_status_rejected': 'Rejected',
   };
 
   // ═══════════════════════════════════════════════════════
@@ -2287,4 +2313,83 @@ class L {
   static List<String> get dayNamesFull => [
     tr('sunday'), tr('monday'), tr('tuesday'), tr('wednesday'), tr('thursday'), tr('friday'), tr('saturday'),
   ];
+
+  // ═══════════════════════════════════════════════════════
+  //  HELPER: Translate server-sent text (notifications, statuses, etc.)
+  // ═══════════════════════════════════════════════════════
+  /// Maps known Arabic server strings to translation keys.
+  /// If the text matches a known pattern, returns the translated version.
+  /// Otherwise returns the original text unchanged.
+  static const _serverTextMap = <String, String>{
+    // Notification titles & bodies
+    'طلب إثبات حالة': 'srv_verify_request_title',
+    'يرجى إثبات تواجدك في نطاق العمل الآن': 'srv_verify_request_body',
+    'طلب إجازة جديد': 'srv_leave_request_new',
+    'طلب إذن جديد': 'srv_perm_request_new',
+    'تمت الموافقة على طلبك ✓': 'srv_request_approved',
+    'تم رفض طلبك ✗': 'srv_request_rejected',
+    // Request types (stored in DB by server)
+    'إجازة': 'leave_request',
+    'إذن': 'permission_request',
+    // Request statuses
+    'تحت الإجراء': 'pending',
+    'تم الموافقة': 'approved',
+    'مرفوض': 'rejected',
+    // Leave types
+    'سنوية': 'annual',
+    'مرضية': 'sick',
+    'طارئة': 'emergency',
+    'بدون راتب': 'unpaid',
+    // Permission types
+    'انصراف مبكر': 'early_departure',
+    'تأخير عن الحضور': 'attendance_lateness',
+    'مهمة خارجية': 'external_mission',
+    'أخرى': 'other',
+  };
+
+  static String serverText(String? text) {
+    if (text == null || text.isEmpty) return '';
+    // If locale is Arabic, return as-is (server already sends Arabic)
+    if (isAr) return text;
+    // Check for exact match
+    final key = _serverTextMap[text];
+    if (key != null) return tr(key);
+    // Check for prefix match (e.g. "إجازة — تم الموافقة")
+    for (final entry in _serverTextMap.entries) {
+      if (text.startsWith(entry.key)) {
+        final translated = tr(entry.value);
+        final rest = text.substring(entry.key.length);
+        // Translate any remaining known parts in the rest
+        return translated + _translateRest(rest);
+      }
+    }
+    return text;
+  }
+
+  /// Convert a translated value back to the Arabic source value for server communication.
+  /// Always sends Arabic to the server regardless of current locale.
+  static String toServerValue(String translated) {
+    if (translated.isEmpty) return translated;
+    // If already Arabic, return as-is
+    for (final entry in _serverTextMap.entries) {
+      if (translated == entry.key) return translated;
+    }
+    // Check if it's a translated value that needs to be converted back
+    for (final entry in _serverTextMap.entries) {
+      final trValue = tr(entry.value);
+      if (translated == trValue) return entry.key;
+    }
+    return translated;
+  }
+
+  /// Recursively translate known substrings in remainder text.
+  static String _translateRest(String text) {
+    if (text.isEmpty) return text;
+    for (final entry in _serverTextMap.entries) {
+      if (text.contains(entry.key)) {
+        text = text.replaceAll(entry.key, tr(entry.value));
+      }
+    }
+    return text;
+  }
 }

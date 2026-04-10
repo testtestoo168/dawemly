@@ -894,7 +894,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
           child: Row(textDirection: L.textDirection, children: [
             Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg))),
-            Expanded(flex: 2, child: Text('${r['requestType'] ?? r['request_type'] ?? ''} — ${r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? ''}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
+            Expanded(flex: 2, child: Text('${L.serverText(r['requestType'] ?? r['request_type'] ?? '')} — ${L.serverText(r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? '')}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(DS.radiusMd)),

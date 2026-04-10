@@ -149,20 +149,25 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
 
   Widget _requestCard(Map<String, dynamic> r) {
     final status = r['status'] ?? '';
-    final isLeave = r['requestType'] == L.tr('leave_request') || r['request_type'] == L.tr('leave_request');
+    final rawType = r['requestType'] ?? r['request_type'] ?? '';
+    // Server stores 'إجازة' — compare against both Arabic source and current locale
+    final isLeave = rawType == 'إجازة' || rawType == L.tr('leave_request');
     Color stColor, stBg, stBd;
 
-    if (status == L.tr('approved')) {
+    // Compare status against both Arabic source values and current locale
+    final isApproved = status == 'تم الموافقة' || status == 'موافق' || status == L.tr('approved');
+    final isRejected = status == 'مرفوض' || status == L.tr('rejected');
+    if (isApproved) {
       stColor = C.green; stBg = C.greenL; stBd = C.greenBd;
-    } else if (status == L.tr('rejected')) {
+    } else if (isRejected) {
       stColor = C.red; stBg = C.redL; stBd = C.redBd;
     } else {
       stColor = C.orange; stBg = C.orangeL; stBd = C.orangeBd;
     }
 
-    final requestType = r['requestType'] ?? r['request_type'] ?? '';
-    final leaveType   = r['leaveType']   ?? r['leave_type']   ?? '';
-    final permType    = r['permType']    ?? r['perm_type']    ?? '';
+    final requestType = L.serverText(rawType);
+    final leaveType   = L.serverText(r['leaveType']   ?? r['leave_type']   ?? '');
+    final permType    = L.serverText(r['permType']    ?? r['perm_type']    ?? '');
     final fromTime    = r['fromTime']    ?? r['from_time']    ?? '';
     final toTime      = r['toTime']      ?? r['to_time']      ?? '';
     final startDate   = r['startDate']   ?? r['start_date'];
@@ -189,9 +194,9 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(color: stBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: stBd)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(status, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
+              Text(L.serverText(status), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
               const SizedBox(width: 4),
-              Icon(status == L.tr('approved') ? Icons.check_circle : status == L.tr('rejected') ? Icons.cancel : Icons.hourglass_bottom, size: 14, color: stColor),
+              Icon(isApproved ? Icons.check_circle : isRejected ? Icons.cancel : Icons.hourglass_bottom, size: 14, color: stColor),
             ]),
           ),
           Row(children: [

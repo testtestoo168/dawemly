@@ -78,7 +78,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
     if (!mounted) return;
     setState(() => _i = 3); // Switch to requests tab
     final status = data['status'] ?? '';
-    final isApproved = status == L.tr('approved');
+    final isApproved = status == 'تم الموافقة' || status == 'موافق' || status == 'approved' || status == L.tr('approved');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         isApproved ? L.tr('your_request_approved') : L.tr('your_request_rejected'),

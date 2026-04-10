@@ -430,7 +430,10 @@ class _AdminAppState extends State<AdminApp> {
           _mHomeUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
           _mHomeAtt = attRes;
           final allReqs = (reqRes['requests'] as List? ?? []).cast<Map<String, dynamic>>();
-          _mHomeRequests = allReqs.where((r) => r['status'] == L.tr('pending')).toList();
+          _mHomeRequests = allReqs.where((r) {
+            final s = r['status'] ?? '';
+            return s == 'تحت الإجراء' || s == 'pending' || s == L.tr('pending');
+          }).toList();
           _mHomeLoading = false;
         });
       }
@@ -516,7 +519,7 @@ class _AdminAppState extends State<AdminApp> {
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
-                          Text('${r['requestType'] ?? ''} — ${r['leaveType'] ?? r['permType'] ?? ''}', style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
+                          Text('${L.serverText(r['requestType'] ?? '')} — ${L.serverText(r['leaveType'] ?? r['permType'] ?? '')}', style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
                         ])),
                         const SizedBox(width: 10),
                         Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),

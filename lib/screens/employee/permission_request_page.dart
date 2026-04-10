@@ -84,7 +84,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
         uid: widget.user['uid'] ?? '',
         empId: widget.user['empId'] ?? '',
         name: widget.user['name'] ?? '',
-        permType: _permType,
+        permType: L.toServerValue(_permType),
         fromTime: _fmtTime(_fromTime!),
         toTime: _fmtTime(_toTime!),
         date: _date,

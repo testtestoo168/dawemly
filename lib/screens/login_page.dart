@@ -70,13 +70,12 @@ class _LoginPageState extends State<LoginPage> {
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
       if (user != null) { widget.onLogin(user); } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
     } catch (e) {
-      String msg = L.tr('err_login');
-      final errStr = e.toString();
-      if (errStr.contains('user-not-found')) msg = L.tr('err_user_not_found');
-      else if (errStr.contains('wrong-password') || errStr.contains('invalid-credential')) msg = L.tr('err_wrong_password');
-      else if (errStr.contains('invalid-email')) msg = L.tr('err_invalid_email');
-      else if (errStr.contains('network')) msg = L.tr('err_network');
-      else if (errStr.contains(L.tr('account_on_other_device')) || errStr.contains(L.tr('logout_device'))) msg = errStr.replaceAll('Exception: ', '');
+      // Pass API error message directly — it already has device-specific info
+      String msg = e.toString().replaceAll('Exception: ', '');
+      // Only replace with generic message if it's a technical error
+      if (msg.contains('SocketException') || msg.contains('TimeoutException') || msg.contains('HandshakeException')) {
+        msg = L.tr('err_network');
+      }
       setState(() { _error = msg; _loading = false; });
     }
   }
