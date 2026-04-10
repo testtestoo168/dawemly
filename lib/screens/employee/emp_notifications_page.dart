@@ -108,7 +108,12 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
 
   Future<void> _markRead(String id) async {
     await ApiService.post('admin.php?action=mark_read', {'id': id});
-    await _loadNotifs();
+    // Remove from list immediately (user already took action)
+    if (mounted) {
+      setState(() {
+        _notifs.removeWhere((n) => n['id']?.toString() == id);
+      });
+    }
   }
 
   Future<void> _markAllRead() async {

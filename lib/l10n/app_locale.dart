@@ -1397,7 +1397,7 @@ class L {
     'mob_attendance': 'Attendance',
     'mob_requests': 'Requests',
     'mob_notifications': 'Notifications',
-    'mob_more': 'More\n ',
+    'mob_more': 'More',
     'mob_current_org': 'Current Organization',
 
     // ─── Admin Dashboard ───
@@ -1876,7 +1876,7 @@ class L {
     'tap_check_in': 'Tap "Check In" to start',
     'check_in_from_home': 'Check in from the home page',
     'enter_range_to_check_in': 'Enter the work zone to check in',
-    'my_attendance': 'My\nAttendance',
+    'my_attendance': 'Attendance',
     'my_attendance_full': 'My Attendance',
     'new_request': 'New\nRequest',
     'new_request_full': 'New Request',
@@ -2428,6 +2428,9 @@ class L {
     'دقة GPS منخفضة': 'api_err_low_gps',
     'أنت خارج نطاق العمل': 'api_err_out_of_range',
     'تم الوصول للحد الأقصى': 'api_err_max_employees',
+    // Common words in compound notification bodies
+    'يوم': 'day',
+    'ساعة': 'hour',
   };
 
   static String serverText(String? text) {
