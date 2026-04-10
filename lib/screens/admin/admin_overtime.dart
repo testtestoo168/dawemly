@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminOvertime extends StatefulWidget {
   final Map<String, dynamic>? adminUser;
@@ -13,7 +14,7 @@ class AdminOvertime extends StatefulWidget {
 
 class _AdminOvertimeState extends State<AdminOvertime> {
   final _mono = GoogleFonts.ibmPlexMono;
-  final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  final _months = L.months;
   late int _selMonth, _selYear;
   double _standardHours = 8.0;
   List<Map<String, dynamic>> _allRecords = [];
@@ -126,19 +127,19 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         // Stat cards
         if (isWide)
           Row(children: [
-            Expanded(child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
+            Expanded(child: _stat(Icons.more_time, L.tr('total_overtime'), '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), L.tr('overtime'))),
             const SizedBox(width: 14),
-            Expanded(child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, 'من ${records.length} سجل')),
+            Expanded(child: _stat(Icons.people, L.tr('total_employees'), '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, L.tr('n_record', args: {'n': records.length.toString()}))),
             const SizedBox(width: 14),
-            Expanded(child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            Expanded(child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
           ])
         else
           SizedBox(height: 130, child: ListView(scrollDirection: Axis.horizontal, children: [
-            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'إجمالي الأوفرتايم', '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), 'ساعات إضافية')),
+            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, L.tr('total_overtime'), '${totalOT.toStringAsFixed(1)}h', W.orange, const Color(0xFFFFFAEB), L.tr('overtime'))),
             const SizedBox(width: 10),
-            SizedBox(width: isMobile ? 140 : 160, child: _stat(Icons.people, 'عدد الموظفين', '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, 'من ${records.length} موظف')),
+            SizedBox(width: isMobile ? 140 : 160, child: _stat(Icons.people, L.tr('total_employees'), '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, L.tr('n_employee', args: {'n': records.length.toString()}))),
             const SizedBox(width: 10),
-            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'أعلى أوفرتايم', withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
           ])),
         const SizedBox(height: 20),
 
@@ -195,7 +196,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             const Spacer(),
             Icon(Icons.more_time, size: 18, color: W.orange),
             const SizedBox(width: 8),
-            Text('سجلات الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+            Text(L.tr('overtime_records'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
           ]),
         ),
         // Table header row
@@ -203,11 +204,11 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(color: W.bg),
           child: Row(children: [
-            SizedBox(width: 140, child: Text('الإجراءات', style: _tableHeader(), textAlign: TextAlign.center)),
-            Expanded(flex: 2, child: Text('الحالة', style: _tableHeader(), textAlign: TextAlign.center)),
-            Expanded(flex: 2, child: Text('الأوفرتايم', style: _tableHeader(), textAlign: TextAlign.center)),
-            Expanded(flex: 2, child: Text('ساعات العمل', style: _tableHeader(), textAlign: TextAlign.center)),
-            Expanded(flex: 3, child: Text('الموظف', style: _tableHeader(), textAlign: TextAlign.right)),
+            SizedBox(width: 140, child: Text(L.tr('actions'), style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text(L.tr('status'), style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text(L.tr('overtime'), style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text(L.tr('work_hours'), style: _tableHeader(), textAlign: TextAlign.center)),
+            Expanded(flex: 3, child: Text(L.tr('employee_filter'), style: _tableHeader(), textAlign: TextAlign.right)),
           ]),
         ),
         // Table rows
@@ -232,20 +233,20 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               child: Row(children: [
                 // Actions
                 SizedBox(width: 140, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  _webActionBtn(Icons.edit, 'تعديل', W.orange, const Color(0xFFFFFAEB), () => _editOvertimeDialog(docId, name, emp)),
+                  _webActionBtn(Icons.edit, L.tr('edit'), W.orange, const Color(0xFFFFFAEB), () => _editOvertimeDialog(docId, name, emp)),
                   const SizedBox(width: 6),
                   if (!otCancelled)
-                    _webActionBtn(Icons.cancel, 'إلغاء', W.red, const Color(0xFFFEF3F2), () => _cancelOvertimeDialog(docId, name))
+                    _webActionBtn(Icons.cancel, L.tr('cancel'), W.red, const Color(0xFFFEF3F2), () => _cancelOvertimeDialog(docId, name))
                   else
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                      child: Text('ملغي', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.red)),
+                      child: Text(L.tr('cancelled'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.red)),
                     ),
                 ])),
                 // Status
                 Expanded(flex: 2, child: Center(child: _badge(
-                  otCancelled ? 'ملغي' : 'أوفرتايم',
+                  otCancelled ? L.tr('cancelled') : L.tr('overtime_stat'),
                   otCancelled ? W.red : W.orange,
                   otCancelled ? const Color(0xFFFEF3F2) : const Color(0xFFFFFAEB),
                 ))),
@@ -334,14 +335,14 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           Icon(Icons.more_time, size: 32, color: W.orange),
           const SizedBox(height: 8),
           Text(totalOT.toStringAsFixed(1), style: _mono(fontSize: 36, fontWeight: FontWeight.w800, color: W.text)),
-          Text('ساعة أوفرتايم', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.sub)),
+          Text(L.tr('overtime_hour'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.sub)),
           const SizedBox(height: 16),
           Divider(color: W.div),
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _miniStat('$cancelledCount', 'ملغي', W.red),
+            _miniStat('$cancelledCount', L.tr('cancelled'), W.red),
             Container(width: 1, height: 30, color: W.div),
-            _miniStat('$activeCount', 'فعّال', W.green),
+            _miniStat('$activeCount', L.tr('enabled'), W.green),
           ]),
         ]),
       ),
@@ -354,7 +355,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           padding: const EdgeInsets.all(20),
           decoration: DS.cardDecoration(),
           child: Column(children: [
-            Align(alignment: Alignment.centerRight, child: Text('توزيع الحالات', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            Align(alignment: Alignment.centerRight, child: Text(L.tr('status_distribution_label'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 12),
             SizedBox(
               height: 140,
@@ -383,9 +384,9 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             ),
             const SizedBox(height: 10),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _legendDot(W.red, 'ملغي'),
+              _legendDot(W.red, L.tr('cancelled')),
               const SizedBox(width: 16),
-              _legendDot(W.orange, 'فعّال'),
+              _legendDot(W.orange, L.tr('enabled')),
             ]),
           ]),
         ),
@@ -398,7 +399,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           padding: const EdgeInsets.all(20),
           decoration: DS.cardDecoration(),
           child: Column(children: [
-            Align(alignment: Alignment.centerRight, child: Text('أعلى 5 موظفين', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            Align(alignment: Alignment.centerRight, child: Text(L.tr('top_5_employees_label'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
@@ -469,7 +470,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           padding: const EdgeInsets.all(20),
           decoration: DS.cardDecoration(),
           child: Column(children: [
-            Align(alignment: Alignment.centerRight, child: Text('ترتيب الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
+            Align(alignment: Alignment.centerRight, child: Text(L.tr('overtime_ranking'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(height: 12),
             ...top5.asMap().entries.map((entry) {
               final i = entry.key;
@@ -536,7 +537,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
       child: Center(child: Column(children: [
         Icon(Icons.more_time, size: 36, color: W.hint),
         const SizedBox(height: 10),
-        Text('لا يوجد أوفرتايم في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+        Text(L.tr('no_overtime'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
       ])),
     );
   }
@@ -549,11 +550,11 @@ class _AdminOvertimeState extends State<AdminOvertime> {
       decoration: DS.cardDecoration(),
       child: Column(children: [
         Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-          child: Align(alignment: Alignment.centerRight, child: Text('ساعات العمل لجميع الموظفين', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
+          child: Align(alignment: Alignment.centerRight, child: Text(L.tr('work_hours_all'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
         SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
           columnSpacing: isMobile ? 16 : 56,
           headingRowColor: WidgetStateProperty.all(W.bg),
-          columns: ['الأوفرتايم', 'ساعات العمل', 'الحالة', 'الموظف'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
+          columns: [L.tr('overtime'), L.tr('work_hours'), L.tr('status'), L.tr('employee_filter')].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
           rows: records.where((r) => (r['first_check_in'] ?? r['check_in']) != null).map((r) {
             final ci = r['first_check_in'] ?? r['check_in'];
             double workH = 0; double ot = 0;
@@ -575,7 +576,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             return DataRow(cells: [
               DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.orange)) : Text('—', style: GoogleFonts.tajawal(color: W.muted))),
               DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
-              DataCell(_badge(hasOut ? 'مكتمل' : 'حاضر', hasOut ? W.green : W.pri, hasOut ? const Color(0xFFECFDF3) : W.priLight)),
+              DataCell(_badge(hasOut ? L.tr('complete') : L.tr('present'), hasOut ? W.green : W.pri, hasOut ? const Color(0xFFECFDF3) : W.priLight)),
               DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
             ]);
           }).toList(),
@@ -617,26 +618,26 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             child: Wrap(spacing: 6, runSpacing: 6, children: [
               InkWell(onTap: () => _editOvertimeDialog(docId, name, emp),
                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.orange), const SizedBox(width: 4), Text('تعديل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))]))),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.orange), const SizedBox(width: 4), Text(L.tr('edit'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))]))),
               if (!otCancelled) InkWell(onTap: () => _cancelOvertimeDialog(docId, name),
                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])))
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])))
               else Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text('ملغي', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.cancel, size: 12, color: W.red), const SizedBox(width: 4), Text(L.tr('cancelled'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red))])),
             ]),
           ),
           const Spacer(),
           // Name + date
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w700, color: otCancelled ? W.muted : W.text)),
-            Text('$dateKey  •  ${workH.toStringAsFixed(1)}h عمل', style: _mono(fontSize: 10, color: W.sub)),
+            Text('$dateKey  •  ${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 10, color: W.sub)),
           ])),
           const SizedBox(width: 8),
           // OT badge
           Container(padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12, vertical: 6), decoration: BoxDecoration(color: otCancelled ? const Color(0xFFFEF3F2) : const Color(0xFFFFFAEB), borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Column(children: [
-              Text(otCancelled ? 'ملغي' : '+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: otCancelled ? W.red : W.orange)),
-              Text('أوفرتايم', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
+              Text(otCancelled ? L.tr('cancelled') : '+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: otCancelled ? W.red : W.orange)),
+              Text(L.tr('overtime_stat'), style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
             ])),
         ]),
         if (otReason.isNotEmpty) ...[
@@ -660,7 +661,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     final currentOT = emp['overtime'] as double;
     final hoursCtrl = TextEditingController(text: currentOT.toStringAsFixed(1));
     final reasonCtrl = TextEditingController(text: emp['otReason'] ?? '');
-    final reasons = ['نسي بصمة الخروج', 'عمل إضافي مطلوب', 'خطأ في النظام', 'تعديل إداري', 'أخرى'];
+    final reasons = [L.tr('forgot_checkout'), L.tr('extra_work_required'), L.tr('system_error'), L.tr('admin_tag'), L.tr('other')];
 
     showDialog(context: context, builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -668,7 +669,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
       child: Container(width: min(isWide ? 500 : 380, screenW - 40), padding: EdgeInsets.all(isWide ? 28 : 20),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            Flexible(child: Text('تعديل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.text))),
+            Flexible(child: Text(L.tr('edit_overtime'), style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.text))),
             const SizedBox(width: 8), Icon(Icons.edit, size: 18, color: W.orange),
           ]),
           const SizedBox(height: 4),
@@ -676,25 +677,25 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           const SizedBox(height: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              Flexible(child: Text('عدد ساعات الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
+              Flexible(child: Text(L.tr('overtime_hours_count'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
               const SizedBox(width: 4), Icon(Icons.access_time, size: 14, color: W.orange),
             ]),
             const SizedBox(height: 4),
             TextField(controller: hoursCtrl, textAlign: TextAlign.center, textDirection: TextDirection.ltr, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: _mono(fontSize: 18, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(hintText: '0.0', suffixText: 'ساعة', filled: true, fillColor: W.bg,
+              decoration: InputDecoration(hintText: '0.0', suffixText: L.tr('hour'), filled: true, fillColor: W.bg,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.orange, width: 2)))),
           ]),
           const SizedBox(height: 12),
-          Align(alignment: Alignment.centerRight, child: Text('السبب', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
+          Align(alignment: Alignment.centerRight, child: Text(L.tr('reason'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
           const SizedBox(height: 6),
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: reasons.map((r) => InkWell(onTap: () => reasonCtrl.text = r,
             child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20), border: Border.all(color: W.border)),
               child: Text(r, style: GoogleFonts.tajawal(fontSize: 10, color: W.sub))))).toList()),
           const SizedBox(height: 8),
           TextField(controller: reasonCtrl, textAlign: TextAlign.right, maxLines: 2, style: GoogleFonts.tajawal(fontSize: 13),
-            decoration: InputDecoration(hintText: 'اكتب السبب أو اختر من الأعلى...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg,
+            decoration: InputDecoration(hintText: L.tr('write_reason_or_select'), hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)))),
           const SizedBox(height: 16),
@@ -706,18 +707,18 @@ class _AdminOvertimeState extends State<AdminOvertime> {
                 'overtimeManualMinutes': (hours * 60).round(),
                 'overtimeCancelled': false,
                 'overtimeReason': reasonCtrl.text.trim(),
-                'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام',
+                'overtimeEditedBy': widget.adminUser?['name'] ?? L.tr('system_admin'),
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تعديل الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('overtime_edited_msg', args: {'name': empName}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 _loadAll();
               }
             },
-            icon: const Icon(Icons.save, size: 16), label: Text('حفظ التعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            icon: const Icon(Icons.save, size: 16), label: Text(L.tr('save_edit'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: W.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
           const SizedBox(height: 6),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
     ));
   }
@@ -729,7 +730,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     final screenW = MediaQuery.of(context).size.width;
     final isWide = screenW > 800;
     final reasonCtrl = TextEditingController();
-    final reasons = ['نسي بصمة الخروج', 'خطأ في البيانات', 'لم يعمل فعلياً', 'أخرى'];
+    final reasons = [L.tr('forgot_checkout'), L.tr('data_error'), L.tr('did_not_work'), L.tr('other')];
 
     showDialog(context: context, builder: (ctx) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -737,7 +738,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
       child: Container(width: min(isWide ? 450 : 360, screenW - 40), padding: EdgeInsets.all(isWide ? 28 : 20),
         child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            Flexible(child: Text('إلغاء الأوفرتايم', style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.red))),
+            Flexible(child: Text(L.tr('cancel_overtime'), style: GoogleFonts.tajawal(fontSize: isWide ? 18 : 16, fontWeight: FontWeight.w700, color: W.red))),
             const SizedBox(width: 8), Icon(Icons.cancel, size: 18, color: W.red),
           ]),
           const SizedBox(height: 4),
@@ -748,7 +749,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               child: Text(r, style: GoogleFonts.tajawal(fontSize: 10, color: W.sub))))).toList()),
           const SizedBox(height: 8),
           TextField(controller: reasonCtrl, textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13),
-            decoration: InputDecoration(hintText: 'سبب الإلغاء...', hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg,
+            decoration: InputDecoration(hintText: L.tr('cancel_reason'), hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)))),
           const SizedBox(height: 16),
@@ -759,18 +760,18 @@ class _AdminOvertimeState extends State<AdminOvertime> {
                 'overtimeCancelled': true,
                 'overtimeManualMinutes': 0,
                 'overtimeReason': reasonCtrl.text.trim(),
-                'overtimeEditedBy': widget.adminUser?['name'] ?? 'مدير النظام',
+                'overtimeEditedBy': widget.adminUser?['name'] ?? L.tr('system_admin'),
               });
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إلغاء الأوفرتايم لـ $empName', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('overtime_cancelled_msg', args: {'name': empName}), style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 _loadAll();
               }
             },
-            icon: const Icon(Icons.cancel, size: 16), label: Text('تأكيد الإلغاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            icon: const Icon(Icons.cancel, size: 16), label: Text(L.tr('confirm_cancel'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
           const SizedBox(height: 6),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('رجوع', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('back'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
     ));
   }

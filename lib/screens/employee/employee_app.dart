@@ -9,6 +9,7 @@ import 'emp_attendance.dart';
 import 'emp_new_request.dart';
 import 'emp_requests.dart';
 import 'emp_more.dart';
+import '../../l10n/app_locale.dart';
 
 class EmployeeApp extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -77,10 +78,10 @@ class _EmployeeAppState extends State<EmployeeApp> {
     if (!mounted) return;
     setState(() => _i = 3); // Switch to requests tab
     final status = data['status'] ?? '';
-    final isApproved = status == 'تم الموافقة';
+    final isApproved = status == L.tr('approved');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
-        isApproved ? 'تمت الموافقة على طلبك' : 'تم رفض طلبك',
+        isApproved ? L.tr('your_request_approved') : L.tr('your_request_rejected'),
         style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
         textDirection: TextDirection.rtl,
       ),
@@ -122,11 +123,11 @@ class _EmployeeAppState extends State<EmployeeApp> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             children: [
-              _navItem(0, Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
-              _navItem(1, Icons.date_range_outlined, Icons.date_range_rounded, 'سجل حضوري'),
+              _navItem(0, Icons.home_outlined, Icons.home_rounded, L.tr('mob_home')),
+              _navItem(1, Icons.date_range_outlined, Icons.date_range_rounded, L.tr('my_attendance_full')),
               _centerNavItem(2),
-              _navItem(3, Icons.description_outlined, Icons.description_rounded, 'الطلبات'),
-              _navItem(4, Icons.more_horiz_rounded, Icons.more_horiz_rounded, 'المزيد'),
+              _navItem(3, Icons.description_outlined, Icons.description_rounded, L.tr('mob_requests')),
+              _navItem(4, Icons.more_horiz_rounded, Icons.more_horiz_rounded, L.tr('mob_more')),
             ],
           ),
         ),
@@ -197,7 +198,7 @@ class _EmployeeAppState extends State<EmployeeApp> {
             ),
             const SizedBox(height: 2),
             Text(
-              'طلب جديد',
+              L.tr('new_request_full'),
               style: GoogleFonts.tajawal(
                 fontSize: 10,
                 fontWeight: on ? FontWeight.w700 : FontWeight.w500,

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/shimmer.dart';
 import '../../services/attendance_service.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpAttendancePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -12,8 +13,8 @@ class EmpAttendancePage extends StatefulWidget {
 }
 
 class _EmpAttendancePageState extends State<EmpAttendancePage> {
-  final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  final _dayNames = const ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  final _months = L.months;
+  final _dayNames = L.dayNamesFull;
 
   late int _selMonth;
   late int _selYear;
@@ -50,16 +51,16 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     }
     if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   String _fmtWorkedTime(int totalMinutes) {
     if (totalMinutes <= 0) return '—';
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
-    if (h > 0 && m > 0) return '${h} س ${m} د';
-    if (h > 0) return '${h} ساعة';
-    return '${m} دقيقة';
+    if (h > 0 && m > 0) return L.tr('h_m_format', args: {'h': h.toString(), 'm': m.toString()});
+    if (h > 0) return L.tr('h_format', args: {'h': h.toString()});
+    return L.tr('m_format', args: {'m': m.toString()});
   }
 
   Future<void> _refresh() async {
@@ -126,7 +127,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('سجل حضوري', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('my_attendance_full'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         centerTitle: true, backgroundColor: C.white, surfaceTintColor: C.white, elevation: 0,
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
       ),
@@ -142,7 +143,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               onTap: () async {
                 final years = List.generate(5, (i) => now.year - i);
                 await showDialog(context: context, builder: (ctx) => SimpleDialog(
-                  title: Text('اختر السنة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+                  title: Text(L.tr('select_year'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.center),
                   children: years.map((y) => SimpleDialogOption(
                     onPressed: () { setState(() => _selYear = y); Navigator.pop(ctx); },
                     child: Center(child: Text('$y', style: GoogleFonts.ibmPlexMono(fontSize: 18, fontWeight: _selYear == y ? FontWeight.w800 : FontWeight.w400, color: _selYear == y ? C.pri : C.text))),
@@ -151,7 +152,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               },
               child: Column(children: [
                 Text('${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
-                Text('اضغط لتغيير السنة', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+                Text(L.tr('tap_change_year'), style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
               ]),
             ),
             const Spacer(),
@@ -202,18 +203,18 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                 padding: const EdgeInsets.all(12),
                 child: Column(children: [
                   Row(children: [
-                    _stat('مكتمل', '$complete', C.green),
+                    _stat(L.tr('complete'), '$complete', C.green),
                     const SizedBox(width: 8),
-                    _stat('حاضر', '$present', C.pri),
+                    _stat(L.tr('present'), '$present', C.pri),
                     const SizedBox(width: 8),
-                    _stat('ساعات العمل', _fmtWorkedTime(totalMonthMinutes), C.orange),
+                    _stat(L.tr('work_hours'), _fmtWorkedTime(totalMonthMinutes), C.orange),
                   ]),
                   if (totalLateDays > 0 || totalEarlyDays > 0) ...[
                     const SizedBox(height: 8),
                     Row(children: [
-                      if (totalLateDays > 0) _stat('تأخر ($totalLateDays يوم)', _fmtWorkedTime(totalLateMinutes), C.red),
+                      if (totalLateDays > 0) _stat(L.tr('late_label', args: {'days': totalLateDays.toString()}), _fmtWorkedTime(totalLateMinutes), C.red),
                       if (totalLateDays > 0 && totalEarlyDays > 0) const SizedBox(width: 8),
-                      if (totalEarlyDays > 0) _stat('خروج مبكر ($totalEarlyDays يوم)', _fmtWorkedTime(totalEarlyMinutes), C.orange),
+                      if (totalEarlyDays > 0) _stat(L.tr('early_leave_label', args: {'days': totalEarlyDays.toString()}), _fmtWorkedTime(totalEarlyMinutes), C.orange),
                     ]),
                   ],
                 ]),
@@ -229,8 +230,8 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                 Padding(padding: const EdgeInsets.all(40), child: Column(children: [
                   Icon(Icons.calendar_today_outlined, size: 48, color: C.hint),
                   const SizedBox(height: 12),
-                  Text('لا توجد بيانات حضور في ${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
-                  Text('سجّل حضورك من الصفحة الرئيسية', style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
+                  Text(L.tr('no_attendance_data', args: {'month': _months[_selMonth - 1], 'year': _selYear.toString()}), style: GoogleFonts.tajawal(fontSize: 14, color: C.muted)),
+                  Text(L.tr('check_in_from_home'), style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
                 ]))
               else
                 ...records.map((r) => _buildDayCard(r)),
@@ -288,14 +289,14 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
-                    child: Text(hasOut ? 'مكتمل' : 'حاضر', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
+                    child: Text(hasOut ? L.tr('complete') : L.tr('present'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor)),
                   ),
                   if (isLateFlag == 1) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(color: C.red.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
-                      child: Text('متأخر $lateMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.red)),
+                      child: Text(L.tr('late_n_min', args: {'n': lateMin.toString()}), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.red)),
                     ),
                   ],
                   if (isEarlyFlag == 1) ...[
@@ -303,12 +304,12 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(color: C.orange.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusSm)),
-                      child: Text('مبكر $earlyMin د', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.orange)),
+                      child: Text(L.tr('early_n_min', args: {'n': earlyMin.toString()}), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: C.orange)),
                     ),
                   ],
                 ]),
                 const SizedBox(height: 4),
-                Text('خروج: ${_fmtTime(lastOut)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.muted)),
+                Text(L.tr('checkout_label', args: {'time': _fmtTime(lastOut)}), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: C.muted)),
                 if (totalMinutes > 0) ...[
                   const SizedBox(height: 2),
                   Text(_fmtWorkedTime(totalMinutes), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: C.green)),
@@ -318,10 +319,10 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
               // Right side: day name, first check-in
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text('$dayName $day ${_months[month - 1]}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
-                Text('حضور: ${_fmtTime(firstIn)}', style: GoogleFonts.ibmPlexMono(fontSize: 11, color: C.sub)),
+                Text(L.tr('checkin_label', args: {'time': _fmtTime(firstIn)}), style: GoogleFonts.ibmPlexMono(fontSize: 11, color: C.sub)),
                 if (sessions > 1) ...[
                   const SizedBox(height: 2),
-                  Text('$sessions فترات عمل', style: GoogleFonts.tajawal(fontSize: 9, color: C.pri)),
+                  Text(L.tr('n_work_sessions', args: {'n': sessions.toString()}), style: GoogleFonts.tajawal(fontSize: 9, color: C.pri)),
                 ],
               ]),
               const SizedBox(width: 10),
@@ -358,7 +359,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
     if (punches == null || punches.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(20),
-        child: Center(child: Text('لا توجد تفاصيل', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
+        child: Center(child: Text(L.tr('no_details'), style: GoogleFonts.tajawal(fontSize: 12, color: C.muted))),
       );
     }
 
@@ -370,9 +371,9 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
-          Text('${punches.length} بصمة', style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
+          Text(L.tr('n_punches', args: {'n': punches.length.toString()}), style: GoogleFonts.tajawal(fontSize: 10, color: C.muted)),
           const Spacer(),
-          Text('تفاصيل البصمات', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: C.text)),
+          Text(L.tr('face_punch_details'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: C.text)),
           const SizedBox(width: 6),
           const Icon(Icons.fingerprint, size: 16, color: C.pri),
         ]),
@@ -384,7 +385,7 @@ class _EmpAttendancePageState extends State<EmpAttendancePage> {
           final isCheckIn = punch['type'] == 'checkIn';
           final color = isCheckIn ? C.pri : C.red;
           final icon = isCheckIn ? Icons.login_rounded : Icons.logout_rounded;
-          final label = isCheckIn ? 'تسجيل دخول' : 'تسجيل خروج';
+          final label = isCheckIn ? L.tr('check_in_action') : L.tr('check_out_action');
           final time = punch['localTime'] ?? punch['timestamp'];
           final isLast = i == punches.length - 1;
 

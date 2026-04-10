@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
 import 'device_info_service.dart';
+import '../l10n/app_locale.dart';
 
 class AuthService {
   // ─── Login ───
@@ -30,7 +31,7 @@ class AuthService {
       }
     }
 
-    final error = result['error'] ?? result['message'] ?? 'خطأ في تسجيل الدخول';
+    final error = result['error'] ?? result['message'] ?? L.tr('err_login');
     throw Exception(error);
   }
 
@@ -53,7 +54,7 @@ class AuthService {
     if (result['success'] == true) {
       return result['user'] as Map<String, dynamic>?;
     }
-    throw Exception(result['error'] ?? 'فشل إنشاء الحساب');
+    throw Exception(result['error'] ?? L.tr('err_create_account'));
   }
 
   // ─── Logout ───

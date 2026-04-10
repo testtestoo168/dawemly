@@ -1,4 +1,5 @@
 import 'api_service.dart';
+import '../l10n/app_locale.dart';
 
 class RequestsService {
   // ─── إنشاء طلب إجازة ───
@@ -24,7 +25,7 @@ class RequestsService {
     });
     return result['success'] == true
         ? {'success': true, 'id': result['id'], 'days': days}
-        : {'success': false, 'error': result['error'] ?? 'فشل إرسال الطلب'};
+        : {'success': false, 'error': result['error'] ?? L.tr('request_failed')};
   }
 
   // ─── إنشاء طلب إذن ───
@@ -57,7 +58,7 @@ class RequestsService {
     });
     return result['success'] == true
         ? {'success': true, 'id': result['id'], 'hours': hours}
-        : {'success': false, 'error': result['error'] ?? 'فشل إرسال الطلب'};
+        : {'success': false, 'error': result['error'] ?? L.tr('request_failed')};
   }
 
   // ─── طلبات الموظف ───

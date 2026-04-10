@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
+import '../../l10n/app_locale.dart';
 
 class PermissionRequestPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -13,7 +14,7 @@ class PermissionRequestPage extends StatefulWidget {
 
 class _PermissionRequestPageState extends State<PermissionRequestPage> {
   final _svc = RequestsService();
-  String _permType = 'انصراف مبكر';
+  String _permType = L.tr('early_departure');
   DateTime _date = DateTime.now();
   TimeOfDay? _fromTime;
   TimeOfDay? _toTime;
@@ -21,7 +22,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
   bool _loading = false;
   String? _error;
 
-  final _types = ['انصراف مبكر', 'تأخير عن الحضور'];
+  final _types = [L.tr('early_departure'), L.tr('attendance_lateness')];
 
   Future<void> _pickTime(bool isFrom) async {
     final picked = await showTimePicker(
@@ -53,27 +54,27 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
   String _fmtTime(TimeOfDay t) {
     final h = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
     final m = t.minute.toString().padLeft(2, '0');
-    final p = t.period == DayPeriod.am ? 'ص' : 'م';
+    final p = t.period == DayPeriod.am ? L.tr('am') : L.tr('pm');
     return '${h.toString().padLeft(2, '0')}:$m $p';
   }
 
   void _submit() async {
     if (_fromTime == null || _toTime == null) {
-      setState(() => _error = 'يرجى تحديد وقت البداية والنهاية');
+      setState(() => _error = L.tr('select_start_end_time'));
       return;
     }
     final fromMin = _fromTime!.hour * 60 + _fromTime!.minute;
     final toMin = _toTime!.hour * 60 + _toTime!.minute;
     if (toMin <= fromMin) {
-      setState(() => _error = 'وقت النهاية يجب أن يكون بعد وقت البداية');
+      setState(() => _error = L.tr('end_after_start_time'));
       return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'يرجى كتابة السبب');
+      setState(() => _error = L.tr('reason_required'));
       return;
     }
     if (_reasonCtrl.text.trim().length > 500) {
-      setState(() => _error = 'السبب طويل جداً — الحد الأقصى 500 حرف');
+      setState(() => _error = L.tr('reason_too_long'));
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -96,14 +97,14 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
         final hours = (result['hours'] as num?)?.toStringAsFixed(1) ?? '0';
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('تم إرسال طلب الإذن بنجاح ($hours ساعة)', style: GoogleFonts.tajawal()),
+          content: Text(L.tr('permission_sent', args: {'hours': hours.toString()}), style: GoogleFonts.tajawal()),
           backgroundColor: C.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
     } catch (e) {
-      setState(() { _error = 'حدث خطأ في إرسال الطلب'; _loading = false; });
+      setState(() { _error = L.tr('request_error'); _loading = false; });
     }
   }
 
@@ -115,7 +116,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
     final dateFmt = DateFormat('dd MMM yyyy', 'ar');
     return Scaffold(
       appBar: AppBar(
-        title: Text('طلب إذن', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('permission_request'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         centerTitle: true,
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -127,7 +128,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           // ─── نوع الإذن ───
-          _sectionLabel('نوع الإذن'),
+          _sectionLabel(L.tr('permission_type')),
           Row(children: _types.map((t) => Expanded(child: Padding(
             padding: EdgeInsets.only(left: t == _types.last ? 0 : 8),
             child: _typeCard(t, _permType == t, () => setState(() => _permType = t)),
@@ -135,7 +136,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
           const SizedBox(height: 20),
 
           // ─── التاريخ ───
-          _sectionLabel('التاريخ'),
+          _sectionLabel(L.tr('date')),
           InkWell(
             onTap: _pickDate,
             borderRadius: BorderRadius.circular(DS.radiusMd),
@@ -153,23 +154,23 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
           const SizedBox(height: 20),
 
           // ─── الوقت ───
-          _sectionLabel('الوقت'),
+          _sectionLabel(L.tr('time')),
           Row(children: [
-            Expanded(child: _timeCard('إلى', _toTime, () => _pickTime(false))),
+            Expanded(child: _timeCard(L.tr('to'), _toTime, () => _pickTime(false))),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Icon(Icons.arrow_back, size: 16, color: C.hint)),
-            Expanded(child: _timeCard('من', _fromTime, () => _pickTime(true))),
+            Expanded(child: _timeCard(L.tr('from'), _fromTime, () => _pickTime(true))),
           ]),
           const SizedBox(height: 20),
 
           // ─── السبب ───
-          _sectionLabel('السبب'),
+          _sectionLabel(L.tr('reason')),
           TextField(
             controller: _reasonCtrl,
             maxLines: 3,
             textAlign: TextAlign.right,
             style: GoogleFonts.tajawal(fontSize: 14, color: C.text),
             decoration: InputDecoration(
-              hintText: 'اكتب سبب الإذن...',
+              hintText: L.tr('write_permission_reason'),
               hintStyle: GoogleFonts.tajawal(color: C.hint),
               filled: true, fillColor: C.bg,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
@@ -197,7 +198,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
                   : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       const Icon(Icons.send, size: 18),
                       const SizedBox(width: 8),
-                      Text('إرسال الطلب', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text(L.tr('send_request'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
                     ]),
             ),
           ),
@@ -222,7 +223,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
         border: Border.all(color: C.border),
       ),
       child: Column(children: [
-        Icon(label.contains('انصراف') ? Icons.logout : Icons.access_time, size: 22, color: selected ? C.orange : C.muted),
+        Icon(label.contains(L.tr('departure')) ? Icons.logout : Icons.access_time, size: 22, color: selected ? C.orange : C.muted),
         const SizedBox(height: 6),
         Text(label, textAlign: TextAlign.center, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? C.orange : C.sub)),
       ]),
@@ -240,7 +241,7 @@ class _PermissionRequestPageState extends State<PermissionRequestPage> {
         const SizedBox(height: 6),
         Icon(Icons.access_time, size: 18, color: time != null ? C.orange : C.hint),
         const SizedBox(height: 4),
-        Text(time != null ? _fmtTime(time) : 'اختر الوقت', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: time != null ? C.text : C.hint)),
+        Text(time != null ? _fmtTime(time) : L.tr('select_time'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: time != null ? C.text : C.hint)),
       ]),
     ),
   );

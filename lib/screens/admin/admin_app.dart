@@ -21,6 +21,7 @@ import 'admin_audit.dart';
 import 'admin_settings.dart';
 import 'admin_salary.dart';
 import 'admin_stat_detail.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminApp extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -49,28 +50,28 @@ class _AdminAppState extends State<AdminApp> {
   // Sidebar sections — filtered by org features
   List<_NavSection> get _navSections {
     return [
-      const _NavSection('الرئيسية', [
-        _NI('dashboard', 'لوحة التحكم', Icons.speed_rounded),
+      _NavSection(L.tr('mob_home'), [
+        _NI('dashboard', L.tr('nav_dashboard'), Icons.speed_rounded),
       ]),
-      const _NavSection('الموظفين', [
-        _NI('employees', 'الموظفين', Icons.people_outline_rounded),
-        _NI('usermgmt', 'إدارة المستخدمين', Icons.person_add_alt_1_outlined),
-        _NI('roles', 'الصلاحيات', Icons.vpn_key_outlined),
+      _NavSection(L.tr('nav_employees'), [
+        _NI('employees', L.tr('nav_employees'), Icons.people_outline_rounded),
+        _NI('usermgmt', L.tr('nav_user_mgmt'), Icons.person_add_alt_1_outlined),
+        _NI('roles', L.tr('nav_roles'), Icons.vpn_key_outlined),
       ]),
-      _NavSection('الحضور والانصراف', [
-        if (_feat('allow_verification')) const _NI('verify', 'إثبات الحالة', Icons.wifi_tethering_outlined),
-        if (_feat('allow_overtime')) const _NI('overtime', 'الأوفرتايم', Icons.more_time_outlined),
-        if (_feat('allow_schedules')) const _NI('schedules', 'الجداول والإجازات', Icons.calendar_month_outlined),
-        const _NI('requests', 'الطلبات', Icons.assignment_outlined),
-        if (_feat('allow_salary_calc')) const _NI('salary', 'الرواتب', Icons.payments_outlined),
+      _NavSection(L.tr('nav_attendance_section'), [
+        if (_feat('allow_verification')) _NI('verify', L.tr('nav_verify'), Icons.wifi_tethering_outlined),
+        if (_feat('allow_overtime')) _NI('overtime', L.tr('overtime'), Icons.more_time_outlined),
+        if (_feat('allow_schedules')) _NI('schedules', L.tr('nav_schedules'), Icons.calendar_month_outlined),
+        _NI('requests', L.tr('mob_requests'), Icons.assignment_outlined),
+        if (_feat('allow_salary_calc')) _NI('salary', L.tr('nav_salary'), Icons.payments_outlined),
       ]),
-      const _NavSection('التقارير والمراقبة', [
-        _NI('reports', 'التقارير', Icons.bar_chart_outlined),
-        _NI('notifications', 'الإشعارات', Icons.notifications_outlined),
-        _NI('audit', 'سجل التدقيق', Icons.history_outlined),
+      _NavSection(L.tr('nav_reports_section'), [
+        _NI('reports', L.tr('reports'), Icons.bar_chart_outlined),
+        _NI('notifications', L.tr('mob_notifications'), Icons.notifications_outlined),
+        _NI('audit', L.tr('audit_log'), Icons.history_outlined),
       ]),
-      const _NavSection('النظام', [
-        _NI('settings', 'الإعدادات', Icons.settings_outlined),
+      _NavSection(L.tr('nav_system_section'), [
+        _NI('settings', L.tr('settings'), Icons.settings_outlined),
       ]),
     ].where((s) => s.items.isNotEmpty).toList();
   }
@@ -93,7 +94,7 @@ class _AdminAppState extends State<AdminApp> {
 
   bool _feat(String key) => ApiService.hasFeature(key);
   @override void dispose() { _timer?.cancel(); super.dispose(); }
-  void _tick() { final n = ServerTimeService().now; final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}'); }
+  void _tick() { final n = ServerTimeService().now; final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour); if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? L.tr('pm') : L.tr('am')}'); }
 
   Widget _getPage(String k) {
     switch (k) {
@@ -121,7 +122,7 @@ class _AdminAppState extends State<AdminApp> {
   //  📱 MOBILE — Redesigned with المزيد page
   // ════════════════════════════════════════════
   Widget _mobile() {
-    final av = _getInitials(widget.user['name'] ?? 'مد');
+    final av = _getInitials(widget.user['name'] ?? L.tr('app_name'));
     return Scaffold(
       backgroundColor: W.bg,
       appBar: PreferredSize(preferredSize: const Size.fromHeight(56), child: Container(
@@ -151,12 +152,12 @@ class _AdminAppState extends State<AdminApp> {
 
   String _getMobileTitle() {
     switch (_mTab) {
-      case 0: return 'الرئيسية';
-      case 1: return 'الحضور';
-      case 2: return 'الطلبات';
-      case 3: return 'الإشعارات';
-      case 4: return 'المزيد';
-      default: return 'الرئيسية';
+      case 0: return L.tr('mob_home');
+      case 1: return L.tr('mob_attendance');
+      case 2: return L.tr('mob_requests');
+      case 3: return L.tr('mob_notifications');
+      case 4: return L.tr('mob_more');
+      default: return L.tr('mob_home');
     }
   }
 
@@ -167,7 +168,7 @@ class _AdminAppState extends State<AdminApp> {
       children: [
         const SizedBox(height: 8),
         // ─── المنشأة الحالية ───
-        _moreSectionTitle('المنشأة الحالية'),
+        _moreSectionTitle(L.tr('mob_current_org')),
         const SizedBox(height: 8),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -182,7 +183,7 @@ class _AdminAppState extends State<AdminApp> {
                   child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
                 ),
                 const SizedBox(width: 12),
-                Flexible(child: Text('داوِملي — نظام الحضور', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)),
+                Flexible(child: Text(L.tr('dawemly_attendance'), style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)),
               ],
             ),
           ),
@@ -191,45 +192,45 @@ class _AdminAppState extends State<AdminApp> {
         const SizedBox(height: 24),
 
         // ─── الموظفين ───
-        _moreSectionTitle('الموظفين'),
+        _moreSectionTitle(L.tr('nav_employees')),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.people_outline_rounded, W.pri, W.priLight, 'الموظفين', () => _openMobilePage('employees')),
-          _MoreMenuItem(Icons.person_add_alt_1_outlined, W.green, W.greenL, 'إدارة المستخدمين', () => _openMobilePage('usermgmt')),
-          _MoreMenuItem(Icons.vpn_key_outlined, W.orange, W.orangeL, 'الصلاحيات', () => _openMobilePage('roles')),
+          _MoreMenuItem(Icons.people_outline_rounded, W.pri, W.priLight, L.tr('nav_employees'), () => _openMobilePage('employees')),
+          _MoreMenuItem(Icons.person_add_alt_1_outlined, W.green, W.greenL, L.tr('nav_user_mgmt'), () => _openMobilePage('usermgmt')),
+          _MoreMenuItem(Icons.vpn_key_outlined, W.orange, W.orangeL, L.tr('nav_roles'), () => _openMobilePage('roles')),
         ]),
 
         const SizedBox(height: 24),
 
         // ─── الحضور والانصراف ───
-        _moreSectionTitle('الحضور والانصراف'),
+        _moreSectionTitle(L.tr('nav_attendance_section')),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          if (_feat('allow_verification')) _MoreMenuItem(Icons.wifi_tethering_outlined, W.teal, Color(0xFFE0F2FE), 'إثبات الحالة', () => _openMobilePage('verify')),
-          if (_feat('allow_overtime')) _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, 'الأوفرتايم', () => _openMobilePage('overtime')),
-          if (_feat('allow_schedules')) _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, 'الجداول والإجازات', () => _openMobilePage('schedules')),
-          _MoreMenuItem(Icons.assignment_outlined, W.orange, W.orangeL, 'الطلبات', () => _openMobilePage('requests')),
-          if (_feat('allow_salary_calc')) _MoreMenuItem(Icons.payments_outlined, W.green, W.greenL, 'الرواتب', () => _openMobilePage('salary')),
+          if (_feat('allow_verification')) _MoreMenuItem(Icons.wifi_tethering_outlined, W.teal, Color(0xFFE0F2FE), L.tr('nav_verify'), () => _openMobilePage('verify')),
+          if (_feat('allow_overtime')) _MoreMenuItem(Icons.more_time_outlined, W.purple, W.purpleL, L.tr('overtime'), () => _openMobilePage('overtime')),
+          if (_feat('allow_schedules')) _MoreMenuItem(Icons.calendar_month_outlined, W.pri, W.priLight, L.tr('nav_schedules'), () => _openMobilePage('schedules')),
+          _MoreMenuItem(Icons.assignment_outlined, W.orange, W.orangeL, L.tr('mob_requests'), () => _openMobilePage('requests')),
+          if (_feat('allow_salary_calc')) _MoreMenuItem(Icons.payments_outlined, W.green, W.greenL, L.tr('nav_salary'), () => _openMobilePage('salary')),
         ]),
 
         const SizedBox(height: 24),
 
         // ─── التقارير والمراقبة ───
-        _moreSectionTitle('التقارير والمراقبة'),
+        _moreSectionTitle(L.tr('nav_reports_section')),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.bar_chart_outlined, W.green, W.greenL, 'التقارير', () => _openMobilePage('reports')),
-          _MoreMenuItem(Icons.notifications_outlined, W.teal, Color(0xFFE0F2FE), 'الإشعارات', () => _openMobilePage('notifications')),
-          _MoreMenuItem(Icons.history_outlined, W.purple, W.purpleL, 'سجل التدقيق', () => _openMobilePage('audit')),
+          _MoreMenuItem(Icons.bar_chart_outlined, W.green, W.greenL, L.tr('reports'), () => _openMobilePage('reports')),
+          _MoreMenuItem(Icons.notifications_outlined, W.teal, Color(0xFFE0F2FE), L.tr('mob_notifications'), () => _openMobilePage('notifications')),
+          _MoreMenuItem(Icons.history_outlined, W.purple, W.purpleL, L.tr('audit_log'), () => _openMobilePage('audit')),
         ]),
 
         const SizedBox(height: 24),
 
         // ─── النظام ───
-        _moreSectionTitle('النظام'),
+        _moreSectionTitle(L.tr('nav_system_section')),
         const SizedBox(height: 8),
         _moreMenuGroup([
-          _MoreMenuItem(Icons.settings_outlined, W.sub, W.bg, 'الإعدادات', () => _openMobilePage('settings')),
+          _MoreMenuItem(Icons.settings_outlined, W.sub, W.bg, L.tr('settings'), () => _openMobilePage('settings')),
         ]),
 
         const SizedBox(height: 16),
@@ -242,7 +243,7 @@ class _AdminAppState extends State<AdminApp> {
             child: OutlinedButton.icon(
               onPressed: () => _showLogoutDialog(),
               icon: Icon(Icons.logout_rounded, size: 18, color: W.red),
-              label: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: W.red)),
+              label: Text(L.tr('logout'), style: _tj(14, weight: FontWeight.w700, color: W.red)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: W.redBd),
                 backgroundColor: W.redL,
@@ -342,13 +343,13 @@ class _AdminAppState extends State<AdminApp> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
-        title: Text('تسجيل الخروج', style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
-        content: Text('هل تريد تسجيل الخروج من حسابك؟', style: _tj(14), textAlign: TextAlign.right),
+        title: Text(L.tr('logout'), style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
+        content: Text(L.tr('logout_confirm_msg'), style: _tj(14), textAlign: TextAlign.right),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: _tj(14, color: W.sub))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: _tj(14, color: W.sub))),
           TextButton(
             onPressed: () async { Navigator.pop(ctx); await AuthService().logout(); widget.onLogout(); },
-            child: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: W.red)),
+            child: Text(L.tr('logout'), style: _tj(14, weight: FontWeight.w700, color: W.red)),
           ),
         ],
       ),
@@ -358,11 +359,11 @@ class _AdminAppState extends State<AdminApp> {
   // ─── Mobile bottom nav — redesigned like رصد ───
   Widget _buildMobileBottomNav() {
     final items = [
-      {'l': 'الرئيسية', 'icon': Icons.home_outlined, 'active': Icons.home_rounded},
-      {'l': 'الحضور', 'icon': Icons.fingerprint_outlined, 'active': Icons.fingerprint_rounded},
-      {'l': 'الطلبات', 'icon': Icons.assignment_outlined, 'active': Icons.assignment_outlined},
-      {'l': 'الإشعارات', 'icon': Icons.notifications_none_rounded, 'active': Icons.notifications_outlined},
-      {'l': 'المزيد', 'icon': Icons.more_horiz_rounded, 'active': Icons.more_horiz_rounded},
+      {'l': L.tr('mob_home'), 'icon': Icons.home_outlined, 'active': Icons.home_rounded},
+      {'l': L.tr('mob_attendance'), 'icon': Icons.fingerprint_outlined, 'active': Icons.fingerprint_rounded},
+      {'l': L.tr('mob_requests'), 'icon': Icons.assignment_outlined, 'active': Icons.assignment_outlined},
+      {'l': L.tr('mob_notifications'), 'icon': Icons.notifications_none_rounded, 'active': Icons.notifications_outlined},
+      {'l': L.tr('mob_more'), 'icon': Icons.more_horiz_rounded, 'active': Icons.more_horiz_rounded},
     ];
     return Container(
       decoration: BoxDecoration(
@@ -429,7 +430,7 @@ class _AdminAppState extends State<AdminApp> {
           _mHomeUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
           _mHomeAtt = attRes;
           final allReqs = (reqRes['requests'] as List? ?? []).cast<Map<String, dynamic>>();
-          _mHomeRequests = allReqs.where((r) => r['status'] == 'تحت الإجراء').toList();
+          _mHomeRequests = allReqs.where((r) => r['status'] == L.tr('pending')).toList();
           _mHomeLoading = false;
         });
       }
@@ -462,14 +463,14 @@ class _AdminAppState extends State<AdminApp> {
           decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0F4199), W.pri]), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('مدارس المروج النموذجية', style: _tj(13, weight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
+            Text(L.tr('school_name'), style: _tj(13, weight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
             const SizedBox(height: 4),
-            Text('نظرة عامة على الحضور', style: _tj(11, color: Colors.white.withOpacity(0.4))),
+            Text(L.tr('attendance_overview'), style: _tj(11, color: Colors.white.withOpacity(0.4))),
             const SizedBox(height: 18),
             Row(children: [
-              Expanded(child: _mStatTap('$absent', 'خروج', const Color(0xFFFF6B6B), () => _openStatDetail('absent', 'الخروج', const Color(0xFFFF6B6B)))),
+              Expanded(child: _mStatTap('$absent', L.tr('exit_label'), const Color(0xFFFF6B6B), () => _openStatDetail('absent', L.tr('check_out_col'), const Color(0xFFFF6B6B)))),
               const SizedBox(width: 10),
-              Expanded(child: _mStatTap('$presentOnly', 'حاضر', const Color(0xFF51CF66), () => _openStatDetail('present', 'الحاضرين', const Color(0xFF51CF66)))),
+              Expanded(child: _mStatTap('$presentOnly', L.tr('present'), const Color(0xFF51CF66), () => _openStatDetail('present', L.tr('present_list'), const Color(0xFF51CF66)))),
             ]),
           ]),
         ),
@@ -481,17 +482,17 @@ class _AdminAppState extends State<AdminApp> {
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             decoration: DS.cardDecoration(),
             child: Row(children: [
-              _quickBtn(Icons.wifi_tethering_outlined, 'إثبات\nالحالة', () => _openMobilePage('verify')),
-              _quickBtn(Icons.assignment_outlined, 'الطلبات', () => setState(() => _mTab = 2)),
-              _quickBtn(Icons.fingerprint_rounded, 'الحضور', () => setState(() => _mTab = 1)),
-              _quickBtn(Icons.bar_chart_outlined, 'التقارير', () => _openMobilePage('reports')),
+              _quickBtn(Icons.wifi_tethering_outlined, L.tr('quick_verify'), () => _openMobilePage('verify')),
+              _quickBtn(Icons.assignment_outlined, L.tr('mob_requests'), () => setState(() => _mTab = 2)),
+              _quickBtn(Icons.fingerprint_rounded, L.tr('mob_attendance'), () => setState(() => _mTab = 1)),
+              _quickBtn(Icons.bar_chart_outlined, L.tr('reports'), () => _openMobilePage('reports')),
             ]),
           ),
         ),
         const SizedBox(height: 8),
 
         // ═══ SECTION: الطلبات المعلقة ═══
-        _sectionHeader('الطلبات المعلقة', onTap: () => setState(() => _mTab = 2)),
+        _sectionHeader(L.tr('pending_requests_action'), onTap: () => setState(() => _mTab = 2)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -502,7 +503,7 @@ class _AdminAppState extends State<AdminApp> {
                 ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
                     Icon(Icons.check_circle_outline_rounded, size: 40, color: W.green.withOpacity(0.5)),
                     const SizedBox(height: 8),
-                    Text('لا توجد طلبات معلقة', style: _tj(13, color: W.muted)),
+                    Text(L.tr('no_pending_requests'), style: _tj(13, color: W.muted)),
                   ])))
                 : Column(children: _mHomeRequests.take(5).map((r) {
                     final isFirst = r == _mHomeRequests.first;
@@ -511,7 +512,7 @@ class _AdminAppState extends State<AdminApp> {
                       decoration: BoxDecoration(border: isFirst ? null : const Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
                       child: Row(children: [
                         Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(20)),
-                          child: Text('معلق', style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
+                          child: Text(L.tr('pending'), style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
@@ -519,7 +520,7 @@ class _AdminAppState extends State<AdminApp> {
                         ])),
                         const SizedBox(width: 10),
                         Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                          child: Center(child: Text(_getInitials(r['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
+                          child: Center(child: Text(_getInitials(r['name'] ?? L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
                       ]),
                     );
                   }).toList()),
@@ -528,7 +529,7 @@ class _AdminAppState extends State<AdminApp> {
         const SizedBox(height: 8),
 
         // ═══ SECTION: حضور الموظفين ═══
-        _sectionHeader('حضور الموظفين', onTap: () => setState(() => _mTab = 1)),
+        _sectionHeader(L.tr('employee_attendance'), onTap: () => setState(() => _mTab = 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -539,7 +540,7 @@ class _AdminAppState extends State<AdminApp> {
                 ? Padding(padding: const EdgeInsets.all(24), child: Center(child: Column(children: [
                     Icon(Icons.hourglass_empty_rounded, size: 40, color: W.muted.withOpacity(0.5)),
                     const SizedBox(height: 8),
-                    Text('لا يوجد موظفون', style: _tj(13, color: W.muted)),
+                    Text(L.tr('no_employees_msg'), style: _tj(13, color: W.muted)),
                   ])))
                 : Column(children: () {
                     // Build merged list: all non-admin employees with their attendance status
@@ -578,7 +579,7 @@ class _AdminAppState extends State<AdminApp> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              isPresent ? 'حاضر' : 'خروج',
+                              isPresent ? L.tr('present') : L.tr('exit_label'),
                               style: _tj(10, weight: FontWeight.w600, color: isPresent ? const Color(0xFF166534) : const Color(0xFF991B1B)),
                             ),
                           ),
@@ -589,7 +590,7 @@ class _AdminAppState extends State<AdminApp> {
                           ])),
                           const SizedBox(width: 10),
                           Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                            child: Center(child: Text(_getInitials(emp['name'] ?? 'م'), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
+                            child: Center(child: Text(_getInitials(emp['name'] ?? L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
                         ]),
                       );
                     }).toList();
@@ -619,7 +620,7 @@ class _AdminAppState extends State<AdminApp> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(children: [
-        if (onTap != null) GestureDetector(onTap: onTap, child: Text('عرض الكل', style: _tj(13, weight: FontWeight.w700, color: W.pri))),
+        if (onTap != null) GestureDetector(onTap: onTap, child: Text(L.tr('show_all'), style: _tj(13, weight: FontWeight.w700, color: W.pri))),
         const Spacer(),
         Text(title, style: _tj(16, weight: FontWeight.w700, color: W.text)),
       ]),
@@ -640,7 +641,7 @@ class _AdminAppState extends State<AdminApp> {
   }
   String _getInitials(String name) {
     if (name.length >= 2) return name.substring(0, 2);
-    return name.isNotEmpty ? name[0] : 'م';
+    return name.isNotEmpty ? name[0] : L.tr('pm');
   }
 
   // ════════════════════════════════════════════
@@ -665,8 +666,8 @@ class _AdminAppState extends State<AdminApp> {
                 child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
               ),
               if (!_sc) ...[const SizedBox(width: 12), Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text('داوِملي', style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
-                Text('نظام إدارة الحضور والانصراف', style: _tj(10, color: Colors.white.withOpacity(0.5))),
+                Text(L.tr('app_name'), style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
+                Text(L.tr('app_subtitle'), style: _tj(10, color: Colors.white.withOpacity(0.5))),
               ]))],
             ]),
           ),
@@ -685,7 +686,7 @@ class _AdminAppState extends State<AdminApp> {
             decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1)))),
             padding: const EdgeInsets.all(10),
             child: Column(children: [
-              _sidebarActionLink(Icons.logout_rounded, 'تسجيل خروج', const Color(0xFFFF6B6B), () async { await AuthService().logout(); widget.onLogout(); }),
+              _sidebarActionLink(Icons.logout_rounded, L.tr('check_out_action'), const Color(0xFFFF6B6B), () async { await AuthService().logout(); widget.onLogout(); }),
               const SizedBox(height: 8),
               if (!_sc) Container(
                 padding: const EdgeInsets.all(12),
@@ -694,8 +695,8 @@ class _AdminAppState extends State<AdminApp> {
                     child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.user['name'] ?? 'المستخدم', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
-                    Text('مدير النظام', style: _tj(11, color: Colors.white.withOpacity(0.5))),
+                    Text(widget.user['name'] ?? L.tr('name'), style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
+                    Text(L.tr('system_admin'), style: _tj(11, color: Colors.white.withOpacity(0.5))),
                   ])),
                 ]),
               ),
@@ -735,7 +736,7 @@ class _AdminAppState extends State<AdminApp> {
               child: Row(children: [
                 const Icon(Icons.search_rounded, size: 16, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 8),
-                Text('بحث...', style: _tj(14, color: const Color(0xFF9CA3AF))),
+                Text(L.tr('search'), style: _tj(14, color: const Color(0xFF9CA3AF))),
               ]),
             ),
             const SizedBox(width: 16),
@@ -757,7 +758,7 @@ class _AdminAppState extends State<AdminApp> {
               child: Row(children: [
                 const Icon(Icons.store_rounded, size: 14, color: Color(0xFF1D4ED8)),
                 const SizedBox(width: 6),
-                Text('الفرع الرئيسي', style: _tj(13, weight: FontWeight.w600, color: const Color(0xFF1D4ED8))),
+                Text(L.tr('main_branch'), style: _tj(13, weight: FontWeight.w600, color: const Color(0xFF1D4ED8))),
                 const SizedBox(width: 4),
                 const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF1D4ED8)),
               ]),

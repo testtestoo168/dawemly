@@ -4,6 +4,7 @@ import 'package:geolocator_android/geolocator_android.dart';
 import 'package:geolocator_apple/geolocator_apple.dart';
 import 'package:local_auth/local_auth.dart';
 import 'api_service.dart';
+import '../l10n/app_locale.dart';
 
 class AttendanceService {
   final LocalAuthentication _localAuth = LocalAuthentication();
@@ -15,7 +16,7 @@ class AttendanceService {
     final isSupported = await _localAuth.isDeviceSupported();
     if (!canCheck || !isSupported) return false;
     return await _localAuth.authenticate(
-      localizedReason: 'يرجى استخدام بصمة الإصبع لإثبات الهوية',
+      localizedReason: L.tr('fingerprint_verify'),
       options: const AuthenticationOptions(stickyAuth: false, biometricOnly: false),
     );
   }
@@ -27,19 +28,19 @@ class AttendanceService {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isSupported = await _localAuth.isDeviceSupported();
       if (!isSupported) {
-        return (success: false, error: 'جهازك لا يدعم البصمة — استخدم قفل الشاشة');
+        return (success: false, error: L.tr('device_no_fingerprint'));
       }
       if (!canCheck) {
-        return (success: false, error: 'لم يتم تسجيل بصمة على الجهاز — سجّل بصمة من إعدادات الجهاز');
+        return (success: false, error: L.tr('no_fingerprint_registered'));
       }
       final result = await _localAuth.authenticate(
-        localizedReason: 'بصمة الحضور',
+        localizedReason: L.tr('attendance_punch'),
         options: const AuthenticationOptions(stickyAuth: false, biometricOnly: false, sensitiveTransaction: false),
       );
       if (result) return (success: true, error: '');
-      return (success: false, error: 'تم إلغاء التحقق — حاول مرة أخرى');
+      return (success: false, error: L.tr('verify_cancelled_retry'));
     } catch (e) {
-      return (success: false, error: 'خطأ في البصمة: $e');
+      return (success: false, error: L.tr('error_occurred', args: {'error': e.toString()}));
     }
   }
 
@@ -208,8 +209,8 @@ class AttendanceService {
     if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
       final pos = locResult.position;
-      if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
-      if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور'};
+      if (pos == null) return {'success': false, 'error': L.tr('cant_determine_location')};
+      if (locResult.isMocked) return {'success': false, 'error': L.tr('spoofing_check_in_block')};
       finalLat = pos.latitude;
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;
@@ -251,8 +252,8 @@ class AttendanceService {
     if (requireLocation && finalLat == null) {
       final locResult = await getCurrentLocation();
       final pos = locResult.position;
-      if (pos == null) return {'success': false, 'error': 'لا يمكن تحديد الموقع — فعّل GPS'};
-      if (locResult.isMocked) return {'success': false, 'error': 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف'};
+      if (pos == null) return {'success': false, 'error': L.tr('cant_determine_location')};
+      if (locResult.isMocked) return {'success': false, 'error': L.tr('spoofing_check_out_block')};
       finalLat = pos.latitude;
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminNotifications extends StatefulWidget {
   const AdminNotifications({super.key});
@@ -10,13 +11,13 @@ class AdminNotifications extends StatefulWidget {
 }
 
 class _AdminNotificationsState extends State<AdminNotifications> {
-  String _fType = 'الكل';
+  String _fType = L.tr('all');
   List<Map<String, dynamic>> _notifs = [];
   bool _loading = true;
 
   final _typeColor = const {'alert': Color(0xFFF04438), 'urgent': Color(0xFFF04438), 'warning': Color(0xFFF79009), 'security': Color(0xFF7F56D9), 'info': Color(0xFF175CD3)};
   final _typeIcon = const {'alert': Icons.warning_amber, 'urgent': Icons.notifications_active, 'warning': Icons.warning_amber, 'security': Icons.lock, 'info': Icons.notifications};
-  final _typeLabel = const {'alert': 'تنبيه', 'urgent': 'مستعجل', 'warning': 'تحذير', 'security': 'أمان', 'info': 'معلومات'};
+  final _typeLabel = {'alert': L.tr('alert'), 'urgent': L.tr('urgent'), 'warning': L.tr('warning'), 'security': L.tr('security_label'), 'info': L.tr('info')};
 
   @override
   void initState() {
@@ -49,13 +50,13 @@ class _AdminNotificationsState extends State<AdminNotifications> {
     final dt = _parseTs(ts);
     if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   String _fmtDate(dynamic ts) {
     final dt = _parseTs(ts);
     if (dt == null) return '—';
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    final months = L.months;
     return '${dt.day} ${months[dt.month - 1]}';
   }
 
@@ -78,7 +79,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
     final isSmall = screenW < 400;
     final allNotifs = _notifs;
     final unread = allNotifs.where((n) => n['read'] == false).length;
-    final filtered = _fType == 'الكل' ? allNotifs : allNotifs.where((n) => n['type'] == _fType).toList();
+    final filtered = _fType == L.tr('all') ? allNotifs : allNotifs.where((n) => n['type'] == _fType).toList();
 
     return RefreshIndicator(
       onRefresh: _loadNotifs,
@@ -90,23 +91,23 @@ class _AdminNotificationsState extends State<AdminNotifications> {
           isSmall
             ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
+                  Text(L.tr('mob_notifications'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: W.text)),
                   if (unread > 0) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Text('$unread', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)))],
                 ]),
                 const SizedBox(height: 6),
-                InkWell(onTap: _markAllRead, child: Text('تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
+                InkWell(onTap: _markAllRead, child: Text(L.tr('mark_all_read'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
               ])
             : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                TextButton(onPressed: _markAllRead, child: Text('تحديد الكل كمقروء', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub))),
+                TextButton(onPressed: _markAllRead, child: Text(L.tr('mark_all_read'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub))),
                 Row(children: [
-                  Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: W.text)),
-                  if (unread > 0) ...[const SizedBox(width: 10), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Text('$unread غير مقروء', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)))],
+                  Text(L.tr('mob_notifications'), style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: W.text)),
+                  if (unread > 0) ...[const SizedBox(width: 10), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: W.red, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Text(L.tr('n_unread', args: {'n': unread.toString()}), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)))],
                 ]),
               ]),
           const SizedBox(height: 14),
           // Type filters
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: [
-            _filterChip('الكل', _fType == 'الكل', () => setState(() => _fType = 'الكل')),
+            _filterChip(L.tr('all'), _fType == L.tr('all'), () => setState(() => _fType = L.tr('all'))),
             ...['alert', 'urgent', 'warning', 'security', 'info'].map((t) => _filterChip('${_typeLabel[t]} (${allNotifs.where((n) => n['type'] == t).length})', _fType == t, () => setState(() => _fType = t), color: _typeColor[t], icon: _typeIcon[t])),
           ]),
           const SizedBox(height: 14),
@@ -118,7 +119,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
               child: Center(child: Column(children: [
                 Icon(Icons.notifications_off, size: 36, color: W.hint),
                 const SizedBox(height: 12),
-                Text('لا توجد إشعارات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
+                Text(L.tr('no_notifications'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
               ])))
           else
             ...filtered.map((n) {
@@ -137,7 +138,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
                           if (!isRead && id.isNotEmpty) InkWell(onTap: () => _markRead(id), child: Container(width: 22, height: 22, decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.check, size: 10, color: W.green))),
                           const Spacer(),
                           if (!isRead) Container(width: 7, height: 7, margin: const EdgeInsets.only(left: 6), decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                          _badge(_typeLabel[n['type']] ?? 'معلومات', color, color.withOpacity(0.08)),
+                          _badge(_typeLabel[n['type']] ?? L.tr('info'), color, color.withOpacity(0.08)),
                           const SizedBox(width: 6),
                           Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(10)), child: Icon(_typeIcon[n['type']] ?? Icons.info, size: 16, color: color)),
                         ]),
@@ -165,7 +166,7 @@ class _AdminNotificationsState extends State<AdminNotifications> {
                         Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                             if (!isRead) Container(width: 8, height: 8, margin: const EdgeInsets.only(left: 6), decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                            _badge(_typeLabel[n['type']] ?? 'معلومات', color, color.withOpacity(0.08)),
+                            _badge(_typeLabel[n['type']] ?? L.tr('info'), color, color.withOpacity(0.08)),
                             const SizedBox(width: 6),
                             Flexible(child: Text(n['title'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: isRead ? FontWeight.w500 : FontWeight.w700, color: W.text))),
                           ]),

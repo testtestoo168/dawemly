@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
+import '../../l10n/app_locale.dart';
 
 class LeaveRequestPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -13,14 +14,14 @@ class LeaveRequestPage extends StatefulWidget {
 
 class _LeaveRequestPageState extends State<LeaveRequestPage> {
   final _svc = RequestsService();
-  String _leaveType = 'سنوية';
+  String _leaveType = L.tr('annual');
   DateTime? _startDate;
   DateTime? _endDate;
   final _reasonCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
 
-  final _types = ['سنوية', 'مرضية', 'طارئة', 'بدون راتب'];
+  final _types = [L.tr('annual'), L.tr('sick'), L.tr('emergency'), L.tr('unpaid')];
 
   int get _days => (_startDate != null && _endDate != null)
       ? _endDate!.difference(_startDate!).inDays + 1
@@ -52,19 +53,19 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
 
   void _submit() async {
     if (_startDate == null || _endDate == null) {
-      setState(() => _error = 'يرجى تحديد تاريخ البداية والنهاية');
+      setState(() => _error = L.tr('select_start_end_date'));
       return;
     }
     if (_endDate!.isBefore(_startDate!)) {
-      setState(() => _error = 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
+      setState(() => _error = L.tr('end_after_start_date'));
       return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'يرجى كتابة سبب الإجازة');
+      setState(() => _error = L.tr('leave_reason_required'));
       return;
     }
     if (_reasonCtrl.text.trim().length > 500) {
-      setState(() => _error = 'السبب طويل جداً — الحد الأقصى 500 حرف');
+      setState(() => _error = L.tr('reason_too_long'));
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -83,14 +84,14 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
       if (result['success'] == true && mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('تم إرسال طلب الإجازة بنجاح (${result['days']} يوم)', style: GoogleFonts.tajawal()),
+          content: Text(L.tr('leave_sent'), style: GoogleFonts.tajawal()),
           backgroundColor: C.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
       }
     } catch (e) {
-      setState(() { _error = 'حدث خطأ في إرسال الطلب'; _loading = false; });
+      setState(() { _error = L.tr('request_error'); _loading = false; });
     }
   }
 
@@ -102,7 +103,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
     final fmt = DateFormat('dd MMM yyyy', 'ar');
     return Scaffold(
       appBar: AppBar(
-        title: Text('طلب إجازة', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('leave_request'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         centerTitle: true,
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -114,7 +115,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           // ─── نوع الإجازة ───
-          _sectionLabel('نوع الإجازة'),
+          _sectionLabel(L.tr('leave_type')),
           Wrap(
             spacing: 8, runSpacing: 8, alignment: WrapAlignment.end,
             children: _types.map((t) => _chip(t, _leaveType == t, () => setState(() => _leaveType = t))).toList(),
@@ -122,11 +123,11 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
           const SizedBox(height: 20),
 
           // ─── التواريخ ───
-          _sectionLabel('تاريخ الإجازة'),
+          _sectionLabel(L.tr('leave_date')),
           Row(children: [
-            Expanded(child: _dateCard('إلى', _endDate, () => _pickDate(false))),
+            Expanded(child: _dateCard(L.tr('to'), _endDate, () => _pickDate(false))),
             const SizedBox(width: 10),
-            Expanded(child: _dateCard('من', _startDate, () => _pickDate(true))),
+            Expanded(child: _dateCard(L.tr('from'), _startDate, () => _pickDate(true))),
           ]),
           if (_days > 0) ...[
             const SizedBox(height: 10),
@@ -134,20 +135,20 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(10)),
-              child: Text('مدة الإجازة: $_days يوم', textAlign: TextAlign.center, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.pri)),
+              child: Text(L.tr('leave_duration', args: {'days': _days.toString()}), textAlign: TextAlign.center, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.pri)),
             ),
           ],
           const SizedBox(height: 20),
 
           // ─── السبب ───
-          _sectionLabel('سبب الإجازة'),
+          _sectionLabel(L.tr('leave_reason')),
           TextField(
             controller: _reasonCtrl,
             maxLines: 3,
             textAlign: TextAlign.right,
             style: GoogleFonts.tajawal(fontSize: 14, color: C.text),
             decoration: InputDecoration(
-              hintText: 'اكتب سبب الإجازة...',
+              hintText: L.tr('write_leave_reason'),
               hintStyle: GoogleFonts.tajawal(color: C.hint),
               filled: true, fillColor: C.bg,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: C.border)),
@@ -177,7 +178,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
                   : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       const Icon(Icons.send, size: 18),
                       const SizedBox(width: 8),
-                      Text('إرسال الطلب', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text(L.tr('send_request'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
                     ]),
             ),
           ),
@@ -218,7 +219,7 @@ class _LeaveRequestPageState extends State<LeaveRequestPage> {
           const SizedBox(height: 6),
           Icon(Icons.calendar_today_outlined, size: 18, color: date != null ? C.pri : C.hint),
           const SizedBox(height: 4),
-          Text(date != null ? fmt.format(date) : 'اختر التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: date != null ? C.text : C.hint)),
+          Text(date != null ? fmt.format(date) : L.tr('select_date'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: date != null ? C.text : C.hint)),
         ]),
       ),
     );

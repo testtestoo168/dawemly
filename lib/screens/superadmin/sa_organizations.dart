@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class SaOrganizations extends StatefulWidget {
   const SaOrganizations({super.key});
@@ -88,12 +89,12 @@ class _SaOrganizationsState extends State<SaOrganizations> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(children: [
-              Text('المؤسسات (${_orgs.length})', style: _tj(18, weight: FontWeight.w700, color: W.text)),
+              Text(L.tr('sa_orgs_count', args: {'n': _orgs.length.toString()}), style: _tj(18, weight: FontWeight.w700, color: W.text)),
               const Spacer(),
               OutlinedButton.icon(
                 onPressed: _loadOrgs,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: Text('تحديث', style: _tj(12, weight: FontWeight.w600)),
+                label: Text(L.tr('update'), style: _tj(12, weight: FontWeight.w600)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: W.pri,
                   side: BorderSide(color: W.border),
@@ -145,15 +146,15 @@ class _SaOrganizationsState extends State<SaOrganizations> {
                         Row(children: [
                           Icon(Icons.people_outline_rounded, size: 14, color: W.muted),
                           const SizedBox(width: 4),
-                          Text('${org['current_employees'] ?? 0} موظف', style: _tj(12, color: W.sub)),
+                          Text(L.tr('n_employee_sa', args: {'n': (org['current_employees'] ?? 0).toString()}), style: _tj(12, color: W.sub)),
                           const SizedBox(width: 12),
                           Icon(Icons.person_outline_rounded, size: 14, color: W.muted),
                           const SizedBox(width: 4),
-                          Text('${org['current_admins'] ?? 0} مدير', style: _tj(12, color: W.sub)),
+                          Text(L.tr('n_admin_sa', args: {'n': (org['current_admins'] ?? 0).toString()}), style: _tj(12, color: W.sub)),
                           const SizedBox(width: 12),
                           Icon(Icons.store_outlined, size: 14, color: W.muted),
                           const SizedBox(width: 4),
-                          Text('${org['current_branches'] ?? 0} فرع', style: _tj(12, color: W.sub)),
+                          Text(L.tr('n_branch_sa', args: {'n': (org['current_branches'] ?? 0).toString()}), style: _tj(12, color: W.sub)),
                         ]),
                       ])),
                       // Status badge
@@ -164,7 +165,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
                           borderRadius: BorderRadius.circular(DS.radiusPill),
                         ),
                         child: Text(
-                          isActive ? 'نشط' : 'معطل',
+                          isActive ? L.tr('active') : L.tr('disabled'),
                           style: _tj(11, weight: FontWeight.w600,
                             color: isActive ? const Color(0xFF17B26A) : const Color(0xFFF04438)),
                         ),
@@ -191,7 +192,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_orgDetails == null) {
-      return Center(child: Text('اختر مؤسسة لعرض التفاصيل', style: _tj(14, color: W.muted)));
+      return Center(child: Text(L.tr('select_org'), style: _tj(14, color: W.muted)));
     }
 
     final org = _orgDetails!;
@@ -220,7 +221,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
           OutlinedButton.icon(
             onPressed: () => _toggleOrg(org['id'] as int),
             icon: Icon(isActive ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 16),
-            label: Text(isActive ? 'تعطيل' : 'تفعيل', style: _tj(12, weight: FontWeight.w600)),
+            label: Text(isActive ? L.tr('disable') : L.tr('enable'), style: _tj(12, weight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: isActive ? W.red : W.green,
               side: BorderSide(color: isActive ? W.redBd : W.greenBd),
@@ -237,16 +238,16 @@ class _SaOrganizationsState extends State<SaOrganizations> {
           padding: const EdgeInsets.all(20),
           decoration: DS.cardDecoration(),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('معلومات المؤسسة', style: _tj(15, weight: FontWeight.w700, color: W.text)),
+            Text(L.tr('org_info'), style: _tj(15, weight: FontWeight.w700, color: W.text)),
             const SizedBox(height: 16),
-            _infoRow('البريد', org['email'] ?? '-'),
-            _infoRow('الهاتف', org['phone'] ?? '-'),
-            _infoRow('العنوان', org['address'] ?? '-'),
-            _infoRow('الحد الأقصى للموظفين', '${org['max_employees'] ?? '-'}'),
-            _infoRow('الباقة', org['plan_name'] ?? 'بدون باقة'),
-            _infoRow('بداية الاشتراك', org['subscription_start'] ?? '-'),
-            _infoRow('نهاية الاشتراك', org['subscription_end'] ?? '-'),
-            _infoRow('تاريخ الإنشاء', org['created_at'] ?? '-'),
+            _infoRow(L.tr('email'), org['email'] ?? '-'),
+            _infoRow(L.tr('phone'), org['phone'] ?? '-'),
+            _infoRow(L.tr('name'), org['address'] ?? '-'),
+            _infoRow(L.tr('max_employees'), '${org['max_employees'] ?? '-'}'),
+            _infoRow(L.tr('plan'), org['plan_name'] ?? L.tr('no_plan')),
+            _infoRow(L.tr('subscription_start'), org['subscription_start'] ?? '-'),
+            _infoRow(L.tr('subscription_end'), org['subscription_end'] ?? '-'),
+            _infoRow(L.tr('creation_date'), org['created_at'] ?? '-'),
           ]),
         ),
         const SizedBox(height: 16),
@@ -257,13 +258,13 @@ class _SaOrganizationsState extends State<SaOrganizations> {
           decoration: DS.cardDecoration(),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Text('المستخدمون (${_orgUsers.length})', style: _tj(15, weight: FontWeight.w700, color: W.text)),
+              Text(L.tr('sa_users_count', args: {'n': _orgUsers.length.toString()}), style: _tj(15, weight: FontWeight.w700, color: W.text)),
             ]),
             const SizedBox(height: 12),
             if (_orgUsers.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Center(child: Text('لا يوجد مستخدمون', style: _tj(13, color: W.muted))),
+                child: Center(child: Text(L.tr('no_users_found'), style: _tj(13, color: W.muted))),
               )
             else
               ..._orgUsers.map((u) => Container(
@@ -277,7 +278,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
                       borderRadius: BorderRadius.circular(DS.radiusSm),
                     ),
                     child: Center(child: Text(
-                      (u['name'] ?? 'م').toString().substring(0, (u['name'] ?? 'م').toString().length >= 2 ? 2 : 1),
+                      (u['name'] ?? L.tr('pm')).toString().substring(0, (u['name'] ?? L.tr('pm')).toString().length >= 2 ? 2 : 1),
                       style: _tj(12, weight: FontWeight.w700, color: u['role'] == 'admin' ? const Color(0xFF7F56D9) : W.pri),
                     )),
                   ),
@@ -293,7 +294,7 @@ class _SaOrganizationsState extends State<SaOrganizations> {
                       borderRadius: BorderRadius.circular(DS.radiusPill),
                     ),
                     child: Text(
-                      u['role'] == 'admin' ? 'مدير' : 'موظف',
+                      u['role'] == 'admin' ? L.tr('role_admin') : L.tr('employee_unit'),
                       style: _tj(10, weight: FontWeight.w600, color: u['role'] == 'admin' ? const Color(0xFF7F56D9) : W.pri),
                     ),
                   ),
@@ -316,12 +317,12 @@ class _SaOrganizationsState extends State<SaOrganizations> {
           padding: const EdgeInsets.all(20),
           decoration: DS.cardDecoration(),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('الفروع (${_orgBranches.length})', style: _tj(15, weight: FontWeight.w700, color: W.text)),
+            Text(L.tr('sa_branches_count', args: {'n': _orgBranches.length.toString()}), style: _tj(15, weight: FontWeight.w700, color: W.text)),
             const SizedBox(height: 12),
             if (_orgBranches.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Center(child: Text('لا توجد فروع', style: _tj(13, color: W.muted))),
+                child: Center(child: Text(L.tr('no_branches'), style: _tj(13, color: W.muted))),
               )
             else
               ..._orgBranches.map((b) => Container(

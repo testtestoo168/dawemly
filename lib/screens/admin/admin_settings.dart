@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminSettings extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -24,9 +25,9 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   // ═══ فترات العمل ═══
   final List<Map<String, dynamic>> _shifts = [
-    {'id': 1, 'name': 'الفترة الأولى', 'start': '08:00 ص', 'end': '04:00 م', 'color': const Color(0xFF175CD3), 'active': true},
-    {'id': 2, 'name': 'الفترة الثانية', 'start': '01:00 م', 'end': '09:00 م', 'color': const Color(0xFF7F56D9), 'active': true},
-    {'id': 3, 'name': 'الفترة الثالثة', 'start': '04:00 م', 'end': '12:00 ص', 'color': const Color(0xFF0BA5EC), 'active': true},
+    {'id': 1, 'name': L.tr('period_1'), 'start': '08:00 ${L.tr('am')}', 'end': '04:00 ${L.tr('pm')}', 'color': const Color(0xFF175CD3), 'active': true},
+    {'id': 2, 'name': L.tr('period_2'), 'start': '01:00 ${L.tr('pm')}', 'end': '09:00 ${L.tr('pm')}', 'color': const Color(0xFF7F56D9), 'active': true},
+    {'id': 3, 'name': L.tr('period_3'), 'start': '04:00 ${L.tr('pm')}', 'end': '12:00 ${L.tr('am')}', 'color': const Color(0xFF0BA5EC), 'active': true},
   ];
   bool _showAddShift = false;
   final _shiftName = TextEditingController();
@@ -49,12 +50,12 @@ class _AdminSettingsState extends State<AdminSettings> {
   double _sessionTimeout = 30, _maxAttempts = 5, _forcePassChange = 90;
 
   // ═══ مظهر ═══
-  String _primaryColor = '#175CD3', _orgName = 'مدارس المروج النموذجية الأهلية', _logo = 'داوِملي', _fontSize = 'medium';
+  String _primaryColor = '#175CD3', _orgName = L.tr('school_full_name'), _logo = L.tr('app_name'), _fontSize = 'medium';
   bool _darkMode = false, _compactMode = false;
 
   // ═══ بصمة مخصصة ═══
   final List<Map<String, dynamic>> _customAtt = [
-    {'id': 1, 'empName': 'محمد فهد الشمري', 'date': '18 مارس 2026', 'start': '10:00 ص', 'end': '02:00 م', 'reason': 'مهمة خارجية', 'status': 'مفعّل'},
+    {'id': 1, 'empName': 'Mohammed Fahad', 'date': '18 Mar 2026', 'start': '10:00 ${L.tr('am')}', 'end': '02:00 ${L.tr('pm')}', 'reason': L.tr('external_mission'), 'status': L.tr('enabled')},
   ];
   bool _showAddAtt = false;
   final _attDate = TextEditingController();
@@ -129,12 +130,12 @@ class _AdminSettingsState extends State<AdminSettings> {
       }
       setState(() => _searchResults = results);
       if (results.isEmpty && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('لم يتم العثور على نتائج — جرّب كلمات أخرى', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('no_search_results'), style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       }
     } catch (e) {
       setState(() => _searchResults = []);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في البحث: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('err_search', args: {'error': e.toString().length > 80 ? e.toString().substring(0, 80) : e.toString()}), style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
       }
     }
     if (mounted) setState(() => _searching = false);
@@ -172,16 +173,16 @@ class _AdminSettingsState extends State<AdminSettings> {
         'primaryColor': _primaryColor, 'orgName': _orgName, 'logo': _logo,
         'fontSize': _fontSize, 'darkMode': _darkMode, 'compactMode': _compactMode,
         'singleDeviceMode': _singleDeviceMode,
-        'updatedBy': widget.user['name'] ?? 'مدير النظام',
+        'updatedBy': widget.user['name'] ?? L.tr('system_admin'),
       });
       await ApiService.post('admin.php?action=audit_log', {
-        'user': widget.user['name'] ?? 'مدير النظام', 'action': 'تحديث الإعدادات',
-        'target': 'إعدادات النظام — $_tab', 'details': 'تم حفظ إعدادات $_tab', 'type': 'settings',
+        'user': widget.user['name'] ?? L.tr('system_admin'), 'action': L.tr('update_settings'),
+        'target': L.tr('settings_system_tab', args: {'tab': _tab}), 'details': L.tr('settings_saved_tab', args: {'tab': _tab}), 'type': 'settings',
       });
       setState(() => _saved = true);
       Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() => _saved = false); });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الإعدادات: $e', style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('err_save_settings_msg', args: {'error': e.toString()}), style: GoogleFonts.tajawal()), backgroundColor: W.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
     }
   }
 
@@ -276,7 +277,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       await _loadLeaveBalances();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('تم حفظ رصيد الإجازات', style: GoogleFonts.tajawal()),
+          content: Text(L.tr('leave_balance_saved'), style: GoogleFonts.tajawal()),
           backgroundColor: W.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
@@ -285,7 +286,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('خطأ: $e', style: GoogleFonts.tajawal()),
+          content: Text(L.tr('error_prefix', args: {'error': e.toString()}), style: GoogleFonts.tajawal()),
           backgroundColor: W.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
@@ -295,16 +296,16 @@ class _AdminSettingsState extends State<AdminSettings> {
   }
 
   List<Map<String, dynamic>> get _tabs => [
-    const {'k': 'shifts', 'l': 'فترات العمل', 'icon': Icons.layers},
-    const {'k': 'locations', 'l': 'المواقع', 'icon': Icons.location_on},
-    if (ApiService.hasFeature('allow_leave_balance')) const {'k': 'leaves', 'l': 'الإجازات', 'icon': Icons.event_busy},
-    if (ApiService.hasFeature('allow_overtime')) const {'k': 'overtime', 'l': 'الأوفرتايم', 'icon': Icons.more_time},
-    const {'k': 'late', 'l': 'التأخير', 'icon': Icons.timer_off},
-    const {'k': 'auth', 'l': 'المصادقة', 'icon': Icons.shield},
-    const {'k': 'security', 'l': 'الأمان', 'icon': Icons.lock},
-    const {'k': 'appearance', 'l': 'المظهر', 'icon': Icons.desktop_windows},
-    const {'k': 'custom', 'l': 'بصمة مخصصة', 'icon': Icons.lock_open},
-    const {'k': 'devicesec', 'l': 'أمان الأجهزة', 'icon': Icons.phone_android},
+    {'k': 'shifts', 'l': L.tr('work_periods'), 'icon': Icons.layers},
+    {'k': 'locations', 'l': L.tr('locations'), 'icon': Icons.location_on},
+    if (ApiService.hasFeature('allow_leave_balance')) {'k': 'leaves', 'l': L.tr('leaves_tab'), 'icon': Icons.event_busy},
+    if (ApiService.hasFeature('allow_overtime')) {'k': 'overtime', 'l': L.tr('overtime'), 'icon': Icons.more_time},
+    {'k': 'late', 'l': L.tr('lateness'), 'icon': Icons.timer_off},
+    {'k': 'auth', 'l': L.tr('authentication'), 'icon': Icons.shield},
+    {'k': 'security', 'l': L.tr('security'), 'icon': Icons.lock},
+    {'k': 'appearance', 'l': L.tr('appearance'), 'icon': Icons.desktop_windows},
+    {'k': 'custom', 'l': L.tr('custom_punch'), 'icon': Icons.lock_open},
+    {'k': 'devicesec', 'l': L.tr('device_security'), 'icon': Icons.phone_android},
   ];
 
   @override
@@ -313,7 +314,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     final isMobile = MediaQuery.of(context).size.width < 500;
     return SingleChildScrollView(padding: EdgeInsets.all(isWide ? 28 : (isMobile ? 10 : 14)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       // Save button only (title is in AppBar)
-      Align(alignment: Alignment.centerLeft, child: ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? 'تم الحفظ' : 'حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
+      Align(alignment: Alignment.centerLeft, child: ElevatedButton.icon(onPressed: _save, icon: Icon(_saved ? Icons.check : Icons.save, size: 16), label: Text(_saved ? L.tr('saved_label') : L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)), style: ElevatedButton.styleFrom(backgroundColor: _saved ? W.green : W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))))),
       const SizedBox(height: 14),
 
       // Sub-tabs — scrollable horizontally on mobile
@@ -378,23 +379,23 @@ class _AdminSettingsState extends State<AdminSettings> {
       Builder(builder: (ctx) {
         final isWide = MediaQuery.of(ctx).size.width > 500;
         if (isWide) {
-          return Row(children: [Expanded(child: _input(_shiftEnd, 'وقت الانتهاء', '04:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, 'وقت البداية', '08:00 ص', isLtr: true)), const SizedBox(width: 10), Expanded(flex: 2, child: _input(_shiftName, 'اسم الفترة', 'الفترة الرابعة'))]);
+          return Row(children: [Expanded(child: _input(_shiftEnd, L.tr('end_time'), '04:00 ${L.tr('pm')}', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, L.tr('start_time'), '08:00 ${L.tr('am')}', isLtr: true)), const SizedBox(width: 10), Expanded(flex: 2, child: _input(_shiftName, L.tr('period_name'), L.tr('period_4')))]);
         }
-        return Column(children: [_input(_shiftName, 'اسم الفترة', 'الفترة الرابعة'), const SizedBox(height: 10), Row(children: [Expanded(child: _input(_shiftEnd, 'وقت الانتهاء', '04:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, 'وقت البداية', '08:00 ص', isLtr: true))])]);
+        return Column(children: [_input(_shiftName, L.tr('period_name'), L.tr('period_4')), const SizedBox(height: 10), Row(children: [Expanded(child: _input(_shiftEnd, L.tr('end_time'), '04:00 ${L.tr('pm')}', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_shiftStart, L.tr('start_time'), '08:00 ${L.tr('am')}', isLtr: true))])]);
       }),
       const SizedBox(height: 12),
-      Row(children: [_greenBtn('✓ إضافة', () { if (_shiftName.text.isEmpty) return; setState(() { _shifts.add({'id': DateTime.now().millisecondsSinceEpoch, 'name': _shiftName.text, 'start': _shiftStart.text, 'end': _shiftEnd.text, 'color': [W.pri, Color(0xFF7F56D9), Color(0xFF0BA5EC), W.orange][_shifts.length % 4], 'active': true}); _shiftName.clear(); _shiftStart.clear(); _shiftEnd.clear(); _showAddShift = false; }); }), SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddShift = false))]),
+      Row(children: [_greenBtn(L.tr('add_btn'), () { if (_shiftName.text.isEmpty) return; setState(() { _shifts.add({'id': DateTime.now().millisecondsSinceEpoch, 'name': _shiftName.text, 'start': _shiftStart.text, 'end': _shiftEnd.text, 'color': [W.pri, Color(0xFF7F56D9), Color(0xFF0BA5EC), W.orange][_shifts.length % 4], 'active': true}); _shiftName.clear(); _shiftStart.clear(); _shiftEnd.clear(); _showAddShift = false; }); }), SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddShift = false))]),
     ])),
     isMobile ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Align(alignment: Alignment.centerRight, child: Text('حدد فترات العمل — كل فترة بوقت بداية ونهاية', style: GoogleFonts.tajawal(fontSize: 11, color: W.sub))),
+      Align(alignment: Alignment.centerRight, child: Text(L.tr('define_periods'), style: GoogleFonts.tajawal(fontSize: 11, color: W.sub))),
       const SizedBox(height: 8),
-      _addBtn('إضافة فترة', () => setState(() => _showAddShift = true)),
-    ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_addBtn('إضافة فترة', () => setState(() => _showAddShift = true)), Flexible(child: Text('حدد فترات العمل — كل فترة بوقت بداية ونهاية', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)))]),
+      _addBtn(L.tr('add_period'), () => setState(() => _showAddShift = true)),
+    ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_addBtn(L.tr('add_period'), () => setState(() => _showAddShift = true)), Flexible(child: Text(L.tr('define_periods'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)))]),
     const SizedBox(height: 14),
     ...List.generate(_shifts.length, (i) { final sh = _shifts[i]; final color = sh['color'] as Color; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.all(isMobile ? 14 : 22), decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: sh['active'] == true ? color.withOpacity(0.3) : W.border)), child: Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(mainAxisSize: MainAxisSize.min, children: [Switch(value: sh['active'] == true, activeColor: W.green, onChanged: (v) => setState(() => _shifts[i]['active'] = v)), InkWell(onTap: () => setState(() => _shifts.removeAt(i)), child: Icon(Icons.delete_outline, size: 16, color: W.red))]), Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(sh['name'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.w700, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 8), Container(width: isMobile ? 36 : 44, height: isMobile ? 36 : 44, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.access_time, size: isMobile ? 16 : 20, color: color))]))]),
       const SizedBox(height: 14),
-      Row(children: [Expanded(child: _timeBox('البداية', sh['start'] as String, color)), Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('→', style: TextStyle(fontSize: 18, color: W.hint))), Expanded(child: _timeBox('النهاية', sh['end'] as String, color))]),
+      Row(children: [Expanded(child: _timeBox(L.tr('leave_start'), sh['start'] as String, color)), Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('→', style: TextStyle(fontSize: 18, color: W.hint))), Expanded(child: _timeBox(L.tr('leave_end'), sh['end'] as String, color))]),
     ])); }),
   ]); }
 
@@ -430,24 +431,24 @@ class _AdminSettingsState extends State<AdminSettings> {
 
   Widget _buildLocations() { final isMobile = MediaQuery.of(context).size.width < 500; return Column(children: [
     isMobile ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Text('مواقع العمل المعتمدة — الموظف يبصم في أي موقع مفعّل', style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+      Text(L.tr('work_locations_desc'), style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
       const SizedBox(height: 8),
-      _addBtn('إضافة موقع', () => setState(() { _editingLocId = null; _showAddLoc = true; })),
-    ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_addBtn('إضافة موقع', () => setState(() { _editingLocId = null; _showAddLoc = true; })), Flexible(child: Text('مواقع العمل المعتمدة — الموظف يبصم في أي موقع مفعّل', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)))]),
+      _addBtn(L.tr('add_location'), () => setState(() { _editingLocId = null; _showAddLoc = true; })),
+    ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_addBtn(L.tr('add_location'), () => setState(() { _editingLocId = null; _showAddLoc = true; })), Flexible(child: Text(L.tr('work_locations_desc'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)))]),
     const SizedBox(height: 14),
     if (_showAddLoc) _card(border: W.pri, child: Column(children: [
       // Edit/Add header
       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        Text(_editingLocId != null ? 'تعديل الموقع' : 'إضافة موقع جديد', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+        Text(_editingLocId != null ? L.tr('edit_location') : L.tr('add_new_location'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
         const SizedBox(width: 8),
         Icon(_editingLocId != null ? Icons.edit_location_alt : Icons.add_location_alt, size: 20, color: W.pri),
       ]),
       const SizedBox(height: 12),
-      _input(_locName, 'اسم الموقع', 'مدارس المروج النموذجية'),
+      _input(_locName, L.tr('location_name'), L.tr('school_name')),
       const SizedBox(height: 10),
       // ─── Search with Autocomplete Suggestions ───
       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Text('ابحث عن الموقع', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+        Text(L.tr('search_location'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
         const SizedBox(height: 4),
         Row(children: [
           InkWell(onTap: _searching ? null : _searchLocation, child: Container(
@@ -470,7 +471,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             },
             onSubmitted: (_) => _searchLocation(),
             decoration: InputDecoration(
-              hintText: 'اكتب اسم المكان... مثال: مدارس المروج',
+              hintText: L.tr('write_place_name'),
               hintStyle: GoogleFonts.tajawal(fontSize: 12, color: W.hint),
               filled: true, fillColor: W.bg, contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
@@ -515,7 +516,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           initialCameraPosition: CameraPosition(target: _pickedLatLng ?? const LatLng(24.7741, 46.7386), zoom: 15),
           onMapCreated: (ctrl) => _mapCtrl = ctrl,
           onTap: (pos) => setState(() { _pickedLatLng = pos; _locLat.text = pos.latitude.toStringAsFixed(6); _locLng.text = pos.longitude.toStringAsFixed(6); }),
-          markers: _pickedLatLng != null ? {Marker(markerId: const MarkerId('picked'), position: _pickedLatLng!, infoWindow: const InfoWindow(title: 'الموقع المختار'))} : {},
+          markers: _pickedLatLng != null ? {Marker(markerId: const MarkerId('picked'), position: _pickedLatLng!, infoWindow: InfoWindow(title: L.tr('chosen_location')))} : {},
           circles: _pickedLatLng != null ? {Circle(circleId: const CircleId('radius'), center: _pickedLatLng!, radius: double.tryParse(_locRadius.text) ?? 300, fillColor: const Color(0xFF17B26A).withOpacity(0.15), strokeColor: const Color(0xFF17B26A).withOpacity(0.5), strokeWidth: 2)} : {},
           myLocationEnabled: true, myLocationButtonEnabled: true, zoomControlsEnabled: true,
         ),
@@ -527,10 +528,10 @@ class _AdminSettingsState extends State<AdminSettings> {
         child: Wrap(alignment: WrapAlignment.center, spacing: 4, runSpacing: 2, children: [
           Text('${_pickedLatLng!.latitude.toStringAsFixed(4)}, ${_pickedLatLng!.longitude.toStringAsFixed(4)}', style: _mono(fontSize: 10, color: W.green)),
           Icon(Icons.check_circle, size: 14, color: W.green),
-          Text('تم تحديد الموقع', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
+          Text(L.tr('location_determined'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
         ]),
       ),
-      if (_pickedLatLng == null) Text('ابحث عن الموقع أو اضغط على الخريطة لتحديده', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+      if (_pickedLatLng == null) Text(L.tr('search_location_tap'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
       const SizedBox(height: 14),
       // ─── Radius Slider ───
       Container(
@@ -539,26 +540,26 @@ class _AdminSettingsState extends State<AdminSettings> {
         child: Column(children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: W.pri.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text('${int.tryParse(_locRadius.text) ?? 300} متر', style: GoogleFonts.ibmPlexMono(fontSize: 16, fontWeight: FontWeight.w800, color: W.pri))),
-            Text('نطاق البصمة', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+              child: Text(L.tr('n_meter_label', args: {'n': (int.tryParse(_locRadius.text) ?? 300).toString()}), style: GoogleFonts.ibmPlexMono(fontSize: 16, fontWeight: FontWeight.w800, color: W.pri))),
+            Text(L.tr('fingerprint_range'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
           ]),
           const SizedBox(height: 8),
           Directionality(textDirection: TextDirection.ltr, child: Slider(
             value: (double.tryParse(_locRadius.text) ?? 300).clamp(50, 2000),
             min: 50, max: 2000, divisions: 39,
             activeColor: W.pri,
-            label: '${int.tryParse(_locRadius.text) ?? 300}م',
+            label: L.tr('n_m_label', args: {'n': (int.tryParse(_locRadius.text) ?? 300).toString()}),
             onChanged: (v) => setState(() => _locRadius.text = v.round().toString()),
           )),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('2000م', style: GoogleFonts.tajawal(fontSize: 10, color: W.hint)),
-            Text('50م', style: GoogleFonts.tajawal(fontSize: 10, color: W.hint)),
+            Text(L.tr('n_m_label', args: {'n': '2000'}), style: GoogleFonts.tajawal(fontSize: 10, color: W.hint)),
+            Text(L.tr('n_m_label', args: {'n': '50'}), style: GoogleFonts.tajawal(fontSize: 10, color: W.hint)),
           ]),
         ]),
       ),
       const SizedBox(height: 12),
       Row(children: [
-        _greenBtn(_editingLocId != null ? '✓ حفظ التعديل' : '✓ إضافة', () async {
+        _greenBtn(_editingLocId != null ? L.tr('save_edit_btn') : L.tr('add_btn'), () async {
           if (_locName.text.isEmpty || _pickedLatLng == null) return;
           final data = {
             'name': _locName.text.trim(),
@@ -587,14 +588,14 @@ class _AdminSettingsState extends State<AdminSettings> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Row(children: [
             Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: W.pri.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text('${_locSelectedEmps.length} موظف', style: GoogleFonts.ibmPlexMono(fontSize: 11, fontWeight: FontWeight.w700, color: W.pri))),
+              child: Text(L.tr('n_employee', args: {'n': _locSelectedEmps.length.toString()}), style: GoogleFonts.ibmPlexMono(fontSize: 11, fontWeight: FontWeight.w700, color: W.pri))),
             const Spacer(),
-            Text('تحديد الموظفين لهذا الموقع', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+            Text(L.tr('select_employees_location'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
             const SizedBox(width: 8),
             Icon(Icons.people, size: 18, color: W.pri),
           ]),
           const SizedBox(height: 4),
-          Text('اختر الموظفين المسموح لهم بالبصمة في هذا الموقع (اتركها فارغة للسماح للجميع)', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+          Text(L.tr('select_employees_for_location'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
           const SizedBox(height: 10),
           Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: _settingsUsers.map((emp) {
             final uid = emp['uid'] ?? emp['_id'];
@@ -634,10 +635,10 @@ class _AdminSettingsState extends State<AdminSettings> {
         ]),
         const SizedBox(height: 8),
         Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)),
-          child: Text(assignedEmps.isEmpty ? 'جميع الموظفين' : '${assignedEmps.length} موظف مخصص', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.pri))),
+          child: Text(assignedEmps.isEmpty ? L.tr('all_employees_filter') : L.tr('n_employee_assigned', args: {'n': assignedEmps.length.toString()}), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.pri))),
         const SizedBox(height: 8),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${radius}م', style: GoogleFonts.ibmPlexMono(fontSize: 14, fontWeight: FontWeight.w700, color: W.pri)), Text('نطاق البصمة', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))]),
-        Directionality(textDirection: TextDirection.ltr, child: Slider(value: (radius as num).toDouble(), min: 50, max: 1000, divisions: 19, activeColor: W.pri, label: '${radius}م', onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'radius': v.round()}); _loadSettings(); })),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(L.tr('n_m_label', args: {'n': radius.toString()}), style: GoogleFonts.ibmPlexMono(fontSize: 14, fontWeight: FontWeight.w700, color: W.pri)), Text(L.tr('fingerprint_range'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))]),
+        Directionality(textDirection: TextDirection.ltr, child: Slider(value: (radius as num).toDouble(), min: 50, max: 1000, divisions: 19, activeColor: W.pri, label: L.tr('n_m_label', args: {'n': radius.toString()}), onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'radius': v.round()}); _loadSettings(); })),
       ]));
     }).toList()),
   ]); }
@@ -674,11 +675,11 @@ class _AdminSettingsState extends State<AdminSettings> {
 
       // ── Stats ──
       Row(children: [
-        Expanded(child: _devStatCard('متصل الآن', '$onlineCount', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded)),
+        Expanded(child: _devStatCard(L.tr('connected_now'), '$onlineCount', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded)),
         SizedBox(width: isMobile ? 6 : 12),
-        Expanded(child: _devStatCard('غير متصل', '$offlineCount', W.red, W.redL, Icons.wifi_off_rounded)),
+        Expanded(child: _devStatCard(L.tr('disconnected'), '$offlineCount', W.red, W.redL, Icons.wifi_off_rounded)),
         SizedBox(width: isMobile ? 6 : 12),
-        Expanded(child: _devStatCard('إجمالي', '${employees.length}', W.muted, W.bg, Icons.people_rounded)),
+        Expanded(child: _devStatCard(L.tr('total'), '${employees.length}', W.muted, W.bg, Icons.people_rounded)),
       ]),
       const SizedBox(height: 14),
 
@@ -693,9 +694,9 @@ class _AdminSettingsState extends State<AdminSettings> {
         ),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('تقييد الجهاز الواحد مفعّل تلقائياً', style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w700, color: const Color(0xFF065F46))),
+            Text(L.tr('device_restrict_note'), style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w700, color: const Color(0xFF065F46))),
             const SizedBox(height: 4),
-            Text('لا يمكن لأي موظف فتح حسابه على جهازين في نفس الوقت — يجب تسجيل الخروج أو إنهاء الجلسة من هنا.', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: const Color(0xFF047857), height: 1.6), textAlign: TextAlign.right),
+            Text(L.tr('one_device_restrict'), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: const Color(0xFF047857), height: 1.6), textAlign: TextAlign.right),
           ])),
           const SizedBox(width: 10),
           Container(width: isMobile ? 34 : 40, height: isMobile ? 34 : 40, decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(DS.radiusMd)),
@@ -713,7 +714,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             textAlign: TextAlign.right,
             style: GoogleFonts.tajawal(fontSize: 12, color: W.text),
             decoration: InputDecoration(
-              hintText: 'بحث بالاسم أو الجهاز...',
+              hintText: L.tr('search_name_device'),
               hintStyle: GoogleFonts.tajawal(fontSize: 12, color: W.hint),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -726,9 +727,9 @@ class _AdminSettingsState extends State<AdminSettings> {
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            _devFilterTab('all', 'الكل'),
-            _devFilterTab('online', 'متصل'),
-            _devFilterTab('offline', 'غير متصل'),
+            _devFilterTab('all', L.tr('all')),
+            _devFilterTab('online', L.tr('connected')),
+            _devFilterTab('offline', L.tr('disconnected')),
           ]),
         ),
       ] else Row(children: [
@@ -737,9 +738,9 @@ class _AdminSettingsState extends State<AdminSettings> {
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            _devFilterTab('all', 'الكل'),
-            _devFilterTab('online', 'متصل'),
-            _devFilterTab('offline', 'غير متصل'),
+            _devFilterTab('all', L.tr('all')),
+            _devFilterTab('online', L.tr('connected')),
+            _devFilterTab('offline', L.tr('disconnected')),
           ]),
         ),
         const SizedBox(width: 10),
@@ -751,7 +752,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             textAlign: TextAlign.right,
             style: GoogleFonts.tajawal(fontSize: 12, color: W.text),
             decoration: InputDecoration(
-              hintText: 'بحث بالاسم أو الجهاز...',
+              hintText: L.tr('search_name_device'),
               hintStyle: GoogleFonts.tajawal(fontSize: 12, color: W.hint),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -769,7 +770,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           ? Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [
               Icon(Icons.devices_rounded, size: 40, color: W.hint),
               const SizedBox(height: 10),
-              Text('لا يوجد نتائج', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+              Text(L.tr('no_records'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
             ])))
           : Column(children: filtered.asMap().entries.map((entry) {
               final i = entry.key;
@@ -781,7 +782,7 @@ class _AdminSettingsState extends State<AdminSettings> {
               final isLast = i == filtered.length - 1;
 
               final name = (emp['name'] ?? '').toString();
-              final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+              final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
               final dept = (emp['dept'] ?? '').toString();
               final empId = (emp['emp_id'] ?? emp['empId'] ?? '').toString();
               final multi = emp['multi_device_allowed'] == 1 || emp['multi_device_allowed'] == true || emp['multiDeviceAllowed'] == true;
@@ -801,7 +802,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                 try {
                   final dt = DateTime.parse(loginAt);
                   final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-                  loginTime = '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+                  loginTime = '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
                 } catch (_) {}
               }
 
@@ -821,7 +822,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(color: hasSession ? const Color(0xFFD1FAE5) : W.bg, borderRadius: BorderRadius.circular(12)),
-                          child: Text(hasSession ? 'متصل' : 'غير متصل', style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: hasSession ? const Color(0xFF059669) : W.muted)),
+                          child: Text(hasSession ? L.tr('connected') : L.tr('disconnected'), style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w600, color: hasSession ? const Color(0xFF059669) : W.muted)),
                         ),
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -855,7 +856,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                             await ApiService.post('admin.php?action=delete_session', {'uid': uid});
                             _loadSettings();
                             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('تم إنهاء جلسة $name', style: GoogleFonts.tajawal(color: Colors.white)),
+                              content: Text(L.tr('session_ended_name', args: {'name': name}), style: GoogleFonts.tajawal(color: Colors.white)),
                               backgroundColor: W.green, behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                             ));
@@ -866,7 +867,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
                               Icon(Icons.logout_rounded, size: 11, color: W.red),
                               const SizedBox(width: 3),
-                              Text('إنهاء الجلسة', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
+                              Text(L.tr('end_session'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
                             ]),
                           ),
                         ),
@@ -889,7 +890,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                             child: Row(mainAxisSize: MainAxisSize.min, children: [
                               Icon(multi ? Icons.devices_rounded : Icons.phone_android_rounded, size: 11, color: multi ? W.green : Color(0xFF9CA3AF)),
                               const SizedBox(width: 3),
-                              Text(multi ? 'متعدد' : 'جهاز واحد', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: multi ? W.green : Color(0xFF9CA3AF))),
+                              Text(multi ? L.tr('multi_device') : L.tr('one_device'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: multi ? W.green : Color(0xFF9CA3AF))),
                             ]),
                           ),
                         ),
@@ -906,7 +907,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                           await ApiService.post('admin.php?action=delete_session', {'uid': uid});
                           _loadSettings();
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('تم إنهاء جلسة $name', style: GoogleFonts.tajawal(color: Colors.white)),
+                            content: Text(L.tr('session_ended_name', args: {'name': name}), style: GoogleFonts.tajawal(color: Colors.white)),
                             backgroundColor: W.green, behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                           ));
@@ -917,7 +918,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             Icon(Icons.logout_rounded, size: 12, color: W.red),
                             const SizedBox(width: 4),
-                            Text('إنهاء الجلسة', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
+                            Text(L.tr('end_session'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
                           ]),
                         ),
                       ),
@@ -941,7 +942,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
                             Icon(multi ? Icons.devices_rounded : Icons.phone_android_rounded, size: 12, color: multi ? W.green : Color(0xFF9CA3AF)),
                             const SizedBox(width: 4),
-                            Text(multi ? 'متعدد' : 'جهاز واحد', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: multi ? W.green : Color(0xFF9CA3AF))),
+                            Text(multi ? L.tr('multi_device') : L.tr('one_device'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: multi ? W.green : Color(0xFF9CA3AF))),
                           ]),
                         ),
                       ),
@@ -967,14 +968,14 @@ class _AdminSettingsState extends State<AdminSettings> {
                         if (loginTime != '—') ...[
                           Icon(Icons.access_time_rounded, size: 10, color: W.muted),
                           const SizedBox(width: 3),
-                          Text('دخل $loginTime', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+                          Text(L.tr('logged_in_time', args: {'time': loginTime}), style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
                         ],
                       ]),
                     ] else ...[
                       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         if (model.isNotEmpty) Flexible(child: Text(model, style: GoogleFonts.tajawal(fontSize: 11, color: W.sub), overflow: TextOverflow.ellipsis)),
                         if (model.isNotEmpty) const SizedBox(width: 4),
-                        Text('غير متصل', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+                        Text(L.tr('disconnected'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
                       ]),
                     ],
                   ])),
@@ -1055,13 +1056,13 @@ class _AdminSettingsState extends State<AdminSettings> {
       // Header
       isMobile
         ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('حدد رصيد الإجازات السنوية والمرضية والطارئة لكل موظف', style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+            Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
             const SizedBox(height: 8),
-            _addBtn('تحديث الأرصدة', () => _loadLeaveBalances()),
+            _addBtn(L.tr('update_balances'), () => _loadLeaveBalances()),
           ])
         : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            _addBtn('تحديث الأرصدة', () => _loadLeaveBalances()),
-            Flexible(child: Text('حدد رصيد الإجازات السنوية والمرضية والطارئة لكل موظف', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+            _addBtn(L.tr('update_balances'), () => _loadLeaveBalances()),
+            Flexible(child: Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
           ]),
       const SizedBox(height: 14),
 
@@ -1070,7 +1071,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       else if (_leaveBalances.isEmpty)
         _card(child: Center(child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Text('لا توجد بيانات — تأكد من وجود موظفين نشطين', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+          child: Text(L.tr('no_data_check'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
         )))
       else
         ..._leaveBalances.map((bal) {
@@ -1085,7 +1086,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           final emergencyTotal = (bal['emergency_total'] as num?)?.toInt() ?? 5;
           final emergencyUsed = (bal['emergency_used'] as num?)?.toInt() ?? 0;
           final unpaidUsed = (bal['unpaid_used'] as num?)?.toInt() ?? 0;
-          final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+          final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
@@ -1115,7 +1116,7 @@ class _AdminSettingsState extends State<AdminSettings> {
 
               // Leave type rows
               _leaveTypeRow(
-                label: 'سنوية',
+                label: L.tr('annual'),
                 icon: Icons.beach_access,
                 color: W.pri,
                 total: annualTotal,
@@ -1124,7 +1125,7 @@ class _AdminSettingsState extends State<AdminSettings> {
               ),
               const SizedBox(height: 8),
               _leaveTypeRow(
-                label: 'مرضية',
+                label: L.tr('sick'),
                 icon: Icons.local_hospital,
                 color: W.red,
                 total: sickTotal,
@@ -1133,7 +1134,7 @@ class _AdminSettingsState extends State<AdminSettings> {
               ),
               const SizedBox(height: 8),
               _leaveTypeRow(
-                label: 'طارئة',
+                label: L.tr('emergency'),
                 icon: Icons.warning_amber,
                 color: W.orange,
                 total: emergencyTotal,
@@ -1143,9 +1144,9 @@ class _AdminSettingsState extends State<AdminSettings> {
               if (unpaidUsed > 0) ...[
                 const SizedBox(height: 8),
                 Row(children: [
-                  Text('$unpaidUsed يوم', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
+                  Text('$unpaidUsed ${L.tr("day_unit")}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
                   const Spacer(),
-                  Text('بدون راتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+                  Text(L.tr('unpaid'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
                   const SizedBox(width: 6),
                   Icon(Icons.money_off, size: 16, color: W.muted),
                 ]),
@@ -1174,20 +1175,20 @@ class _AdminSettingsState extends State<AdminSettings> {
           final ctrl = TextEditingController(text: '$total');
           showDialog(context: context, builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Text('تعديل رصيد $label', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+            title: Text(L.tr('edit_balance_label', args: {'label': label}), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
             content: TextField(
               controller: ctrl,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: color),
               decoration: InputDecoration(
-                hintText: 'عدد الأيام',
+                hintText: L.tr('number_of_days'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                suffixText: 'يوم',
+                suffixText: L.tr('day_unit'),
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub))),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.sub))),
               ElevatedButton(
                 onPressed: () {
                   final v = int.tryParse(ctrl.text);
@@ -1197,7 +1198,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                   }
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white),
-                child: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                child: Text(L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               ),
             ],
           ));
@@ -1212,9 +1213,9 @@ class _AdminSettingsState extends State<AdminSettings> {
       // Progress bar + numbers
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Row(children: [
-          Text('$remaining متبقي من $total', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)),
+          Text(L.tr('n_remaining_of_total', args: {'remaining': remaining.toString(), 'total': total.toString()}), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)),
           const Spacer(),
-          Text('$used مستخدم', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: color)),
+          Text(L.tr('n_used', args: {'used': used.toString()}), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: color)),
         ]),
         const SizedBox(height: 4),
         ClipRRect(
@@ -1244,7 +1245,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     final isWide = MediaQuery.of(context).size.width > 800;
     final cards = [
       _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        _cardHeader('ساعات العمل الرسمية', Icons.access_time, W.pri),
+        _cardHeader(L.tr('official_work_hours'), Icons.access_time, W.pri),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           SizedBox(width: 80, child: TextField(
@@ -1255,11 +1256,11 @@ class _AdminSettingsState extends State<AdminSettings> {
             decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), suffixText: 'h'),
             onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 24) setState(() => _generalH = val); },
           )),
-          Text('ساعات/يوم', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+          Text(L.tr('hours_day'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
         ]),
       ])),
       _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        _cardHeader('معامل الأوفرتايم', Icons.more_time, W.orange),
+        _cardHeader(L.tr('overtime_multiplier'), Icons.more_time, W.orange),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           SizedBox(width: 80, child: TextField(
@@ -1270,18 +1271,18 @@ class _AdminSettingsState extends State<AdminSettings> {
             decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), prefixText: '×'),
             onChanged: (v) { final val = double.tryParse(v); if (val != null && val >= 1 && val <= 5) setState(() => _overtimeRate = val); },
           )),
-          Text('من الراتب', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+          Text(L.tr('from_salary'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
         ]),
       ])),
       _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        _cardHeader('تفعيل الأوفرتايم', Icons.more_time, W.orange),
+        _cardHeader(L.tr('enable_overtime'), Icons.more_time, W.orange),
         const SizedBox(height: 6),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Switch(value: _overtimeActive, activeColor: W.green, onChanged: (v) => setState(() => _overtimeActive = v)),
-          Text(_overtimeActive ? 'مفعّل' : 'معطّل', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: _overtimeActive ? W.green : W.muted)),
+          Text(_overtimeActive ? L.tr('enabled') : L.tr('inactive'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: _overtimeActive ? W.green : W.muted)),
         ]),
         const SizedBox(height: 4),
-        Text('أي ساعات فوق المحدد = أوفرتايم', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+        Text(L.tr('overtime_above_standard'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
       ])),
     ];
 
@@ -1302,9 +1303,9 @@ class _AdminSettingsState extends State<AdminSettings> {
   // ─────────────────── التأخير (صفحة منفصلة) ───────────────────
   Widget _buildLateSettings() {
     return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('سماحية التأخير', Icons.timer_off, W.red),
+      _cardHeader(L.tr('late_tolerance'), Icons.timer_off, W.red),
       const SizedBox(height: 8),
-      Text('عدد الدقائق المسموحة قبل احتساب الموظف متأخراً', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted), textAlign: TextAlign.right),
+      Text(L.tr('allowed_minutes_desc'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted), textAlign: TextAlign.right),
       const SizedBox(height: 14),
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         SizedBox(width: 100, child: TextField(
@@ -1312,16 +1313,16 @@ class _AdminSettingsState extends State<AdminSettings> {
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
           style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: W.red),
-          decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), suffixText: 'د'),
+          decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)), suffixText: L.tr('minute')),
           onChanged: (v) { final val = int.tryParse(v); if (val != null && val >= 0 && val <= 120) setState(() => _lateGraceMinutes = val); },
         )),
-        Text('سماحية التأخير (بالدقائق)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+        Text(L.tr('late_tolerance_minutes'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
       ]),
       const SizedBox(height: 12),
       Container(
         width: double.infinity, padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
-        child: Text('مثال: لو السماحية 15 دقيقة والدوام يبدأ 8:00 — الموظف اللي يجي 8:15 أو قبل مش متأخر، بس 8:16 يتحسب متأخر', style: GoogleFonts.tajawal(fontSize: 11, color: W.red, height: 1.6), textAlign: TextAlign.right),
+        child: Text(L.tr('tolerance_example'), style: GoogleFonts.tajawal(fontSize: 11, color: W.red, height: 1.6), textAlign: TextAlign.right),
       ),
     ]));
   }
@@ -1329,25 +1330,25 @@ class _AdminSettingsState extends State<AdminSettings> {
   // ─────────────────── المصادقة ───────────────────
   Widget _buildAuth() => Column(children: [
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('إعدادات المصادقة العامة', Icons.shield, W.pri),
+      _cardHeader(L.tr('auth_settings'), Icons.shield, W.pri),
       const SizedBox(height: 4),
-      Text('هذه الإعدادات تُطبّق على جميع الموظفين — يمكنك تخصيص موظف معين من الأسفل', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
+      Text(L.tr('settings_apply_all'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
       const SizedBox(height: 10),
     ])),
     if (ApiService.hasFeature('allow_face_auth'))
-      _toggleCard('التعرف على الوجه', 'التحقق من هوية الموظف عبر الكاميرا', Icons.face, W.pri, _authFace, (v) => setState(() => _authFace = v)),
-    _toggleCard('البصمة الرقمية', 'بصمة الإصبع عبر الجهاز', Icons.fingerprint, W.green, _authFinger, (v) => setState(() => _authFinger = v)),
-    _toggleCard('التحقق من الموقع', 'التأكد من التواجد في نطاق العمل', Icons.location_on, W.orange, _authLoc, (v) => setState(() => _authLoc = v)),
+      _toggleCard(L.tr('face_recognition'), L.tr('face_check_desc'), Icons.face, W.pri, _authFace, (v) => setState(() => _authFace = v)),
+    _toggleCard(L.tr('digital_fingerprint'), L.tr('fingerprint_device'), Icons.fingerprint, W.green, _authFinger, (v) => setState(() => _authFinger = v)),
+    _toggleCard(L.tr('location_check'), L.tr('attendance_confirm'), Icons.location_on, W.orange, _authLoc, (v) => setState(() => _authLoc = v)),
     const SizedBox(height: 20),
     // ─── Per-employee override ───
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('تخصيص موظف معين', Icons.person_pin, const Color(0xFF7F56D9)),
-      Text('السماح أو منع البصمة/الموقع لموظف محدد بشكل مختلف عن الإعداد العام', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
+      _cardHeader(L.tr('customize_employee'), Icons.person_pin, const Color(0xFF7F56D9)),
+      Text(L.tr('allow_different'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), textAlign: TextAlign.right),
       const SizedBox(height: 12),
       Builder(builder: (_) {
           final users = _settingsUsers.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
           users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-          if (users.isEmpty) return Text('لا يوجد موظفين', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted));
+          if (users.isEmpty) return Text(L.tr('no_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted));
           return Column(children: users.map((emp) {
             final uid = emp['uid'] ?? emp['_id'];
             final hasOverride = emp['authOverride'] == true;
@@ -1378,7 +1379,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(color: hasOverride ? Color(0xFF7F56D9).withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                      child: Text(hasOverride ? 'إلغاء التخصيص' : 'تخصيص', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: hasOverride ? Color(0xFF7F56D9) : W.sub)),
+                      child: Text(hasOverride ? L.tr('cancel_customize') : L.tr('customize'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: hasOverride ? Color(0xFF7F56D9) : W.sub)),
                     ),
                   ),
                   const Spacer(),
@@ -1392,7 +1393,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     Switch(value: empFace, activeColor: W.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authFace': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
-                      Text('بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
+                      Text(L.tr('face_punch'), style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
                       const SizedBox(width: 4),
                       Icon(Icons.face, size: 14, color: W.pri),
                     ]),
@@ -1401,7 +1402,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     Switch(value: empBio, activeColor: W.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authBiometric': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
-                      Text('البصمة', style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
+                      Text(L.tr('fingerprint_label_settings'), style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
                       const SizedBox(width: 4),
                       Icon(Icons.fingerprint, size: 14, color: W.green),
                     ]),
@@ -1410,7 +1411,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     Switch(value: empLoc, activeColor: W.green, onChanged: (v) async { await ApiService.post('users.php?action=update', {'uid': uid, 'authLoc': v}); _loadSettings(); }),
                     const Spacer(),
                     Row(children: [
-                      Text('الموقع', style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
+                      Text(L.tr('location_label_settings'), style: GoogleFonts.tajawal(fontSize: 12, color: W.text)),
                       const SizedBox(width: 4),
                       Icon(Icons.location_on, size: 14, color: W.orange),
                     ]),
@@ -1420,13 +1421,13 @@ class _AdminSettingsState extends State<AdminSettings> {
                   InkWell(
                     onTap: () async {
                       await ApiService.post('face.php?action=reset', {'uid': uid});
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إعادة تعيين بصمة الوجه لـ ${emp['name']}', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('face_reset_for_name', args: {'name': emp['name'] ?? ''}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: W.redL, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.redBd)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('إعادة تعيين بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
+                        Text(L.tr('reset_face'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.red)),
                         const SizedBox(width: 4),
                         Icon(Icons.refresh, size: 12, color: W.red),
                       ]),
@@ -1443,68 +1444,68 @@ class _AdminSettingsState extends State<AdminSettings> {
   // ─────────────────── الأمان ───────────────────
   Widget _buildSecurity() => Column(children: [
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('التحقق بخطوتين (2FA)', Icons.lock, W.red),
-      _secToggle('تفعيل التحقق بخطوتين', 'إرسال رمز تحقق عبر SMS أو البريد عند تسجيل الدخول', _twoFA, (v) => setState(() => _twoFA = v)),
-      _secToggle('إشعار تسجيل الدخول', 'إخطار المدير عند أي تسجيل دخول جديد', _loginNotify, (v) => setState(() => _loginNotify = v)),
-      _secToggle('إشعار محاولات الدخول الفاشلة', 'تنبيه فوري عند محاولة دخول فاشلة', _failedNotify, (v) => setState(() => _failedNotify = v)),
+      _cardHeader(L.tr('two_fa'), Icons.lock, W.red),
+      _secToggle(L.tr('two_fa_enable'), L.tr('two_fa_desc'), _twoFA, (v) => setState(() => _twoFA = v)),
+      _secToggle(L.tr('login_notification'), L.tr('login_notif'), _loginNotify, (v) => setState(() => _loginNotify = v)),
+      _secToggle(L.tr('failed_login_notif'), L.tr('failed_login_desc'), _failedNotify, (v) => setState(() => _failedNotify = v)),
     ])),
     const SizedBox(height: 14),
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('سياسات الأمان', Icons.shield, const Color(0xFF7F56D9)),
-      _sliderSetting('مهلة انتهاء الجلسة (بالدقائق)', _sessionTimeout, 5, 120, 23, W.pri, (v) => setState(() => _sessionTimeout = v)),
-      _sliderSetting('عدد محاولات الدخول المسموحة', _maxAttempts, 1, 10, 9, W.red, (v) => setState(() => _maxAttempts = v)),
-      _sliderSetting('إجبار تغيير كلمة المرور (كل X يوم)', _forcePassChange, 7, 365, 51, W.orange, (v) => setState(() => _forcePassChange = v)),
-      _secToggle('تقييد IP', 'السماح فقط لعناوين محددة', _ipWhitelist, (v) => setState(() => _ipWhitelist = v)),
+      _cardHeader(L.tr('security_policies'), Icons.shield, const Color(0xFF7F56D9)),
+      _sliderSetting(L.tr('session_timeout'), _sessionTimeout, 5, 120, 23, W.pri, (v) => setState(() => _sessionTimeout = v)),
+      _sliderSetting(L.tr('max_login_attempts'), _maxAttempts, 1, 10, 9, W.red, (v) => setState(() => _maxAttempts = v)),
+      _sliderSetting(L.tr('force_password_change'), _forcePassChange, 7, 365, 51, W.orange, (v) => setState(() => _forcePassChange = v)),
+      _secToggle(L.tr('ip_restrict'), L.tr('ip_restrict_desc'), _ipWhitelist, (v) => setState(() => _ipWhitelist = v)),
     ])),
   ]);
 
   // ─────────────────── المظهر ───────────────────
   Widget _buildAppearance() => Column(children: [
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('تخصيص المظهر', Icons.desktop_windows, W.pri),
+      _cardHeader(L.tr('appearance_customize'), Icons.desktop_windows, W.pri),
       const SizedBox(height: 10),
-      _input(TextEditingController(text: _orgName), 'اسم المؤسسة', 'مدارس المروج النموذجية الأهلية'),
+      _input(TextEditingController(text: _orgName), L.tr('org_name'), L.tr('school_full_name')),
       const SizedBox(height: 14),
-      Align(alignment: Alignment.centerRight, child: Text('حجم الخط', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
+      Align(alignment: Alignment.centerRight, child: Text(L.tr('font_size'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub))),
       const SizedBox(height: 6),
-      Row(children: [{'k': 'small', 'l': 'صغير'}, {'k': 'medium', 'l': 'متوسط'}, {'k': 'large', 'l': 'كبير'}].map((f) => Expanded(child: Padding(padding: EdgeInsets.only(left: 6), child: InkWell(onTap: () => setState(() => _fontSize = f['k']!), child: Container(padding: EdgeInsets.all(8), decoration: BoxDecoration(color: _fontSize == f['k'] ? W.priLight : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: _fontSize == f['k'] ? W.pri : W.border, width: _fontSize == f['k'] ? 2 : 1)), child: Center(child: Text(f['l']!, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: _fontSize == f['k'] ? W.pri : W.sub)))))))).toList()),
+      Row(children: [{'k': 'small', 'l': L.tr('small')}, {'k': 'medium', 'l': L.tr('medium')}, {'k': 'large', 'l': L.tr('large')}].map((f) => Expanded(child: Padding(padding: EdgeInsets.only(left: 6), child: InkWell(onTap: () => setState(() => _fontSize = f['k']!), child: Container(padding: EdgeInsets.all(8), decoration: BoxDecoration(color: _fontSize == f['k'] ? W.priLight : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: _fontSize == f['k'] ? W.pri : W.border, width: _fontSize == f['k'] ? 2 : 1)), child: Center(child: Text(f['l']!, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: _fontSize == f['k'] ? W.pri : W.sub)))))))).toList()),
     ])),
     const SizedBox(height: 14),
     _card(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      _cardHeader('خيارات العرض', Icons.visibility, const Color(0xFF0BA5EC)),
-      _secToggle('الوضع الداكن', 'تغيير الألوان لوضع مريح للعين في الإضاءة المنخفضة', _darkMode, (v) => setState(() => _darkMode = v)),
-      _secToggle('الوضع المضغوط', 'تقليل المسافات والحجوم لعرض بيانات أكثر', _compactMode, (v) => setState(() => _compactMode = v)),
+      _cardHeader(L.tr('display_options'), Icons.visibility, const Color(0xFF0BA5EC)),
+      _secToggle(L.tr('dark_mode'), L.tr('dark_mode_desc'), _darkMode, (v) => setState(() => _darkMode = v)),
+      _secToggle(L.tr('compact_mode'), L.tr('compact_mode_desc'), _compactMode, (v) => setState(() => _compactMode = v)),
     ])),
   ]);
 
   // ─────────────────── بصمة مخصصة ───────────────────
   Widget _buildCustomAtt() { final isMobile = MediaQuery.of(context).size.width < 500; return Column(children: [
     isMobile ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Text('افتح البصمة لموظف محدد في وقت معين', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+      Text(L.tr('custom_employee'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
       const SizedBox(height: 8),
-      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
+      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text(L.tr('open_punch_employee'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
     ]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text('فتح بصمة لموظف', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
-      Flexible(child: Text('افتح البصمة لموظف محدد في وقت معين', style: GoogleFonts.tajawal(fontSize: 14, color: W.sub))),
+      ElevatedButton.icon(onPressed: () => setState(() => _showAddAtt = true), icon: const Icon(Icons.add, size: 14), label: Text(L.tr('open_punch_employee'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8F8FD), foregroundColor: const Color(0xFF0BA5EC), side: const BorderSide(color: Color(0xFF0BA5EC)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
+      Flexible(child: Text(L.tr('custom_employee'), style: GoogleFonts.tajawal(fontSize: 14, color: W.sub))),
     ]),
     const SizedBox(height: 14),
     if (_showAddAtt) _card(border: const Color(0xFF0BA5EC), child: Column(children: [
       isMobile ? Column(children: [
-        _input(_attDate, 'التاريخ', '18 مارس 2026'),
+        _input(_attDate, L.tr('date'), '18 Mar 2026'),
         const SizedBox(height: 8),
-        Row(children: [Expanded(child: _input(_attEnd, 'إلى', '02:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attStart, 'من', '10:00 ص', isLtr: true))]),
+        Row(children: [Expanded(child: _input(_attEnd, L.tr('to'), '02:00 ${L.tr('pm')}', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attStart, L.tr('from'), '10:00 ${L.tr('am')}', isLtr: true))]),
         const SizedBox(height: 8),
-        _input(_attReason, 'السبب', 'مهمة خارجية'),
-      ]) : Row(children: [Expanded(child: _input(_attReason, 'السبب', 'مهمة خارجية')), const SizedBox(width: 10), Expanded(child: _input(_attEnd, 'إلى', '02:00 م', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attStart, 'من', '10:00 ص', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attDate, 'التاريخ', '18 مارس 2026'))]),
+        _input(_attReason, L.tr('reason'), L.tr('external_mission')),
+      ]) : Row(children: [Expanded(child: _input(_attReason, L.tr('reason'), L.tr('external_mission'))), const SizedBox(width: 10), Expanded(child: _input(_attEnd, L.tr('to'), '02:00 ${L.tr('pm')}', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attStart, L.tr('from'), '10:00 ${L.tr('am')}', isLtr: true)), const SizedBox(width: 10), Expanded(child: _input(_attDate, L.tr('date'), '18 Mar 2026'))]),
       const SizedBox(height: 12),
-      Row(children: [ElevatedButton(onPressed: () { setState(() { _customAtt.add({'id': DateTime.now().millisecondsSinceEpoch, 'empName': 'موظف', 'date': _attDate.text, 'start': _attStart.text, 'end': _attEnd.text, 'reason': _attReason.text, 'status': 'مفعّل'}); _attDate.clear(); _attStart.clear(); _attEnd.clear(); _attReason.clear(); _showAddAtt = false; }); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0BA5EC), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))), child: Text('✓ فتح البصمة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600))), const SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddAtt = false))]),
+      Row(children: [ElevatedButton(onPressed: () { setState(() { _customAtt.add({'id': DateTime.now().millisecondsSinceEpoch, 'empName': L.tr('employee_unit'), 'date': _attDate.text, 'start': _attStart.text, 'end': _attEnd.text, 'reason': _attReason.text, 'status': L.tr('enabled')}); _attDate.clear(); _attStart.clear(); _attEnd.clear(); _attReason.clear(); _showAddAtt = false; }); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0BA5EC), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))), child: Text(L.tr('open_punch'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600))), const SizedBox(width: 8), _cancelBtn(() => setState(() => _showAddAtt = false))]),
     ])),
     ..._customAtt.map((a) => Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 16), decoration: DS.cardDecoration(), child: Row(children: [
       Row(mainAxisSize: MainAxisSize.min, children: [InkWell(onTap: () => setState(() => _customAtt.removeWhere((x) => x['id'] == a['id'])), child: Icon(Icons.delete_outline, size: 14, color: W.red)), SizedBox(width: 6), Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Color(0xFFECFDF3), borderRadius: BorderRadius.circular(20)), child: Text(a['status'] as String, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.green)))]),
       const Spacer(),
-      Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(a['empName'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 6), Icon(Icons.lock_open, size: 14, color: Color(0xFF0BA5EC))]), Text('${a['date']} — من ${a['start']} إلى ${a['end']}', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.sub), overflow: TextOverflow.ellipsis), Text('السبب: ${a['reason']}', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted), overflow: TextOverflow.ellipsis)])),
+      Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Text(a['empName'] as String, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis)), SizedBox(width: 6), Icon(Icons.lock_open, size: 14, color: Color(0xFF0BA5EC))]), Text('${a['date']} — ${L.tr('from')} ${a['start']} ${L.tr('to')} ${a['end']}', style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.sub), overflow: TextOverflow.ellipsis), Text(L.tr('reason_prefix', args: {'reason': a['reason'] as String}), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted), overflow: TextOverflow.ellipsis)])),
     ]))),
-    if (_customAtt.isEmpty) _card(child: Center(child: Padding(padding: EdgeInsets.all(20), child: Text('لا توجد بصمات مخصصة', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))))),
+    if (_customAtt.isEmpty) _card(child: Center(child: Padding(padding: EdgeInsets.all(20), child: Text(L.tr('no_custom_punches'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))))),
   ]); }
 
   // ═══════════ Shared Widgets ═══════════
@@ -1514,7 +1515,7 @@ class _AdminSettingsState extends State<AdminSettings> {
   Widget _input(TextEditingController ctrl, String label, String hint, {bool isLtr = false}) => Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)), SizedBox(height: 4), TextField(controller: ctrl, textAlign: isLtr ? TextAlign.center : TextAlign.right, style: GoogleFonts.tajawal(fontSize: 13), decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10)))]);
   Widget _addBtn(String label, VoidCallback onTap) => ElevatedButton.icon(onPressed: onTap, icon: Icon(Icons.add, size: 14), label: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)), style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri, style: BorderStyle.solid), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
   Widget _greenBtn(String label, VoidCallback onTap) => ElevatedButton(onPressed: onTap, style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))), child: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)));
-  Widget _cancelBtn(VoidCallback onTap) => TextButton(onPressed: onTap, child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub)));
+  Widget _cancelBtn(VoidCallback onTap) => TextButton(onPressed: onTap, child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.sub)));
   Widget _toggleCard(String title, String desc, IconData icon, Color color, bool value, Function(bool) onChanged) { final isMobile = MediaQuery.of(context).size.width < 500; return Container(margin: EdgeInsets.only(bottom: 10), padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22, vertical: isMobile ? 12 : 18), decoration: DS.cardDecoration(), child: Row(children: [Switch(value: value, activeColor: W.green, onChanged: onChanged), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(title, style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text(desc, style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 12, color: W.muted), overflow: TextOverflow.ellipsis, maxLines: 2)])), SizedBox(width: isMobile ? 8 : 12), Container(width: isMobile ? 34 : 42, height: isMobile ? 34 : 42, decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(icon, size: isMobile ? 16 : 20, color: color))])); }
   Widget _secToggle(String title, String desc, bool value, Function(bool) onChanged) => Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))), child: Row(children: [Switch(value: value, activeColor: W.green, onChanged: onChanged), const SizedBox(width: 4), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(title, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text(desc, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis, maxLines: 2)]))]));
   Widget _sliderSetting(String label, double value, double min, double max, int divisions, Color color, Function(double) onChanged) => Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub), overflow: TextOverflow.ellipsis), Row(children: [Text('${value.round()}', style: GoogleFonts.ibmPlexMono(fontSize: 16, fontWeight: FontWeight.w700, color: color)), const SizedBox(width: 4), Expanded(child: Slider(value: value, min: min, max: max, divisions: divisions, activeColor: color, onChanged: onChanged))])]));

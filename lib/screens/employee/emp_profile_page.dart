@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpProfilePage extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -11,7 +12,7 @@ class EmpProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final roleLabels = {'admin': 'مدير النظام', 'moderator': 'مشرف', 'employee': 'موظف'};
+    final roleLabels = {'admin': L.tr('system_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
     final roleColors = {'admin': C.red, 'moderator': C.purple, 'employee': C.pri};
     final roleBgs = {'admin': C.redL, 'moderator': C.purpleL, 'employee': C.priLight};
     final role = user['role'] ?? 'employee';
@@ -23,7 +24,7 @@ class EmpProfilePage extends StatelessWidget {
         surfaceTintColor: C.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('الملف الشخصي', style: _tj(17, weight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('profile'), style: _tj(17, weight: FontWeight.w700, color: C.text)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text),
           onPressed: () => Navigator.pop(context),
@@ -51,7 +52,7 @@ class EmpProfilePage extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      _getInitials(user['name'] ?? 'م'),
+                      _getInitials(user['name'] ?? L.tr('pm')),
                       style: _tj(26, weight: FontWeight.w700, color: Colors.white),
                     ),
                   ),
@@ -68,7 +69,7 @@ class EmpProfilePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    roleLabels[role] ?? 'موظف',
+                    roleLabels[role] ?? L.tr('employee_unit'),
                     style: _tj(12, weight: FontWeight.w600, color: roleColors[role] ?? C.pri),
                   ),
                 ),
@@ -79,12 +80,12 @@ class EmpProfilePage extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ─── Info Cards ───
-          _infoCard(Icons.mail_outline_rounded, 'البريد الإلكتروني', user['email'] ?? '—'),
-          _infoCard(Icons.apartment_rounded, 'القسم / الإدارة', user['dept'] ?? '—'),
-          _infoCard(Icons.badge_outlined, 'الرقم الوظيفي', user['empId'] ?? '—'),
-          _infoCard(Icons.phone_outlined, 'رقم الجوال', user['phone'] ?? '—'),
-          _infoCard(Icons.fingerprint_rounded, 'طريقة المصادقة', 'بصمة + التعرف على الوجه'),
-          _infoCard(Icons.calendar_today_rounded, 'تاريخ التعيين', user['joinDate'] ?? '—'),
+          _infoCard(Icons.mail_outline_rounded, L.tr('email'), user['email'] ?? '—'),
+          _infoCard(Icons.apartment_rounded, L.tr('department'), user['dept'] ?? '—'),
+          _infoCard(Icons.badge_outlined, L.tr('employee_id'), user['empId'] ?? '—'),
+          _infoCard(Icons.phone_outlined, L.tr('phone_number'), user['phone'] ?? '—'),
+          _infoCard(Icons.fingerprint_rounded, L.tr('auth_method'), L.tr('fingerprint_face')),
+          _infoCard(Icons.calendar_today_rounded, L.tr('appointment_date'), user['joinDate'] ?? '—'),
         ],
       ),
     );
@@ -124,6 +125,6 @@ class EmpProfilePage extends StatelessWidget {
 
   String _getInitials(String name) {
     if (name.length >= 2) return name.substring(0, 2);
-    return name.isNotEmpty ? name[0] : 'م';
+    return name.isNotEmpty ? name[0] : L.tr('pm');
   }
 }

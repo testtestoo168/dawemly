@@ -9,6 +9,7 @@ import 'sa_dashboard.dart';
 import 'sa_organizations.dart';
 import 'sa_plans.dart';
 import 'sa_audit_log.dart';
+import '../../l10n/app_locale.dart';
 
 class SuperadminApp extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -31,11 +32,11 @@ class _SuperadminAppState extends State<SuperadminApp> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
-  static const _navItems = [
-    _NI('dashboard', 'إحصائيات', Icons.speed_rounded),
-    _NI('organizations', 'المؤسسات', Icons.business_rounded),
-    _NI('plans', 'الباقات', Icons.card_membership_rounded),
-    _NI('audit', 'سجل العمليات', Icons.history_rounded),
+  static List<_NI> get _navItems => [
+    _NI('dashboard', L.tr('statistics'), Icons.speed_rounded),
+    _NI('organizations', L.tr('sa_organizations'), Icons.business_rounded),
+    _NI('plans', L.tr('sa_plans'), Icons.card_membership_rounded),
+    _NI('audit', L.tr('operations_log'), Icons.history_rounded),
   ];
 
   @override
@@ -54,7 +55,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
   void _tick() {
     final n = ServerTimeService().now;
     final h = n.hour > 12 ? n.hour - 12 : (n.hour == 0 ? 12 : n.hour);
-    if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? 'م' : 'ص'}');
+    if (mounted) setState(() => _ts = '${h.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')} ${n.hour >= 12 ? L.tr('pm') : L.tr('am')}');
   }
 
   Widget _getPage(String k) {
@@ -93,8 +94,8 @@ class _SuperadminAppState extends State<SuperadminApp> {
                 child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
               ),
               if (!_sc) ...[const SizedBox(width: 12), Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text('داوِملي', style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
-                Text('لوحة المدير الأعلى', style: _tj(10, color: Colors.white.withOpacity(0.5))),
+                Text(L.tr('app_name'), style: _tj(18, weight: FontWeight.w800, color: Colors.white)),
+                Text(L.tr('sa_dashboard'), style: _tj(10, color: Colors.white.withOpacity(0.5))),
               ]))],
             ]),
           ),
@@ -103,7 +104,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
           Expanded(child: ListView(padding: const EdgeInsets.symmetric(vertical: 12), children: [
             if (!_sc) Padding(
               padding: const EdgeInsets.only(right: 18, top: 6, bottom: 8),
-              child: Text('القائمة', style: _tj(10, weight: FontWeight.w700, color: Colors.white.withOpacity(0.35))),
+              child: Text(L.tr('list_view'), style: _tj(10, weight: FontWeight.w700, color: Colors.white.withOpacity(0.35))),
             ),
             if (_sc) const SizedBox(height: 8),
             for (final item in _navItems)
@@ -115,7 +116,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
             decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1)))),
             padding: const EdgeInsets.all(10),
             child: Column(children: [
-              _sidebarActionLink(Icons.logout_rounded, 'تسجيل خروج', const Color(0xFFFF6B6B), () async {
+              _sidebarActionLink(Icons.logout_rounded, L.tr('check_out_action'), const Color(0xFFFF6B6B), () async {
                 await AuthService().logout();
                 widget.onLogout();
               }),
@@ -133,7 +134,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(widget.user['name'] ?? 'Super Admin', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
-                    Text('المدير الأعلى', style: _tj(11, color: Colors.white.withOpacity(0.5))),
+                    Text(L.tr('higher_admin'), style: _tj(11, color: Colors.white.withOpacity(0.5))),
                   ])),
                 ]),
               ),

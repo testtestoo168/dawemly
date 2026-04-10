@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpLocationsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -96,7 +97,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
         surfaceTintColor: C.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('مواقع العمل', style: _tj(17, weight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('work_locations'), style: _tj(17, weight: FontWeight.w700, color: C.text)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text),
           onPressed: () => Navigator.pop(context),
@@ -112,9 +113,9 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                     children: [
                       Icon(Icons.location_off_rounded, size: 60, color: C.muted.withOpacity(0.4)),
                       const SizedBox(height: 12),
-                      Text('لا توجد مواقع محددة لك', style: _tj(16, weight: FontWeight.w600, color: C.muted)),
+                      Text(L.tr('no_locations_for_you'), style: _tj(16, weight: FontWeight.w600, color: C.muted)),
                       const SizedBox(height: 4),
-                      Text('تواصل مع الإدارة لتحديد مواقع العمل', style: _tj(13, color: C.muted)),
+                      Text(L.tr('contact_admin_locations'), style: _tj(13, color: C.muted)),
                     ],
                   ),
                 )
@@ -144,14 +145,14 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
       final lat = (loc['lat'] as num?)?.toDouble();
       final lng = (loc['lng'] as num?)?.toDouble();
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
-      final name = loc['name'] ?? 'موقع ${i + 1}';
+      final name = loc['name'] ?? L.tr('location_n', args: {'n': (i + 1).toString()});
       final isSelected = i == _selectedIndex;
 
       if (lat != null && lng != null) {
         markers.add(Marker(
           markerId: MarkerId('loc_$i'),
           position: LatLng(lat, lng),
-          infoWindow: InfoWindow(title: name, snippet: 'النطاق: ${radius.toInt()}م'),
+          infoWindow: InfoWindow(title: name, snippet: L.tr('range_n_m', args: {'n': radius.toInt().toString()})),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             isSelected ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueOrange,
           ),
@@ -175,7 +176,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
       markers.add(Marker(
         markerId: const MarkerId('my_position'),
         position: LatLng(_myPosition!.latitude, _myPosition!.longitude),
-        infoWindow: const InfoWindow(title: 'موقعي الحالي'),
+        infoWindow: InfoWindow(title: L.tr('current_location')),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       ));
     }
@@ -214,8 +215,8 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
           final dist = Geolocator.distanceBetween(_myPosition!.latitude, _myPosition!.longitude, lat, lng);
           isInside = dist <= radius;
           distanceText = dist < 1000
-              ? '${dist.round()} م'
-              : '${(dist / 1000).toStringAsFixed(1)} كم';
+              ? L.tr('distance_m', args: {'d': dist.round().toString()})
+              : L.tr('n_km', args: {'n': (dist / 1000).toStringAsFixed(1)});
         }
 
         return InkWell(
@@ -247,7 +248,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          isInside ? 'داخل النطاق' : 'خارج النطاق',
+                          isInside ? L.tr('inside_range_label') : L.tr('outside_range_label'),
                           style: _tj(10, weight: FontWeight.w600, color: isInside ? C.green : C.red),
                         ),
                       ),
@@ -262,7 +263,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                     color: C.greenL,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text('${radius.toInt()}م', style: _tj(11, weight: FontWeight.w600, color: C.green)),
+                  child: Text(L.tr('n_m_label', args: {'n': radius.toInt().toString()}), style: _tj(11, weight: FontWeight.w600, color: C.green)),
                 ),
                 const Spacer(),
                 // Info
@@ -271,7 +272,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        loc['name'] ?? 'موقع',
+                        loc['name'] ?? L.tr('locations'),
                         style: _tj(14, weight: FontWeight.w700, color: C.text),
                         overflow: TextOverflow.ellipsis,
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminRoles extends StatefulWidget {
   const AdminRoles({super.key});
@@ -19,54 +20,54 @@ class _AdminRolesState extends State<AdminRoles> {
   bool _saved = false;
   bool _listVisible = true;
 
-  static const _sections = [
+  static List<Map<String, dynamic>> get _sections => [
     {
-      'title': 'الرئيسية',
+      'title': L.tr('mob_home'),
       'color': 0xFF1D4ED8,
       'icon': Icons.home_rounded,
       'perms': [
-        {'key': 'dashboard', 'label': 'لوحة التحكم', 'icon': Icons.speed_rounded},
+        {'key': 'dashboard', 'label': L.tr('nav_dashboard'), 'icon': Icons.speed_rounded},
       ],
     },
     {
-      'title': 'الموظفون',
+      'title': L.tr('employees_label'),
       'color': 0xFF0891B2,
       'icon': Icons.people_rounded,
       'perms': [
-        {'key': 'employees', 'label': 'سجل الموظفين',     'icon': Icons.people_alt_rounded},
-        {'key': 'usermgmt',  'label': 'إدارة المستخدمين', 'icon': Icons.manage_accounts_rounded},
-        {'key': 'roles',     'label': 'الصلاحيات',        'icon': Icons.vpn_key_rounded},
+        {'key': 'employees', 'label': L.tr('employee_log'),     'icon': Icons.people_alt_rounded},
+        {'key': 'usermgmt',  'label': L.tr('nav_user_mgmt'), 'icon': Icons.manage_accounts_rounded},
+        {'key': 'roles',     'label': L.tr('nav_roles'),        'icon': Icons.vpn_key_rounded},
       ],
     },
     {
-      'title': 'الحضور والانصراف',
+      'title': L.tr('nav_attendance_section'),
       'color': 0xFF7C3AED,
       'icon': Icons.fingerprint_rounded,
       'perms': [
-        {'key': 'verify',    'label': 'إثبات الحالة',      'icon': Icons.wifi_tethering_rounded},
-        {'key': 'overtime',  'label': 'الأوفرتايم',        'icon': Icons.more_time_rounded},
-        {'key': 'schedules', 'label': 'الجداول والإجازات', 'icon': Icons.calendar_month_rounded},
-        {'key': 'requests',  'label': 'الطلبات',           'icon': Icons.task_alt_rounded},
+        {'key': 'verify',    'label': L.tr('nav_verify'),      'icon': Icons.wifi_tethering_rounded},
+        {'key': 'overtime',  'label': L.tr('overtime'),        'icon': Icons.more_time_rounded},
+        {'key': 'schedules', 'label': L.tr('nav_schedules'), 'icon': Icons.calendar_month_rounded},
+        {'key': 'requests',  'label': L.tr('mob_requests'),           'icon': Icons.task_alt_rounded},
       ],
     },
     {
-      'title': 'التقارير والمراقبة',
+      'title': L.tr('nav_reports_section'),
       'color': 0xFF059669,
       'icon': Icons.analytics_rounded,
       'perms': [
-        {'key': 'reports',       'label': 'التقارير',        'icon': Icons.bar_chart_rounded},
-        {'key': 'devices',       'label': 'مراقبة الأجهزة', 'icon': Icons.devices_rounded},
-        {'key': 'notifications', 'label': 'الإشعارات',      'icon': Icons.notifications_rounded},
-        {'key': 'audit',         'label': 'سجل التدقيق',    'icon': Icons.history_rounded},
+        {'key': 'reports',       'label': L.tr('reports'),        'icon': Icons.bar_chart_rounded},
+        {'key': 'devices',       'label': L.tr('device_monitoring'), 'icon': Icons.devices_rounded},
+        {'key': 'notifications', 'label': L.tr('mob_notifications'),      'icon': Icons.notifications_rounded},
+        {'key': 'audit',         'label': L.tr('audit_log'),    'icon': Icons.history_rounded},
       ],
     },
     {
-      'title': 'النظام',
+      'title': L.tr('nav_system_section'),
       'color': 0xFFDC2626,
       'icon': Icons.settings_rounded,
       'perms': [
-        {'key': 'settings', 'label': 'الإعدادات',      'icon': Icons.tune_rounded},
-        {'key': 'delete',   'label': 'صلاحية الحذف',   'icon': Icons.delete_forever_rounded},
+        {'key': 'settings', 'label': L.tr('settings'),      'icon': Icons.tune_rounded},
+        {'key': 'delete',   'label': L.tr('delete_permission'),   'icon': Icons.delete_forever_rounded},
       ],
     },
   ];
@@ -171,8 +172,8 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _header() => Align(
     alignment: Alignment.centerRight,
     child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-      Text('إدارة الصلاحيات', style: _tj(20, w: FontWeight.w800, color: W.text)),
-      Text('اضغط على موظف لتحديد صلاحياته', style: _tj(11, color: W.muted)),
+      Text(L.tr('roles_management'), style: _tj(20, w: FontWeight.w800, color: W.text)),
+      Text(L.tr('tap_employee_roles'), style: _tj(11, color: W.muted)),
     ]),
   );
 
@@ -182,9 +183,9 @@ class _AdminRolesState extends State<AdminRoles> {
       Container(width: 64, height: 64, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(18)),
         child: Icon(Icons.vpn_key_rounded, size: 30, color: W.pri)),
       const SizedBox(height: 16),
-      Text('اختر موظفاً من القائمة', style: _tj(16, w: FontWeight.w700, color: W.text)),
+      Text(L.tr('select_employee'), style: _tj(16, w: FontWeight.w700, color: W.text)),
       const SizedBox(height: 6),
-      Text('ستظهر هنا صلاحياته للتعديل', style: _tj(12, color: W.muted)),
+      Text(L.tr('permissions_shown'), style: _tj(12, color: W.muted)),
     ])),
   );
 
@@ -210,7 +211,7 @@ class _AdminRolesState extends State<AdminRoles> {
             const SizedBox(width: 6),
             Text('${_users.length}', style: _tj(11, color: W.muted)),
             const Spacer(),
-            Text('الموظفون', style: _tj(14, w: FontWeight.w800, color: W.text)),
+            Text(L.tr('employees_label'), style: _tj(14, w: FontWeight.w800, color: W.text)),
             const SizedBox(width: 8),
             Container(width: 30, height: 30, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)),
               child: Icon(Icons.people_rounded, size: 15, color: W.pri)),
@@ -227,7 +228,7 @@ class _AdminRolesState extends State<AdminRoles> {
               textAlign: TextAlign.right,
               style: _tj(12, color: W.text),
               decoration: InputDecoration(
-                hintText: 'بحث...',
+                hintText: L.tr('search'),
                 hintStyle: _tj(12, color: W.hint),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -243,7 +244,7 @@ class _AdminRolesState extends State<AdminRoles> {
             ? Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.search_off_rounded, size: 32, color: W.hint),
                 const SizedBox(height: 8),
-                Text('لا يوجد نتائج', style: _tj(12, color: W.muted)),
+                Text(L.tr('no_records'), style: _tj(12, color: W.muted)),
               ]))
             : ListView.builder(shrinkWrap: true, itemCount: list.length,
                 itemBuilder: (_, i) => _empTile(list[i])),
@@ -254,7 +255,7 @@ class _AdminRolesState extends State<AdminRoles> {
 
   Widget _empTile(Map<String, dynamic> u) {
     final name = (u['name'] ?? '').toString();
-    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final isSelected = _selectedUser?['uid'] == u['uid'];
     final count = _permCount(u);
 
@@ -289,7 +290,7 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _permsPanel() {
     final u = _selectedUser!;
     final name = (u['name'] ?? '').toString();
-    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final enabledCount = _editPerms.values.where((v) => v).length;
     final total = _allKeys.length;
 
@@ -312,14 +313,14 @@ class _AdminRolesState extends State<AdminRoles> {
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(_saved ? Icons.check_rounded : Icons.save_rounded, size: 14, color: Colors.white),
                       const SizedBox(width: 6),
-                      Text(_saved ? 'تم الحفظ' : 'حفظ', style: _tj(12, w: FontWeight.w700, color: Colors.white)),
+                      Text(_saved ? L.tr('saved_label') : L.tr('save'), style: _tj(12, w: FontWeight.w700, color: Colors.white)),
                     ]),
                   ),
                 ),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(name, style: _tj(14, w: FontWeight.w700, color: W.text)),
-              Text('$enabledCount / $total صلاحية', style: _tj(11, color: W.muted)),
+              Text(L.tr('n_permissions', args: {'count': enabledCount.toString(), 'total': total.toString()}), style: _tj(11, color: W.muted)),
             ]),
             const SizedBox(width: 10),
             CircleAvatar(radius: 19, backgroundColor: W.priLight,
@@ -352,7 +353,7 @@ class _AdminRolesState extends State<AdminRoles> {
   Widget _permsPanelMobile() {
     final u = _selectedUser!;
     final name = (u['name'] ?? '').toString();
-    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final enabledCount = _editPerms.values.where((v) => v).length;
     final total = _allKeys.length;
 
@@ -375,14 +376,14 @@ class _AdminRolesState extends State<AdminRoles> {
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(_saved ? Icons.check_rounded : Icons.save_rounded, size: 13, color: Colors.white),
                       const SizedBox(width: 4),
-                      Text(_saved ? 'تم' : 'حفظ', style: _tj(11, w: FontWeight.w700, color: Colors.white)),
+                      Text(_saved ? L.tr('ok') : L.tr('save'), style: _tj(11, w: FontWeight.w700, color: Colors.white)),
                     ]),
                   ),
                 ),
             const Spacer(),
             Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(name, style: _tj(13, w: FontWeight.w700, color: W.text)),
-              Text('$enabledCount / $total صلاحية', style: _tj(10, color: W.muted)),
+              Text(L.tr('n_permissions', args: {'count': enabledCount.toString(), 'total': total.toString()}), style: _tj(10, color: W.muted)),
             ])),
             const SizedBox(width: 8),
             CircleAvatar(radius: 16, backgroundColor: W.priLight,

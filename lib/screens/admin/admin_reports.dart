@@ -11,6 +11,7 @@ import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
 import '../../services/download_stub.dart'
     if (dart.library.html) '../../services/download_web.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminReports extends StatefulWidget {
   const AdminReports({super.key});
@@ -19,14 +20,14 @@ class AdminReports extends StatefulWidget {
 
 class _AdminReportsState extends State<AdminReports> {
   final _mono = GoogleFonts.ibmPlexMono;
-  final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  final _dayNames = const ['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'];
+  final _months = L.months;
+  final _dayNames = L.dayNamesFull;
 
   late int _selMonth, _selYear;
   double _standardHours = 8.0;
   int _startHour = 8, _startMinute = 0;
   bool _exporting = false;
-  String _selectedUid = 'الكل';
+  String _selectedUid = L.tr('all');
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _allRecords = [];
   bool _loading = true;
@@ -73,7 +74,7 @@ class _AdminReportsState extends State<AdminReports> {
         'month': _selMonth.toString(),
         'year': _selYear.toString(),
       };
-      if (_selectedUid != 'الكل') params['uid'] = _selectedUid;
+      if (_selectedUid != L.tr('all')) params['uid'] = _selectedUid;
       final recRes = await ApiService.get('attendance.php?action=all_records', params: params);
       if (recRes['success'] == true) {
         _allRecords = (recRes['records'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -97,7 +98,7 @@ class _AdminReportsState extends State<AdminReports> {
     final dt = _parseTs(ts);
     if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   Future<List<Map<String, dynamic>>> _buildReportData() async {
@@ -105,7 +106,7 @@ class _AdminReportsState extends State<AdminReports> {
     final attRecords = _allRecords.where((r) {
       final dk = (r['date_key'] ?? r['dateKey'] ?? '').toString();
       if (!dk.startsWith(monthPrefix)) return false;
-      if (_selectedUid != 'الكل' && r['uid'] != _selectedUid) return false;
+      if (_selectedUid != L.tr('all') && r['uid'] != _selectedUid) return false;
       return true;
     }).toList();
 
@@ -143,14 +144,14 @@ class _AdminReportsState extends State<AdminReports> {
       }
 
       if (storedLateMin > 0) {
-        lateTime = '$storedLateMin د';
+        lateTime = L.tr('late_n_d', args: {'n': storedLateMin.toString()});
       } else if (ci != null) {
         final checkIn = _parseTs(ci);
         if (checkIn != null) {
           final expectedStart = DateTime(checkIn.year, checkIn.month, checkIn.day, _startHour, _startMinute);
           if (checkIn.isAfter(expectedStart)) {
             final lateMins = checkIn.difference(expectedStart).inMinutes;
-            lateTime = '$lateMins د';
+            lateTime = L.tr('late_n_d', args: {'n': lateMins.toString()});
           }
         }
       }
@@ -158,7 +159,7 @@ class _AdminReportsState extends State<AdminReports> {
       // Early leave
       final storedEarly = att['early_leave_minutes'];
       final storedEarlyMin = storedEarly != null ? (storedEarly is int ? storedEarly : int.tryParse('$storedEarly') ?? 0) : 0;
-      String earlyTime = storedEarlyMin > 0 ? '$storedEarlyMin د' : '—';
+      String earlyTime = storedEarlyMin > 0 ? L.tr('late_n_d', args: {'n': storedEarlyMin.toString()}) : '—';
 
       rows.add({
         'empId': user['emp_id'] ?? user['empId'] ?? '—',
@@ -181,14 +182,14 @@ class _AdminReportsState extends State<AdminReports> {
     setState(() => _exporting = true);
     try {
       final data = await _buildReportData();
-      final headers = ['كود الموظف', 'الاسم', 'التاريخ', 'اليوم', 'الدخول', 'الخروج', 'ساعات العمل', 'التأخير', 'خروج مبكر', 'الأوفرتايم'];
+      final headers = [L.tr('employee_code'), L.tr('name'), L.tr('date'), L.tr('day'), L.tr('check_in_col'), L.tr('check_out_col'), L.tr('work_hours'), L.tr('lateness'), L.tr('early_leave'), L.tr('overtime')];
       final csvRows = [headers, ...data.map((r) => [r['empId'], r['name'], r['date'], r['day'], r['checkIn'], r['checkOut'], r['hours'], r['late'], r['early'], r['overtime']])];
       final csv = const ListToCsvConverter().convert(csvRows);
       final bytes = utf8.encode('\uFEFF$csv');
-      final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
+      final empLabel = _selectedUid == L.tr('all') ? 'all' : _selectedUid;
       downloadFile(bytes, 'dawemli_${empLabel}_$_selYear-$_selMonth.csv', 'text/csv');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: W.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('error_prefix', args: {'error': e.toString()})), backgroundColor: W.red));
     }
     if (mounted) setState(() => _exporting = false);
   }
@@ -224,11 +225,11 @@ class _AdminReportsState extends State<AdminReports> {
       final headerStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 9, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
       final titleStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 16, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold);
 
-      final empName = _selectedUid == 'الكل' ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
+      final empName = _selectedUid == L.tr('all') ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
 
-      final titleAr = hasArabic ? 'تقرير الحضور — ${_months[_selMonth - 1]} $_selYear${_selectedUid != 'الكل' ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
+      final titleAr = hasArabic ? L.tr('attendance_report', args: {'month': _months[_selMonth - 1], 'year': _selYear.toString()}) + '${_selectedUid != L.tr('all') ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
       final headersAr = hasArabic
-        ? ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود']
+        ? [L.tr('overtime'), L.tr('early_leave'), L.tr('lateness'), L.tr('work_hours'), L.tr('check_out_col'), L.tr('check_in_col'), L.tr('day'), L.tr('date'), L.tr('name'), L.tr('code')]
         : ['Overtime', 'Early Leave', 'Late', 'Hours', 'Check Out', 'Check In', 'Day', 'Date', 'Name', 'EmpID'];
 
       pdf.addPage(pw.MultiPage(
@@ -251,18 +252,18 @@ class _AdminReportsState extends State<AdminReports> {
       ));
 
       final bytes = await pdf.save();
-      final empLabel = _selectedUid == 'الكل' ? 'all' : _selectedUid;
+      final empLabel = _selectedUid == L.tr('all') ? 'all' : _selectedUid;
       downloadFile(bytes, 'dawemli_${empLabel}_$_selYear-$_selMonth.pdf', 'application/pdf');
 
       if (!hasArabic && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('⚠ لتصدير PDF بالعربي، ضع ملف Tajawal-Regular.ttf في assets/fonts/', style: GoogleFonts.tajawal()),
+          content: Text(L.tr('export_pdf_arabic_warning'), style: GoogleFonts.tajawal()),
           backgroundColor: W.orange, behavior: SnackBarBehavior.floating, duration: Duration(seconds: 5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في التصدير: $e'), backgroundColor: W.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('export_error', args: {'error': e.toString()})), backgroundColor: W.red));
     }
     if (mounted) setState(() => _exporting = false);
   }
@@ -288,7 +289,7 @@ class _AdminReportsState extends State<AdminReports> {
                 ElevatedButton.icon(onPressed: _exporting ? null : _exportPDF, icon: const Icon(Icons.picture_as_pdf, size: 15), label: Text('PDF', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(backgroundColor: W.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))),
             ]),
-            Text('التقارير', style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
+            Text(L.tr('reports'), style: GoogleFonts.tajawal(fontSize: isWide ? 24 : 18, fontWeight: FontWeight.w800, color: W.text)),
           ]),
           const SizedBox(height: 16),
 
@@ -319,13 +320,13 @@ class _AdminReportsState extends State<AdminReports> {
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: W.border)),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'الكل', child: Text('جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 13))),
+                    DropdownMenuItem(value: L.tr('all'), child: Text(L.tr('all_employees_filter'), style: GoogleFonts.tajawal(fontSize: 13))),
                     ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
-                  onChanged: (v) { setState(() { _selectedUid = v ?? 'الكل'; _page = 0; }); _loadAll(); },
+                  onChanged: (v) { setState(() { _selectedUid = v ?? L.tr('all'); _page = 0; }); _loadAll(); },
                 )),
                 const SizedBox(width: 10),
-                Text('الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub)),
+                Text(L.tr('employee_filter'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.sub)),
                 const SizedBox(width: 6),
                 Icon(Icons.person, size: 16, color: W.pri),
               ]),
@@ -336,20 +337,20 @@ class _AdminReportsState extends State<AdminReports> {
           // Stats — full-width row on web, 2-column grid on mobile
           if (isWide)
             Row(children: [
-              Expanded(child: _stat('إجمالي السجلات', '$_totalRecords', W.pri)),
+              Expanded(child: _stat(L.tr('total_records'), '$_totalRecords', W.pri)),
               const SizedBox(width: 12),
-              Expanded(child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
+              Expanded(child: _stat(L.tr('avg_hours'), data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
               const SizedBox(width: 12),
-              Expanded(child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
+              Expanded(child: _stat(L.tr('late_cases'), '${data.where((r) => r['late'] != '—').length}', W.orange)),
               const SizedBox(width: 12),
-              Expanded(child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
+              Expanded(child: _stat(L.tr('overtime_stat'), '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
             ])
           else
             Wrap(spacing: 10, runSpacing: 10, children: [
-              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('إجمالي السجلات', '$_totalRecords', W.pri)),
-              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('متوسط الساعات', data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
-              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('حالات تأخير', '${data.where((r) => r['late'] != '—').length}', W.orange)),
-              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat('أوفرتايم', '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat(L.tr('total_records'), '$_totalRecords', W.pri)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat(L.tr('avg_hours'), data.isNotEmpty ? '${(data.map((r) => double.tryParse(r['hours'] ?? '0') ?? 0).reduce((a, b) => a + b) / data.length).toStringAsFixed(1)}h' : '—', W.green)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat(L.tr('late_cases'), '${data.where((r) => r['late'] != '—').length}', W.orange)),
+              SizedBox(width: (MediaQuery.of(context).size.width - 38) / 2, child: _stat(L.tr('overtime_stat'), '${data.where((r) => r['overtime'] != '—').length}', W.pri)),
             ]),
           const SizedBox(height: 20),
 
@@ -358,7 +359,7 @@ class _AdminReportsState extends State<AdminReports> {
             const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(strokeWidth: 2)))
           else if (data.isEmpty)
             Container(width: double.infinity, padding: EdgeInsets.all(50), decoration: DS.cardDecoration(),
-              child: Center(child: Column(children: [Icon(Icons.bar_chart, size: 48, color: W.hint), SizedBox(height: 12), Text('لا توجد بيانات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
+              child: Center(child: Column(children: [Icon(Icons.bar_chart, size: 48, color: W.hint), SizedBox(height: 12), Text(L.tr('no_data'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))])))
           else Container(
             width: double.infinity,
             decoration: DS.cardDecoration(),
@@ -373,7 +374,7 @@ class _AdminReportsState extends State<AdminReports> {
                   dataRowMaxHeight: isWide ? 52 : 44,
                   columnSpacing: isWide ? 32 : 16,
                   horizontalMargin: isWide ? 24 : 12,
-                  columns: ['الأوفرتايم', 'خروج مبكر', 'التأخير', 'الساعات', 'الخروج', 'الدخول', 'اليوم', 'التاريخ', 'الاسم', 'الكود'].map((h) =>
+                  columns: [L.tr('overtime'), L.tr('early_leave'), L.tr('lateness'), L.tr('work_hours'), L.tr('check_out_col'), L.tr('check_in_col'), L.tr('day'), L.tr('date'), L.tr('name'), L.tr('code')].map((h) =>
                     DataColumn(label: Expanded(child: Text(h, style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 11, fontWeight: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)))).toList(),
                   rows: data.map((r) => DataRow(cells: [
                     DataCell(Center(child: Text(r['overtime'] ?? '—', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: r['overtime'] != '—' ? W.orange : W.muted)))),
@@ -422,7 +423,7 @@ class _AdminReportsState extends State<AdminReports> {
         TextButton.icon(
           onPressed: _page > 0 ? () => _goToPage(_page - 1) : null,
           icon: const Icon(Icons.chevron_right, size: 18),
-          label: Text('السابق', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
+          label: Text(L.tr('previous'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
           style: TextButton.styleFrom(
             foregroundColor: _page > 0 ? W.pri : W.muted,
           ),
@@ -431,12 +432,12 @@ class _AdminReportsState extends State<AdminReports> {
         // Record count and page info
         Column(mainAxisSize: MainAxisSize.min, children: [
           Text(
-            'صفحة ${_page + 1} من $_totalPages',
+            L.tr('page_info', args: {'page': (_page + 1).toString(), 'total': _totalPages.toString()}),
             style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text),
           ),
           const SizedBox(height: 2),
           Text(
-            'عرض $start-$end من $_totalRecords سجل',
+            L.tr('showing_records', args: {'start': start.toString(), 'end': end.toString(), 'total': _totalRecords.toString()}),
             style: GoogleFonts.tajawal(fontSize: 11, color: W.sub),
           ),
         ]),
@@ -444,7 +445,7 @@ class _AdminReportsState extends State<AdminReports> {
         // Next button
         TextButton.icon(
           onPressed: _page < _totalPages - 1 ? () => _goToPage(_page + 1) : null,
-          icon: Text('التالي', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
+          icon: Text(L.tr('next'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600)),
           label: const Icon(Icons.chevron_left, size: 18),
           style: TextButton.styleFrom(
             foregroundColor: _page < _totalPages - 1 ? W.pri : W.muted,

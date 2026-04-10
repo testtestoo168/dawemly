@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/requests_service.dart';
 import '../../services/server_time_service.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpRequestsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -16,7 +17,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
   List<Map<String, dynamic>>? _requests;
   bool _loading = true;
 
-  final _months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  final _months = L.months;
 
   late int _selMonth;
   late int _selYear;
@@ -61,7 +62,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
     final now = ServerTimeService().now;
     return Scaffold(
       appBar: AppBar(
-        title: Text('الطلبات', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('mob_requests'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         centerTitle: true,
         backgroundColor: C.white,
         surfaceTintColor: C.white,
@@ -129,10 +130,10 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
                   child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(Icons.description_outlined, size: 48, color: C.hint),
                     const SizedBox(height: 12),
-                    Text('لا توجد طلبات في ${_months[_selMonth - 1]} $_selYear',
+                    Text(L.tr('no_requests_in_month', args: {'month': _months[_selMonth - 1], 'year': _selYear.toString()}),
                       style: GoogleFonts.tajawal(fontSize: 14, color: C.muted), textAlign: TextAlign.center),
                     const SizedBox(height: 4),
-                    Text('أنشئ طلب جديد من زر "طلب جديد"',
+                    Text(L.tr('create_from_new_btn'),
                       style: GoogleFonts.tajawal(fontSize: 12, color: C.hint)),
                   ])),
                 ),
@@ -148,12 +149,12 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
 
   Widget _requestCard(Map<String, dynamic> r) {
     final status = r['status'] ?? '';
-    final isLeave = r['requestType'] == 'إجازة' || r['request_type'] == 'إجازة';
+    final isLeave = r['requestType'] == L.tr('leave_request') || r['request_type'] == L.tr('leave_request');
     Color stColor, stBg, stBd;
 
-    if (status == 'تم الموافقة') {
+    if (status == L.tr('approved')) {
       stColor = C.green; stBg = C.greenL; stBd = C.greenBd;
-    } else if (status == 'مرفوض') {
+    } else if (status == L.tr('rejected')) {
       stColor = C.red; stBg = C.redL; stBd = C.redBd;
     } else {
       stColor = C.orange; stBg = C.orangeL; stBd = C.orangeBd;
@@ -173,9 +174,9 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
 
     String desc = '';
     if (isLeave) {
-      desc = '$leaveType — $days يوم\nمن ${_fmtDate(startDate)} إلى ${_fmtDate(endDate)}';
+      desc = '$leaveType — $days ${L.tr('day_unit')}\n${L.tr('from')} ${_fmtDate(startDate)} ${L.tr('to')} ${_fmtDate(endDate)}';
     } else {
-      desc = '$permType${hours != null ? ' — $hours ساعة' : ''}\nمن $fromTime إلى $toTime';
+      desc = '$permType${hours != null ? ' — $hours ${L.tr('hour')}' : ''}\n${L.tr('from')} $fromTime ${L.tr('to')} $toTime';
     }
 
     return Container(
@@ -190,7 +191,7 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Text(status, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: stColor)),
               const SizedBox(width: 4),
-              Icon(status == 'تم الموافقة' ? Icons.check_circle : status == 'مرفوض' ? Icons.cancel : Icons.hourglass_bottom, size: 14, color: stColor),
+              Icon(status == L.tr('approved') ? Icons.check_circle : status == L.tr('rejected') ? Icons.cancel : Icons.hourglass_bottom, size: 14, color: stColor),
             ]),
           ),
           Row(children: [
@@ -207,14 +208,14 @@ class _EmpRequestsPageState extends State<EmpRequestsPage> {
         Text(desc, style: GoogleFonts.tajawal(fontSize: 12, color: C.sub, height: 1.5)),
         if ((r['reason'] ?? '').isNotEmpty) ...[
           const SizedBox(height: 4),
-          Text('السبب: ${r['reason']}', style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
+          Text(L.tr('reason_prefix', args: {'reason': r['reason'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 11, color: C.muted)),
         ],
         if (adminNote.isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(
             width: double.infinity, padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusSm)),
-            child: Text('ملاحظة الإدارة: $adminNote', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
+            child: Text(L.tr('admin_note', args: {'note': adminNote}), style: GoogleFonts.tajawal(fontSize: 11, color: C.sub), textAlign: TextAlign.right),
           ),
         ],
         if (createdAt != null) ...[

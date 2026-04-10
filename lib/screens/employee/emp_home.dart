@@ -13,6 +13,7 @@ import '../../services/api_service.dart';
 import '../../services/server_time_service.dart';
 import 'face_registration_page.dart';
 import 'face_verify_dialog.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpHomePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -62,8 +63,8 @@ class EmpHomePageState extends State<EmpHomePage> {
   bool _cachedFaceRequired = false;
   bool _authReqsLoaded = false;
 
-  final _months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  final _days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  final _months = L.months;
+  final _days = L.dayNamesFull;
 
   @override
   void initState() {
@@ -231,7 +232,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     if (mounted) {
-      _currentTime.value = '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
+      _currentTime.value = '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? L.tr('pm') : L.tr('am')}';
     }
   }
 
@@ -358,7 +359,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       final bioResult = await _attService.authenticateBiometricWithDetails();
       if (!mounted) return;
       if (!bioResult.success) {
-        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        _showResultDialog(false, L.tr('err_biometric_failed'), bioResult.error);
         return;
       }
     }
@@ -378,7 +379,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (!mounted) return;
       final faceResult = await showFaceVerifyDialog(context, uid);
       if (faceResult == null || faceResult['success'] != true) {
-        if (mounted) _showResultDialog(false, 'فشل التحقق من الوجه', faceResult?['error'] ?? 'تم إلغاء التحقق');
+        if (mounted) _showResultDialog(false, L.tr('face_verify_failed'), faceResult?['error'] ?? L.tr('verify_cancelled'));
         return;
       }
       facePhotoUrl = faceResult['photoUrl'] as String?;
@@ -387,17 +388,17 @@ class EmpHomePageState extends State<EmpHomePage> {
 
     // ─── Step 3: Location check (already in-flight from above, just await it) ───
     if (showLocCheck) {
-      _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.green);
+      _showLoadingDialog(L.tr('verifying_location'), L.tr('determining_location'), C.green);
       final locResult = await locFuture!;
       final pos = locResult.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
-        _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
+        _showResultDialog(false, L.tr('location_failed'), L.tr('enable_gps_retry'));
         return;
       }
       if (locResult.isMocked) {
         if (mounted) Navigator.pop(context);
-        _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الحضور');
+        _showResultDialog(false, L.tr('fake_location'), L.tr('spoofing_check_in_block'));
         return;
       }
       savedLat = pos.latitude;
@@ -406,7 +407,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
       // Reject if accuracy is too poor (matches server threshold of 30m)
       if (pos.accuracy > 30) {
-        _showResultDialog(false, 'دقة GPS منخفضة', 'دقة الموقع ${pos.accuracy.round()} متر — انتظر في مكان مفتوح حتى تتحسن الإشارة ثم حاول مرة أخرى');
+        _showResultDialog(false, L.tr('low_gps'), L.tr('gps_accuracy_warning', args: {'meters': pos.accuracy.round().toString()}));
         return;
       }
       final adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
@@ -416,14 +417,14 @@ class EmpHomePageState extends State<EmpHomePage> {
       // Same formula as server: distance + accuracy must be within radius
       final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? 'الموقع المحدد');
+        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? L.tr('selected_location'));
         return;
       }
     }
 
     // ─── Step 4: Send check-in to API ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    _showLoadingDialog('جارٍ إثبات الحضور...', 'يرجى الانتظار', C.green);
+    _showLoadingDialog(L.tr('checking_in'), L.tr('please_wait'), C.green);
 
     // ─── Step 5: Record attendance ───
     Map<String, dynamic> result;
@@ -441,7 +442,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        _showResultDialog(false, 'خطأ في إثبات الحضور', e.toString());
+        _showResultDialog(false, L.tr('err_check_in'), e.toString());
       }
       return;
     }
@@ -455,15 +456,15 @@ class EmpHomePageState extends State<EmpHomePage> {
         _todayRecord!['first_check_in'] ??= now.toIso8601String();
         _todayRecord!['check_in'] ??= now.toIso8601String();
         _todayRecord!['current_session_start'] = now.toIso8601String();
-        _todayRecord!['status'] = 'حاضر';
+        _todayRecord!['status'] = L.tr('present');
         _loadingRecord = false;
       });
       _updateElapsed();
       // Also refresh from server in background
       _loadToday();
-      _showLocationResultDialog(true, 'تم إثبات الحضور ✓', result['time'] ?? '', result['lat'], result['lng']);
+      _showLocationResultDialog(true, L.tr('checked_in_success'), result['time'] ?? '', result['lat'], result['lng']);
     } else {
-      _showResultDialog(false, 'فشل إثبات الحضور', result['error'] ?? 'خطأ غير معروف');
+      _showResultDialog(false, L.tr('check_in_failed'), result['error'] ?? L.tr('unknown_error'));
     }
   }
 
@@ -491,7 +492,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       final bioResult = await _attService.authenticateBiometricWithDetails();
       if (!mounted) return;
       if (!bioResult.success) {
-        _showResultDialog(false, 'فشل التحقق من البصمة', bioResult.error);
+        _showResultDialog(false, L.tr('err_biometric_failed'), bioResult.error);
         return;
       }
     }
@@ -501,13 +502,13 @@ class EmpHomePageState extends State<EmpHomePage> {
       final hasRegistered = await FaceRecognitionService.hasFaceRegistered(uid);
       if (!hasRegistered) {
         if (!mounted) return;
-        _showResultDialog(false, 'بصمة الوجه غير مسجلة', 'يجب تسجيل بصمة الوجه أولاً من خلال تسجيل الحضور');
+        _showResultDialog(false, L.tr('face_not_registered_yet'), L.tr('must_register_face_first'));
         return;
       }
       if (!mounted) return;
       final faceResult = await showFaceVerifyDialog(context, uid);
       if (faceResult == null || faceResult['success'] != true) {
-        if (mounted) _showResultDialog(false, 'فشل التحقق من الوجه', faceResult?['error'] ?? 'تم إلغاء التحقق');
+        if (mounted) _showResultDialog(false, L.tr('face_verify_failed'), faceResult?['error'] ?? L.tr('verify_cancelled'));
         return;
       }
       facePhotoUrl = faceResult['photoUrl'] as String?;
@@ -516,17 +517,17 @@ class EmpHomePageState extends State<EmpHomePage> {
 
     // ─── Step 3: Location check (await the fetch kicked off at the top) ───
     if (showLocCheck2) {
-      _showLoadingDialog('جارٍ التحقق من الموقع...', 'تحديد موقعك الحالي', C.red);
+      _showLoadingDialog(L.tr('verifying_location'), L.tr('determining_location'), C.red);
       final locResult2 = await locFuture2!;
       final pos = locResult2.position;
       if (pos == null) {
         if (mounted) Navigator.pop(context);
-        _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS والمحاولة مرة أخرى');
+        _showResultDialog(false, L.tr('location_failed'), L.tr('enable_gps_retry'));
         return;
       }
       if (locResult2.isMocked) {
         if (mounted) Navigator.pop(context);
-        _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع — لا يمكن تسجيل الانصراف');
+        _showResultDialog(false, L.tr('fake_location'), L.tr('spoofing_check_out_block'));
         return;
       }
       savedLat = pos.latitude;
@@ -535,7 +536,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       if (mounted) Navigator.pop(context);
       // Reject if accuracy is too poor (matches server threshold of 30m)
       if (pos.accuracy > 30) {
-        _showResultDialog(false, 'دقة GPS منخفضة', 'دقة الموقع ${pos.accuracy.round()} متر — انتظر في مكان مفتوح حتى تتحسن الإشارة ثم حاول مرة أخرى');
+        _showResultDialog(false, L.tr('low_gps'), L.tr('gps_accuracy_warning', args: {'meters': pos.accuracy.round().toString()}));
         return;
       }
       final adminLat = (loc2['lat'] as num?)?.toDouble() ?? 0;
@@ -545,14 +546,14 @@ class EmpHomePageState extends State<EmpHomePage> {
       // Same formula as server: distance + accuracy must be within radius
       final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? 'الموقع المحدد');
+        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? L.tr('selected_location'));
         return;
       }
     }
 
     // ─── Step 4: Send check-out to API ───
     final authMethod = usedFaceAuth ? 'face' : 'fingerprint';
-    _showLoadingDialog('جارٍ إثبات الخروج...', 'يرجى الانتظار', C.red);
+    _showLoadingDialog(L.tr('checking_out'), L.tr('please_wait'), C.red);
 
     // ─── Step 5: Record checkout ───
     Map<String, dynamic> result;
@@ -570,7 +571,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        _showResultDialog(false, 'خطأ في إثبات الخروج', e.toString());
+        _showResultDialog(false, L.tr('err_check_out'), e.toString());
       }
       return;
     }
@@ -582,14 +583,14 @@ class EmpHomePageState extends State<EmpHomePage> {
           _todayRecord!['is_checked_in'] = 0;
           _todayRecord!['last_check_out'] = DateTime.now().toIso8601String();
           _todayRecord!['check_out'] = DateTime.now().toIso8601String();
-          _todayRecord!['status'] = 'مكتمل';
+          _todayRecord!['status'] = L.tr('complete');
         }
       });
       _updateElapsed();
       _loadToday();
-      _showLocationResultDialog(true, 'تم إثبات الخروج ✓', result['time'] ?? '', result['lat'], result['lng']);
+      _showLocationResultDialog(true, L.tr('checked_out_success'), result['time'] ?? '', result['lat'], result['lng']);
     } else {
-      _showResultDialog(false, 'فشل إثبات الخروج', result['error'] ?? 'خطأ غير معروف');
+      _showResultDialog(false, L.tr('check_out_failed'), result['error'] ?? L.tr('unknown_error'));
     }
   }
 
@@ -601,13 +602,13 @@ class EmpHomePageState extends State<EmpHomePage> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 60, height: 60, decoration: BoxDecoration(color: C.redL, shape: BoxShape.circle), child: const Icon(Icons.location_off, size: 30, color: C.red)),
         const SizedBox(height: 12),
-        Text('أنت خارج نطاق العمل', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.red)),
-        Text('ادخل النطاق لتسجيل الحضور', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+        Text(L.tr('outside_range'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.red)),
+        Text(L.tr('enter_range_to_check_in'), style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 14),
         ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(adminLat, adminLng), zoom: 14),
           markers: {
-            Marker(markerId: const MarkerId('emp'), position: LatLng(empLat, empLng), infoWindow: InfoWindow(title: 'موقعك — ${distance.round()}م'), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
+            Marker(markerId: const MarkerId('emp'), position: LatLng(empLat, empLng), infoWindow: InfoWindow(title: L.tr('your_location_label', args: {'meters': distance.round().toString()})), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
             Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng), infoWindow: InfoWindow(title: locName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
           },
           circles: {
@@ -618,13 +619,13 @@ class EmpHomePageState extends State<EmpHomePage> {
         const SizedBox(height: 10),
         Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(DS.radiusMd)),
           child: Column(children: [
-            Text('أنت تبعد ${distance.round()} متر عن $locName', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.red)),
-            Text('النطاق المسموح: ${radius.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, color: C.red.withOpacity(0.7))),
+            Text(L.tr('you_away_meters', args: {'meters': distance.round().toString(), 'name': locName}), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: C.red)),
+            Text(L.tr('allowed_range', args: {'meters': radius.round().toString()}), style: GoogleFonts.tajawal(fontSize: 12, color: C.red.withOpacity(0.7))),
           ]),
         ),
         const SizedBox(height: 12),
         SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)),
-          child: Text('فهمت', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+          child: Text(L.tr('understood'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     ))));
   }
@@ -654,7 +655,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         const SizedBox(height: 4),
         Text(sub, style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 16),
-        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: success ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: success ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))), child: Text(L.tr('ok'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     ))));
   }
@@ -664,7 +665,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final adminLat = (adminLoc?['lat'] as num?)?.toDouble();
     final adminLng = (adminLoc?['lng'] as num?)?.toDouble();
     final adminRadius = (adminLoc?['radius'] as num?)?.toDouble() ?? 300.0;
-    final adminName = adminLoc?['name'] ?? 'الموقع المحدد';
+    final adminName = adminLoc?['name'] ?? L.tr('selected_location');
     if (!mounted) return;
     final empLat = (lat as num?)?.toDouble() ?? 0;
     final empLng = (lng as num?)?.toDouble() ?? 0;
@@ -676,12 +677,12 @@ class EmpHomePageState extends State<EmpHomePage> {
         Container(width: 50, height: 50, decoration: BoxDecoration(color: C.greenL, shape: BoxShape.circle), child: const Icon(Icons.check, size: 24, color: C.green)),
         const SizedBox(height: 10),
         Text(title, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: C.text)),
-        Text('الوقت: $time', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+        Text(L.tr('time_colon', args: {'time': time}), style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
         const SizedBox(height: 14),
         if (lat != null && lng != null) ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 200, child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(adminLat ?? empLat, adminLng ?? empLng), zoom: 15),
           markers: {
-            Marker(markerId: const MarkerId('employee'), position: LatLng(empLat, empLng), infoWindow: const InfoWindow(title: 'موقع البصمة'), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
+            Marker(markerId: const MarkerId('employee'), position: LatLng(empLat, empLng), infoWindow: InfoWindow(title: L.tr('attendance_punch')), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)),
             if (adminLat != null) Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng!), infoWindow: InfoWindow(title: adminName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)),
           },
           circles: {
@@ -692,11 +693,11 @@ class EmpHomePageState extends State<EmpHomePage> {
         const SizedBox(height: 8),
         Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: C.greenL, borderRadius: BorderRadius.circular(4)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('تم تسجيل موقعك بنجاح', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.green)),
+            Text(L.tr('location_verified'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.green)),
             const SizedBox(width: 6), const Icon(Icons.check_circle, size: 16, color: C.green),
           ])),
         const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+        SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: C.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text(L.tr('ok'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
       ]),
     ))));
   }
@@ -716,7 +717,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final dt = _parseTs(ts);
     if (dt == null) return '—';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   @override
@@ -724,7 +725,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final now = DateTime.now();
     final dayName = _days[now.weekday % 7];
     final monthName = _months[now.month - 1];
-    final greeting = now.hour < 12 ? 'صباح الخير' : 'مساء الخير';
+    final greeting = now.hour < 12 ? L.tr('good_morning') : L.tr('good_evening');
     final hasCheckIn = (_todayRecord?['firstCheckIn'] ?? _todayRecord?['first_check_in'] ?? _todayRecord?['checkIn'] ?? _todayRecord?['check_in']) != null;
     final hasCheckOut = (_todayRecord?['lastCheckOut'] ?? _todayRecord?['last_check_out'] ?? _todayRecord?['checkOut'] ?? _todayRecord?['check_out']) != null;
     // isCheckedIn: use new field if available, otherwise fallback to old logic
@@ -735,9 +736,9 @@ class EmpHomePageState extends State<EmpHomePage> {
       // Old data fallback: checked in if has checkIn but no checkOut
       isCurrentlyCheckedIn = hasCheckIn && !hasCheckOut;
     }
-    final status = hasCheckOut && !isCurrentlyCheckedIn ? 'مكتمل' : isCurrentlyCheckedIn ? 'حاضر' : hasCheckIn ? 'حاضر' : 'لم يسجّل';
+    final status = hasCheckOut && !isCurrentlyCheckedIn ? L.tr('complete') : isCurrentlyCheckedIn ? L.tr('present') : hasCheckIn ? L.tr('present') : L.tr('not_registered');
     final stColor = isCurrentlyCheckedIn ? C.green : (hasCheckOut && !isCurrentlyCheckedIn) ? C.green : hasCheckIn ? C.pri : C.muted;
-    final av = (widget.user['name'] ?? 'م').toString().length >= 2 ? (widget.user['name'] ?? 'م').toString().substring(0, 2) : 'م';
+    final av = (widget.user['name'] ?? L.tr('pm')).toString().length >= 2 ? (widget.user['name'] ?? L.tr('pm')).toString().substring(0, 2) : L.tr('pm');
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.light),
@@ -800,7 +801,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text('اختر الموقع المحدد', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.6))),
+                child: Text(L.tr('select_specific_location'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.6))),
               ),
             ),
             Container(
@@ -813,7 +814,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
                 dropdownColor: const Color(0xFF0F4199),
                 style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-                hint: Text('اختر موقع البصمة', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
+                hint: Text(L.tr('choose_punch_location'), style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white60)),
                 items: _allLocations.map((loc) => DropdownMenuItem<String>(
                   value: loc['id'].toString(),
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -862,15 +863,15 @@ class EmpHomePageState extends State<EmpHomePage> {
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: C.orange)),
                     const SizedBox(width: 8),
-                    Text('جارٍ تحديد موقعك...', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
+                    Text(L.tr('determining_location_gps'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
                   ]),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(width: double.infinity, child: Opacity(
                   opacity: 0.4,
                   child: isCurrentlyCheckedIn
-                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, () {})
-                    : _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
+                    ? _clockBtn(L.tr('check_out_confirm'), Icons.logout_rounded, C.red, Colors.white, () {})
+                    : _clockBtn(L.tr('check_in_confirm'), Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
                 )),
               ]);
             }
@@ -890,7 +891,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: C.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text('أنت خارج النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: C.red)),
+                    Text(L.tr('outside_range_distance', args: {'meters': distance.round().toString()}), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: C.red)),
                     const SizedBox(width: 6),
                     const Icon(Icons.location_off_rounded, size: 16, color: C.red),
                   ]),
@@ -899,8 +900,8 @@ class EmpHomePageState extends State<EmpHomePage> {
                 SizedBox(width: double.infinity, child: Opacity(
                   opacity: 0.4,
                   child: isCurrentlyCheckedIn
-                    ? _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, () {})
-                    : _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
+                    ? _clockBtn(L.tr('check_out_confirm'), Icons.logout_rounded, C.red, Colors.white, () {})
+                    : _clockBtn(L.tr('check_in_confirm'), Icons.fingerprint_rounded, Colors.white, C.pri, () {}),
                 )),
               ]);
 
@@ -912,15 +913,15 @@ class EmpHomePageState extends State<EmpHomePage> {
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(color: C.green.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('داخل النطاق — ${distance.round()} متر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.green)),
+                  Text(L.tr('inside_range_distance', args: {'meters': distance.round().toString()}), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: C.green)),
                   const SizedBox(width: 6),
                   const Icon(Icons.check_circle_rounded, size: 14, color: C.green),
                 ]),
               ),
               if (isCurrentlyCheckedIn)
-                SizedBox(width: double.infinity, child: _clockBtn('إثبات الخروج', Icons.logout_rounded, C.red, Colors.white, _checkOut))
+                SizedBox(width: double.infinity, child: _clockBtn(L.tr('check_out_confirm'), Icons.logout_rounded, C.red, Colors.white, _checkOut))
               else
-                SizedBox(width: double.infinity, child: _clockBtn('إثبات الحضور', Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
+                SizedBox(width: double.infinity, child: _clockBtn(L.tr('check_in_confirm'), Icons.fingerprint_rounded, Colors.white, C.pri, _checkIn)),
             ]);
           }),
         ]),
@@ -933,10 +934,10 @@ class EmpHomePageState extends State<EmpHomePage> {
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
           decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: C.border)),
           child: Row(children: [
-            _empQuickBtn(Icons.calendar_today_rounded, 'سجل\nحضوري', () => widget.onTabChange?.call(1)),
-            _empQuickBtn(Icons.description_outlined, 'طلباتي', () => widget.onTabChange?.call(3)),
-            _empQuickBtn(Icons.add_circle_outline_rounded, 'طلب\nجديد', () => widget.onTabChange?.call(2)),
-            _empQuickBtn(Icons.person_outline_rounded, 'المزيد', () => widget.onTabChange?.call(4)),
+            _empQuickBtn(Icons.calendar_today_rounded, L.tr('my_attendance'), () => widget.onTabChange?.call(1)),
+            _empQuickBtn(Icons.description_outlined, L.tr('my_requests'), () => widget.onTabChange?.call(3)),
+            _empQuickBtn(Icons.add_circle_outline_rounded, L.tr('new_request'), () => widget.onTabChange?.call(2)),
+            _empQuickBtn(Icons.person_outline_rounded, L.tr('mob_more'), () => widget.onTabChange?.call(4)),
           ]),
         ),
       ),
@@ -955,21 +956,21 @@ class EmpHomePageState extends State<EmpHomePage> {
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
                 child: Text(status, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor))),
               const Spacer(),
-              Text(hasCheckOut ? 'إجمالي ساعات العمل' : 'الوقت المنقضي', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
+              Text(hasCheckOut ? L.tr('total_hours') : L.tr('elapsed_time_label'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: C.text)),
             ]),
             const SizedBox(height: 14),
             ValueListenableBuilder<Duration>(valueListenable: _elapsed, builder: (_, e, __) => Text(_fmtDuration(e), style: GoogleFonts.ibmPlexMono(fontSize: 40, fontWeight: FontWeight.w700, color: hasCheckOut ? C.green : C.pri, letterSpacing: 4))),
             const SizedBox(height: 14),
             Row(children: [
-              _statBox('أوفر تايم', _hasOvertime ? '${_overtime.toStringAsFixed(1)} ساعة' : '—', _hasOvertime ? C.orange : C.muted),
+              _statBox(L.tr('overtime_extra'), _hasOvertime ? L.tr('overtime_hours_display', args: {'h': _overtime.toStringAsFixed(1)}) : '—', _hasOvertime ? C.orange : C.muted),
               const SizedBox(width: 10),
-              _statBox('ساعات العمل', '${_workedHours.toStringAsFixed(1)}h / ${_standardHours.toStringAsFixed(0)}h', _workedHours >= _standardHours ? C.green : C.pri),
+              _statBox(L.tr('work_hours'), '${_workedHours.toStringAsFixed(1)}h / ${_standardHours.toStringAsFixed(0)}h', _workedHours >= _standardHours ? C.green : C.pri),
             ]),
             if (_hasOvertime && !hasCheckOut) ...[
               const SizedBox(height: 12),
               Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: C.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('تجاوزت ساعات العمل الأساسية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
+                  Text(L.tr('exceeded_standard'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: C.orange)),
                   const SizedBox(width: 8), const Icon(Icons.warning_amber_rounded, size: 18, color: C.orange),
                 ])),
             ],
@@ -985,7 +986,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: stColor.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
               child: Text(status, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor))),
             const Spacer(),
-            Text('سجل الحضور اليومي', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
+            Text(L.tr('daily_attendance_log'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.text)),
             const SizedBox(width: 8),
             Container(width: 28, height: 28, decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.history_rounded, size: 14, color: C.pri)),
           ])),
@@ -995,13 +996,13 @@ class EmpHomePageState extends State<EmpHomePage> {
             Padding(padding: const EdgeInsets.all(30), child: Column(children: [
               Container(width: 56, height: 56, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: const Icon(Icons.fingerprint_rounded, size: 30, color: C.hint)),
               const SizedBox(height: 12),
-              Text('لم تسجّل بعد اليوم', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.text)),
+              Text(L.tr('not_checked_in'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: C.text)),
               const SizedBox(height: 4),
-              Text('اضغط "إثبات الحضور" للبدء', style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)),
+              Text(L.tr('tap_check_in'), style: GoogleFonts.tajawal(fontSize: 12, color: C.muted)),
             ]))
           else Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-            if (hasCheckIn) _entryRow('أول حضور', _formatTimestamp(_todayRecord!['firstCheckIn'] ?? _todayRecord!['first_check_in'] ?? _todayRecord!['checkIn'] ?? _todayRecord!['check_in']), C.pri, Icons.login_rounded),
-            if (hasCheckOut) _entryRow('آخر خروج', _formatTimestamp(_todayRecord!['lastCheckOut'] ?? _todayRecord!['last_check_out'] ?? _todayRecord!['checkOut'] ?? _todayRecord!['check_out']), C.red, Icons.logout_rounded),
+            if (hasCheckIn) _entryRow(L.tr('first_check_in'), _formatTimestamp(_todayRecord!['firstCheckIn'] ?? _todayRecord!['first_check_in'] ?? _todayRecord!['checkIn'] ?? _todayRecord!['check_in']), C.pri, Icons.login_rounded),
+            if (hasCheckOut) _entryRow(L.tr('last_check_out'), _formatTimestamp(_todayRecord!['lastCheckOut'] ?? _todayRecord!['last_check_out'] ?? _todayRecord!['checkOut'] ?? _todayRecord!['check_out']), C.red, Icons.logout_rounded),
           ])),
         ]),
       )),
@@ -1014,7 +1015,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final authLat = (loc?['lat'] as num?)?.toDouble();
     final authLng = (loc?['lng'] as num?)?.toDouble();
     final authRadius = (loc?['radius'] as num?)?.toDouble() ?? 300.0;
-    final authName = loc?['name'] ?? 'الموقع المصرح';
+    final authName = loc?['name'] ?? L.tr('authorized_location');
 
     final empLat = _livePosition?.latitude;
     final empLng = _livePosition?.longitude;
@@ -1037,7 +1038,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       markers.add(Marker(
         markerId: const MarkerId('employee'),
         position: LatLng(empLat, empLng),
-        infoWindow: const InfoWindow(title: 'موقعي الحالي'),
+        infoWindow: InfoWindow(title: L.tr('current_location')),
         icon: BitmapDescriptor.defaultMarkerWithHue(
           insideZone == true ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed,
         ),
@@ -1088,7 +1089,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(insideZone ? Icons.check_circle_rounded : Icons.cancel_rounded, size: 12, color: insideZone ? C.green : C.red),
                   const SizedBox(width: 4),
-                  Text(insideZone ? 'داخل النطاق' : 'خارج النطاق', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: insideZone ? C.green : C.red)),
+                  Text(insideZone ? L.tr('inside_range_label') : L.tr('outside_range_label'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: insideZone ? C.green : C.red)),
                 ]),
               ),
               const Spacer(),
@@ -1171,7 +1172,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             child: Row(children: [
               InkWell(onTap: () => Navigator.pop(ctx), child: const Icon(Icons.close, size: 18, color: Colors.white70)),
               const Spacer(),
-              Text('الإشعارات', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+              Text(L.tr('mob_notifications'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
               const SizedBox(width: 8), const Icon(Icons.notifications, size: 18, color: Colors.white),
             ])),
           Flexible(child: FutureBuilder<Map<String, dynamic>>(
@@ -1186,7 +1187,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                 final aT = _parseTs(a['timestamp']); final bT = _parseTs(b['timestamp']);
                 if (aT == null || bT == null) return 0; return bT.compareTo(aT);
               });
-              if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [const Icon(Icons.notifications_off, size: 40, color: C.hint), const SizedBox(height: 8), Text('لا توجد إشعارات', style: GoogleFonts.tajawal(color: C.muted))])));
+              if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(40), child: Center(child: Column(children: [const Icon(Icons.notifications_off, size: 40, color: C.hint), const SizedBox(height: 8), Text(L.tr('no_notifications'), style: GoogleFonts.tajawal(color: C.muted))])));
               return ListView.builder(shrinkWrap: true, itemCount: docs.length, itemBuilder: (ctx, i) {
                 final n = docs[i];
                 final docId = n['id']?.toString() ?? '';
@@ -1204,7 +1205,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                     child: Row(children: [
                       if (isVerifyRequest && !isRead) ...[
                         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: C.orange, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                          child: Text('إثبات الآن', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white))),
+                          child: Text(L.tr('verify_now'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white))),
                         const SizedBox(width: 8),
                       ] else if (!isRead) ...[Container(width: 8, height: 8, decoration: BoxDecoration(color: isUrgent ? C.red : C.pri, shape: BoxShape.circle)), const SizedBox(width: 8)],
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -1234,14 +1235,14 @@ class EmpHomePageState extends State<EmpHomePage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 60, height: 60, decoration: BoxDecoration(color: C.orangeL, shape: BoxShape.circle), child: const Icon(Icons.wifi_tethering, size: 30, color: C.orange)),
           const SizedBox(height: 14),
-          Text('طلب إثبات حالة', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text)),
+          Text(L.tr('verify_request_title'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text)),
           const SizedBox(height: 6),
-          Text('الإدارة تطلب إثبات تواجدك في نطاق العمل الآن', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub, height: 1.5), textAlign: TextAlign.center),
+          Text(L.tr('admin_requests_verify'), style: GoogleFonts.tajawal(fontSize: 13, color: C.sub, height: 1.5), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           SizedBox(width: double.infinity, height: 50, child: ElevatedButton(
             onPressed: () async { Navigator.pop(ctx); _doVerificationResponse(uid, verificationId: verificationId); },
             style: ElevatedButton.styleFrom(backgroundColor: C.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), elevation: 4),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.my_location, size: 20), const SizedBox(width: 8), Text('إثبات موقعي الآن', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700))]),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.my_location, size: 20), const SizedBox(width: 8), Text(L.tr('verify_my_location'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700))]),
           )),
         ]),
       )),
@@ -1249,21 +1250,21 @@ class EmpHomePageState extends State<EmpHomePage> {
   }
 
   void _doVerificationResponse(String uid, {dynamic verificationId}) async {
-    _showLoadingDialog('جارٍ إثبات الحالة...', 'جاري تحديد موقعك وحساب المسافة', C.orange);
+    _showLoadingDialog(L.tr('verifying_status'), L.tr('calculating_distance'), C.orange);
     try {
       final locResultV = await _getBestPosition();
       final pos = locResultV.position;
-      if (pos == null) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'فشل تحديد الموقع', 'يرجى تفعيل GPS'); return; }
-      if (locResultV.isMocked) { if (mounted) Navigator.pop(context); _showResultDialog(false, 'موقع مزيف', 'تم اكتشاف تطبيق تزوير موقع'); return; }
+      if (pos == null) { if (mounted) Navigator.pop(context); _showResultDialog(false, L.tr('location_failed'), L.tr('enable_gps')); return; }
+      if (locResultV.isMocked) { if (mounted) Navigator.pop(context); _showResultDialog(false, L.tr('fake_location'), L.tr('spoofing_detected')); return; }
 
       final loc = _selectedLocation;
       double adminLat = 0, adminLng = 0, radius = 300;
-      String locName = 'الموقع المحدد';
+      String locName = L.tr('selected_location');
       if (loc != null && loc.isNotEmpty) {
         adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
         adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
         radius = (loc['radius'] as num?)?.toDouble() ?? 300;
-        locName = loc['name'] ?? 'الموقع المحدد';
+        locName = loc['name'] ?? L.tr('selected_location');
       } else {
         // Fallback: load locations from API
         try {
@@ -1276,7 +1277,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               adminLat = (l['lat'] as num?)?.toDouble() ?? 0;
               adminLng = (l['lng'] as num?)?.toDouble() ?? 0;
               radius = (l['radius'] as num?)?.toDouble() ?? 300;
-              locName = l['name'] ?? 'الموقع المحدد';
+              locName = l['name'] ?? L.tr('selected_location');
             }
           }
         } catch (_) {}
@@ -1305,13 +1306,13 @@ class EmpHomePageState extends State<EmpHomePage> {
           Container(width: 56, height: 56, decoration: BoxDecoration(color: inRange ? C.greenL : C.redL, shape: BoxShape.circle),
             child: Icon(inRange ? Icons.check : Icons.warning_amber, size: 28, color: inRange ? C.green : C.red)),
           const SizedBox(height: 12),
-          Text(inRange ? 'أنت داخل النطاق ✓' : 'أنت خارج النطاق ⚠', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: inRange ? C.green : C.red)),
-          Text('المسافة: ${distance.round()} متر من $locName', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
+          Text(inRange ? L.tr('inside_range') : L.tr('outside_range_warning'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: inRange ? C.green : C.red)),
+          Text(L.tr('distance_info', args: {'meters': distance.round().toString(), 'name': locName}), style: GoogleFonts.tajawal(fontSize: 13, color: C.sub)),
           const SizedBox(height: 14),
           ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: SizedBox(width: double.infinity, height: 220, child: GoogleMap(
             initialCameraPosition: CameraPosition(target: LatLng(adminLat, adminLng), zoom: 15),
             markers: {
-              Marker(markerId: const MarkerId('employee'), position: LatLng(pos.latitude, pos.longitude), infoWindow: InfoWindow(title: 'موقعك — ${distance.round()}م'), icon: BitmapDescriptor.defaultMarkerWithHue(inRange ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed)),
+              Marker(markerId: const MarkerId('employee'), position: LatLng(pos.latitude, pos.longitude), infoWindow: InfoWindow(title: L.tr('your_location_label', args: {'meters': distance.round().toString()})), icon: BitmapDescriptor.defaultMarkerWithHue(inRange ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed)),
               Marker(markerId: const MarkerId('work'), position: LatLng(adminLat, adminLng), infoWindow: InfoWindow(title: locName), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)),
             },
             circles: { Circle(circleId: const CircleId('workZone'), center: LatLng(adminLat, adminLng), radius: radius, fillColor: C.green.withOpacity(0.15), strokeColor: C.green, strokeWidth: 2) },
@@ -1320,17 +1321,17 @@ class EmpHomePageState extends State<EmpHomePage> {
           const SizedBox(height: 10),
           Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: inRange ? C.greenL : C.redL, borderRadius: BorderRadius.circular(4)),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(inRange ? 'تم إثبات تواجدك بنجاح' : 'أنت خارج نطاق العمل بـ ${(distance - radius).round()} متر', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: inRange ? C.green : C.red)),
+              Text(inRange ? L.tr('verify_success') : L.tr('out_range_by_meters', args: {'meters': (distance - radius).round().toString()}), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: inRange ? C.green : C.red)),
               const SizedBox(width: 6), Icon(inRange ? Icons.check_circle : Icons.error, size: 16, color: inRange ? C.green : C.red),
             ])),
           const SizedBox(height: 12),
           SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(ctx), style: ElevatedButton.styleFrom(backgroundColor: inRange ? C.green : C.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)), padding: const EdgeInsets.symmetric(vertical: 12)),
-            child: Text('حسناً', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
+            child: Text(L.tr('ok'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)))),
         ]),
       ))));
     } catch (e) {
       if (mounted) Navigator.pop(context);
-      _showResultDialog(false, 'خطأ في الإثبات', 'حدث خطأ: $e');
+      _showResultDialog(false, L.tr('err_verify'), L.tr('error_occurred_msg', args: {'error': e.toString()}));
     }
   }
 }

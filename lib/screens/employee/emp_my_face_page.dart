@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpMyFacePage extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -17,7 +18,7 @@ class EmpMyFacePage extends StatelessWidget {
         surfaceTintColor: C.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('بصمتي', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('my_face'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: C.text), onPressed: () => Navigator.pop(context)),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
       ),
@@ -72,10 +73,10 @@ class EmpMyFacePage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(color: registered ? C.greenL : C.orangeL, borderRadius: BorderRadius.circular(20)),
-                      child: Text(registered ? 'مسجّلة' : 'غير مسجّلة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: registered ? C.green : C.orange)),
+                      child: Text(registered ? L.tr('face_registered') : L.tr('face_not_registered'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: registered ? C.green : C.orange)),
                     ),
                     const Spacer(),
-                    Text('حالة بصمة الوجه', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
+                    Text(L.tr('face_status'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: C.text)),
                     const SizedBox(width: 8),
                     Icon(Icons.face, size: 22, color: registered ? C.green : C.orange),
                   ]),
@@ -83,13 +84,13 @@ class EmpMyFacePage extends StatelessWidget {
                     const SizedBox(height: 12),
                     Container(height: 1, color: C.div),
                     const SizedBox(height: 12),
-                    _infoRow(Icons.calendar_today, 'تاريخ التسجيل', _formatDate(registeredAt)),
+                    _infoRow(Icons.calendar_today, L.tr('registration_date'), _formatDate(registeredAt)),
                     const SizedBox(height: 8),
-                    _infoRow(Icons.security, 'الحالة', 'نشطة ومفعّلة'),
+                    _infoRow(Icons.security, L.tr('status'), L.tr('active_enabled')),
                   ],
                   if (!registered) ...[
                     const SizedBox(height: 12),
-                    Text('لم يتم تسجيل بصمة الوجه بعد. سيُطلب منك التسجيل عند أول بصمة حضور.', style: GoogleFonts.tajawal(fontSize: 13, color: C.sub, height: 1.6), textAlign: TextAlign.right),
+                    Text(L.tr('face_will_register'), style: GoogleFonts.tajawal(fontSize: 13, color: C.sub, height: 1.6), textAlign: TextAlign.right),
                   ],
                 ]),
               ),
@@ -103,7 +104,7 @@ class EmpMyFacePage extends StatelessWidget {
                 decoration: BoxDecoration(color: C.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: Text(
-                    'بصمة الوجه تُستخدم للتحقق من هويتك عند تسجيل الحضور والانصراف. لا يمكنك تعديل أو حذف البصمة — تواصل مع المدير لإعادة التسجيل.',
+                    L.tr('face_info'),
                     style: GoogleFonts.tajawal(fontSize: 12, color: C.pri, height: 1.6),
                     textAlign: TextAlign.right,
                   )),
@@ -135,7 +136,7 @@ class EmpMyFacePage extends StatelessWidget {
   }
 
   String _formatDate(DateTime d) {
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    final months = L.months;
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 }

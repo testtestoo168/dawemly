@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_locale.dart';
 
 /// Professional splash screen with branded gradient, logo, and loading indicator.
 class SplashScreen extends StatefulWidget {
@@ -94,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                 // App name
                 Text(
-                  'داوِملي',
+                  L.tr('app_name'),
                   style: GoogleFonts.tajawal(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
@@ -107,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                 // Subtitle
                 Text(
-                  'نظام إدارة الحضور والانصراف',
+                  L.tr('app_subtitle'),
                   style: GoogleFonts.tajawal(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,

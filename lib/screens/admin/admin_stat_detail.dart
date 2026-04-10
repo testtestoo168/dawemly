@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
 import '../../services/attendance_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminStatDetail extends StatefulWidget {
   final String filter;
@@ -73,7 +74,7 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
     final d = _parseTs(v);
     if (d == null) return '';
     final h = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
-    return '${h.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   @override
@@ -92,7 +93,7 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.people_outline_rounded, size: 60, color: W.muted.withOpacity(0.4)),
                   const SizedBox(height: 12),
-                  Text('لا يوجد موظفين', style: _tj(16, weight: FontWeight.w600, color: W.muted)),
+                  Text(L.tr('no_employees'), style: _tj(16, weight: FontWeight.w600, color: W.muted)),
                 ]))
               : RefreshIndicator(
                   onRefresh: _load,
@@ -105,26 +106,26 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
                       final name = emp['name'] ?? '';
                       final empId = emp['empId'] ?? emp['emp_id'] ?? '';
                       final dept = emp['dept'] ?? '';
-                      final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+                      final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
                       final att = emp['_att'] as Map<String, dynamic>?;
 
                       String status; Color statusColor; Color statusBg; String timeInfo = '';
                       if (att == null) {
-                        status = 'غائب'; statusColor = W.red; statusBg = W.redL;
+                        status = L.tr('absent'); statusColor = W.red; statusBg = W.redL;
                       } else if ((att['checkOut'] ?? att['last_check_out']) != null) {
-                        status = 'مكتمل'; statusColor = W.green; statusBg = W.greenL;
+                        status = L.tr('complete'); statusColor = W.green; statusBg = W.greenL;
                         final ci = att['checkIn'] ?? att['first_check_in'];
                         final co = att['checkOut'] ?? att['last_check_out'];
                         final ciDt = _parseTs(ci); final coDt = _parseTs(co);
                         if (ciDt != null && coDt != null) {
                           timeInfo = '${_fmtTime(ci)} → ${_fmtTime(co)}';
                           final mins = coDt.difference(ciDt).inMinutes;
-                          timeInfo += '  (${mins ~/ 60}س ${mins % 60}د)';
+                          timeInfo += '  (${L.tr('h_m_format', args: {'h': (mins ~/ 60).toString(), 'm': (mins % 60).toString()})})';
                         }
                       } else {
-                        status = 'حاضر'; statusColor = W.green; statusBg = W.greenL;
+                        status = L.tr('present'); statusColor = W.green; statusBg = W.greenL;
                         final ci = att['checkIn'] ?? att['first_check_in'];
-                        if (ci != null) timeInfo = 'دخول: ${_fmtTime(ci)}';
+                        if (ci != null) timeInfo = L.tr('entry_time', args: {'time': _fmtTime(ci)});
                       }
 
                       return Container(

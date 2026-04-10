@@ -19,6 +19,7 @@ import 'services/auth_service.dart';
 import 'services/server_time_service.dart';
 import 'screens/splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'l10n/app_locale.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -50,6 +51,9 @@ void main() async {
     initializeDateFormatting('ar', null),
   ]);
   prefs = results[0] as SharedPreferences;
+
+  // Initialize locale from saved prefs
+  L.init();
 
   // Load token from the already-fetched prefs (synchronous, no IO)
   ApiService.loadTokenSync(prefs);
@@ -89,9 +93,9 @@ void _setupFcm() async {
       alert: true, badge: true, sound: true,
     );
 
-    const channel = AndroidNotificationChannel(
-      'dawemly_channel', 'إشعارات داوملي',
-      description: 'إشعارات نظام الحضور والانصراف',
+    final channel = AndroidNotificationChannel(
+      'dawemly_channel', L.tr('notif_channel_name'),
+      description: L.tr('notif_channel_desc'),
       importance: Importance.high,
       playSound: true,
       enableVibration: true,
@@ -111,8 +115,8 @@ void _setupFcm() async {
       if (n != null) {
         flnp.show(n.hashCode, n.title, n.body, NotificationDetails(
           android: AndroidNotificationDetails(
-            'dawemly_channel', 'إشعارات داوملي',
-            channelDescription: 'إشعارات نظام الحضور والانصراف',
+            'dawemly_channel', L.tr('notif_channel_name'),
+            channelDescription: L.tr('notif_channel_desc'),
             importance: Importance.high, priority: Priority.high,
             icon: '@drawable/ic_notification',
             color: const Color(0xFF175CD3),
@@ -126,6 +130,12 @@ void _setupFcm() async {
 
 class RasdApp extends StatefulWidget {
   const RasdApp({super.key});
+
+  /// Call this from anywhere to rebuild the app (e.g. after locale change).
+  static void rebuildApp(BuildContext context) {
+    context.findAncestorStateOfType<_RasdAppState>()?.rebuild();
+  }
+
   @override
   State<RasdApp> createState() => _RasdAppState();
 }
@@ -139,6 +149,8 @@ class _RasdAppState extends State<RasdApp> {
     super.initState();
     _loadDisplaySettings();
   }
+
+  void rebuild() => setState(() {});
 
   void _loadDisplaySettings() async {
     if (!ApiService.isLoggedIn) return;
@@ -176,7 +188,7 @@ class _RasdAppState extends State<RasdApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'داوِملي',
+      title: L.tr('app_name'),
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
@@ -209,7 +221,7 @@ class _RasdAppState extends State<RasdApp> {
           data: MediaQuery.of(ctx).copyWith(
             textScaler: TextScaler.linear(_fontScale),
           ),
-          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+          child: Directionality(textDirection: L.textDirection, child: child!),
         );
       },
       home: const AuthGate(),
@@ -313,20 +325,20 @@ class _AuthGateState extends State<AuthGate> {
               child: Image.asset('assets/app_icon_192.png', width: 80, height: 80, fit: BoxFit.cover),
             ),
             const SizedBox(height: 24),
-            Text('داوِملي', style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.w800, color: C.pri)),
+            Text(L.tr('app_name'), style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.w800, color: C.pri)),
             const SizedBox(height: 12),
-            Text('لوحة التحكم متاحة للإدارة فقط',
+            Text(L.tr('dashboard_admin_only'),
               style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: C.text),
               textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text('يرجى استخدام تطبيق الهاتف لتسجيل الحضور والانصراف',
+            Text(L.tr('use_mobile_app'),
               style: GoogleFonts.tajawal(fontSize: 14, color: C.sub, height: 1.6),
               textAlign: TextAlign.center),
             const SizedBox(height: 24),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: _onLogout,
               icon: const Icon(Icons.logout, size: 18, color: C.red),
-              label: Text('تسجيل الخروج',
+              label: Text(L.tr('logout'),
                 style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: C.red)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: C.redBd),

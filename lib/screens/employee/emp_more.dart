@@ -11,6 +11,7 @@ import 'emp_profile_page.dart';
 import 'emp_my_face_page.dart';
 import 'emp_notifications_page.dart';
 import '../onboarding_screen.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpMorePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -55,7 +56,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
         }).toList();
         if (mounted) {
           setState(() {
-            _locationName = userLocs.isNotEmpty ? (userLocs.first['name'] ?? 'المنشأة') : null;
+            _locationName = userLocs.isNotEmpty ? (userLocs.first['name'] ?? L.tr('organization')) : null;
             _loadingLoc = false;
           });
         }
@@ -118,7 +119,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('المزيد', style: _tj(17, weight: FontWeight.w700, color: C.text)),
+                      Text(L.tr('mob_more'), style: _tj(17, weight: FontWeight.w700, color: C.text)),
                       const SizedBox(height: 2),
                       Text(
                         _getCurrentTime(),
@@ -137,7 +138,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     ),
                     child: Center(
                       child: Text(
-                        _getInitials(widget.user['name'] ?? 'م'),
+                        _getInitials(widget.user['name'] ?? L.tr('pm')),
                         style: _tj(15, weight: FontWeight.w700, color: Colors.white),
                       ),
                     ),
@@ -149,7 +150,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
             const SizedBox(height: 16),
 
             // ─── المنشأة الحالية ───
-            _sectionTitle('المنشأة الحالية'),
+            _sectionTitle(L.tr('mob_current_org')),
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -173,7 +174,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(_locationName ?? 'لا توجد مواقع محددة', style: _tj(14, weight: _locationName != null ? FontWeight.w600 : FontWeight.w400, color: _locationName != null ? C.text : C.muted), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                        Expanded(child: Text(_locationName ?? L.tr('no_locations'), style: _tj(14, weight: _locationName != null ? FontWeight.w600 : FontWeight.w400, color: _locationName != null ? C.text : C.muted), maxLines: 2, overflow: TextOverflow.ellipsis)),
                       ],
                     ),
                   ),
@@ -182,7 +183,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
             const SizedBox(height: 24),
 
             // ─── رصيد الإجازات ───
-            _sectionTitle('رصيد الإجازات'),
+            _sectionTitle(L.tr('leave_balance')),
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -198,7 +199,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     Row(children: [
                       Text('${_leaveTotal - _leaveUsed}', style: GoogleFonts.ibmPlexMono(fontSize: 28, fontWeight: FontWeight.w800, color: C.pri)),
                       const SizedBox(width: 6),
-                      Text('يوم متبقي', style: _tj(13, color: C.sub)),
+                      Text(L.tr('remaining_day'), style: _tj(13, color: C.sub)),
                       const Spacer(),
                       Container(
                         width: 40, height: 40,
@@ -218,8 +219,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     ),
                     const SizedBox(height: 8),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('الإجمالي: $_leaveTotal يوم', style: _tj(11, color: C.muted)),
-                      Text('مستخدم: $_leaveUsed يوم', style: _tj(11, color: C.muted)),
+                      Text(L.tr('leave_total_label', args: {'total': _leaveTotal.toString()}), style: _tj(11, color: C.muted)),
+                      Text(L.tr('leave_used_label', args: {'used': _leaveUsed.toString()}), style: _tj(11, color: C.muted)),
                     ]),
                   ]),
             ),
@@ -227,7 +228,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
             const SizedBox(height: 24),
 
             // ─── الخدمات ───
-            _sectionTitle('الخدمات'),
+            _sectionTitle(L.tr('services')),
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -240,37 +241,37 @@ class _EmpMorePageState extends State<EmpMorePage> {
                 children: [
                   _menuItem(
                     icon: Icons.notifications_outlined,
-                    label: 'إشعاراتي',
+                    label: L.tr('my_notifications'),
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpNotificationsPage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.location_on_outlined,
-                    label: 'المواقع والفرع',
+                    label: L.tr('locations_branch'),
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpLocationsPage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.calendar_month_outlined,
-                    label: 'جدول العمل',
+                    label: L.tr('work_schedule'),
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpSchedulePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.person_outline_rounded,
-                    label: 'الملف الشخصي',
+                    label: L.tr('profile'),
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpProfilePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.face_outlined,
-                    label: 'بصمتي',
+                    label: L.tr('my_face'),
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EmpMyFacePage(user: widget.user))),
                   ),
                   _divider(),
                   _menuItem(
                     icon: Icons.info_outline_rounded,
-                    label: 'جولة تعريفية للتطبيق',
+                    label: L.tr('onboarding_tour'),
                     onTap: () => _showOnboardingTour(),
                   ),
                 ],
@@ -280,7 +281,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
             const SizedBox(height: 24),
 
             // ─── إدارة الحساب ───
-            _sectionTitle('إدارة الحساب'),
+            _sectionTitle(L.tr('account_mgmt')),
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -291,7 +292,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
               ),
               child: _menuItem(
                 icon: Icons.settings_outlined,
-                label: 'الإعدادات',
+                label: L.tr('settings'),
                 onTap: () => _showChangePasswordDialog(),
               ),
             ),
@@ -306,7 +307,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                 child: OutlinedButton.icon(
                   onPressed: () => _showLogoutDialog(context),
                   icon: const Icon(Icons.logout_rounded, size: 18, color: C.red),
-                  label: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: C.red)),
+                  label: Text(L.tr('logout'), style: _tj(14, weight: FontWeight.w700, color: C.red)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: C.redBd),
                     backgroundColor: C.redL,
@@ -378,13 +379,13 @@ class _EmpMorePageState extends State<EmpMorePage> {
 
   String _getInitials(String name) {
     if (name.length >= 2) return name.substring(0, 2);
-    return name.isNotEmpty ? name[0] : 'م';
+    return name.isNotEmpty ? name[0] : L.tr('pm');
   }
 
   String _getCurrentTime() {
     final now = ServerTimeService().now;
     final h = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    return '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   void _showOnboardingTour() {
@@ -413,7 +414,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('تغيير كلمة المرور', style: _tj(18, weight: FontWeight.w700, color: C.text)),
+              Text(L.tr('change_password'), style: _tj(18, weight: FontWeight.w700, color: C.text)),
               const SizedBox(width: 8),
               const Icon(Icons.lock_outline_rounded, size: 20, color: C.pri),
             ],
@@ -430,7 +431,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.right,
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور الحالية',
+                      labelText: L.tr('current_password'),
                       labelStyle: _tj(13, color: C.sub),
                       prefixIcon: IconButton(
                         icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
@@ -442,7 +443,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: C.pri)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'مطلوب' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? L.tr('required') : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
@@ -451,7 +452,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.right,
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور الجديدة',
+                      labelText: L.tr('new_password'),
                       labelStyle: _tj(13, color: C.sub),
                       prefixIcon: IconButton(
                         icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
@@ -464,8 +465,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'مطلوب';
-                      if (v.length < 6) return 'يجب أن تكون 6 أحرف على الأقل';
+                      if (v == null || v.isEmpty) return L.tr('required');
+                      if (v.length < 6) return L.tr('password_min_6');
                       return null;
                     },
                   ),
@@ -476,7 +477,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.right,
                     decoration: InputDecoration(
-                      labelText: 'تأكيد كلمة المرور',
+                      labelText: L.tr('confirm_password'),
                       labelStyle: _tj(13, color: C.sub),
                       prefixIcon: IconButton(
                         icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, size: 18, color: C.muted),
@@ -489,8 +490,8 @@ class _EmpMorePageState extends State<EmpMorePage> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'مطلوب';
-                      if (v != newCtrl.text) return 'كلمة المرور غير متطابقة';
+                      if (v == null || v.isEmpty) return L.tr('required');
+                      if (v != newCtrl.text) return L.tr('password_mismatch');
                       return null;
                     },
                   ),
@@ -501,7 +502,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('إلغاء', style: _tj(14, color: C.sub)),
+              child: Text(L.tr('cancel'), style: _tj(14, color: C.sub)),
             ),
             ElevatedButton(
               onPressed: loading ? null : () async {
@@ -513,14 +514,14 @@ class _EmpMorePageState extends State<EmpMorePage> {
                   Navigator.pop(ctx);
                   if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('تم تغيير كلمة المرور بنجاح', style: _tj(13, color: Colors.white)),
+                      content: Text(L.tr('password_changed'), style: _tj(13, color: Colors.white)),
                       backgroundColor: C.green,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ));
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('كلمة المرور الحالية غير صحيحة', style: _tj(13, color: Colors.white)),
+                      content: Text(L.tr('current_password_wrong'), style: _tj(13, color: Colors.white)),
                       backgroundColor: C.red,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -530,7 +531,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                   if (!ctx.mounted) return;
                   setDState(() => loading = false);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('حدث خطأ، حاول مرة أخرى', style: _tj(13, color: Colors.white)),
+                    content: Text(L.tr('generic_error'), style: _tj(13, color: Colors.white)),
                     backgroundColor: C.red,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -544,7 +545,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
               ),
               child: loading
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Text('تغيير', style: _tj(14, weight: FontWeight.w700, color: Colors.white)),
+                : Text(L.tr('change'), style: _tj(14, weight: FontWeight.w700, color: Colors.white)),
             ),
           ],
         ),
@@ -557,16 +558,16 @@ class _EmpMorePageState extends State<EmpMorePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('تسجيل الخروج', style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
-        content: Text('هل تريد تسجيل الخروج من حسابك؟', style: _tj(14), textAlign: TextAlign.right),
+        title: Text(L.tr('logout'), style: _tj(18, weight: FontWeight.w700), textAlign: TextAlign.right),
+        content: Text(L.tr('logout_confirm_msg'), style: _tj(14), textAlign: TextAlign.right),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: _tj(14, color: C.sub)),
+            child: Text(L.tr('cancel'), style: _tj(14, color: C.sub)),
           ),
           TextButton(
             onPressed: () { Navigator.pop(ctx); widget.onLogout(); },
-            child: Text('تسجيل الخروج', style: _tj(14, weight: FontWeight.w700, color: C.red)),
+            child: Text(L.tr('logout'), style: _tj(14, weight: FontWeight.w700, color: C.red)),
           ),
         ],
       ),

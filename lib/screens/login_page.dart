@@ -4,6 +4,8 @@ import 'package:local_auth/local_auth.dart';
 import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../l10n/app_locale.dart';
+import '../main.dart' show RasdApp;
 
 class LoginPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onLogin;
@@ -33,6 +35,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() { _emailCtrl.dispose(); _passCtrl.dispose(); super.dispose(); }
 
+  // ─── Language switch ───
+  void _switchLocale(String loc) async {
+    await L.setLocale(loc);
+    if (mounted) {
+      RasdApp.rebuildApp(context);
+      setState(() {});
+    }
+  }
+
   // ─── Auth methods ───
   void _biometricLogin() async {
     setState(() { _loading = true; _error = null; });
@@ -40,39 +51,39 @@ class _LoginPageState extends State<LoginPage> {
       // Biometric requires an active session — user must log in with email first
       final currentUser = ApiService.currentUser;
       if (currentUser == null) {
-        setState(() { _error = 'سجّل دخول بالبريد أولاً ثم استخدم البصمة'; _loading = false; });
+        setState(() { _error = L.tr('err_biometric_email_first'); _loading = false; });
         return;
       }
       final canCheck = await _localAuth.canCheckBiometrics;
       final isSupported = await _localAuth.isDeviceSupported();
-      if (!canCheck && !isSupported) { setState(() { _error = 'البصمة غير مدعومة على هذا الجهاز'; _loading = false; }); return; }
-      final authenticated = await _localAuth.authenticate(localizedReason: 'استخدم البصمة لتسجيل الدخول', options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false));
-      if (!authenticated) { setState(() { _error = 'فشل التحقق من البصمة'; _loading = false; }); return; }
+      if (!canCheck && !isSupported) { setState(() { _error = L.tr('err_biometric_not_supported'); _loading = false; }); return; }
+      final authenticated = await _localAuth.authenticate(localizedReason: L.tr('biometric_login_reason'), options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false));
+      if (!authenticated) { setState(() { _error = L.tr('err_biometric_failed'); _loading = false; }); return; }
       widget.onLogin(currentUser);
-    } catch (e) { setState(() { _error = 'خطأ في البصمة — سجّل دخول بالبريد أولاً'; _loading = false; }); }
+    } catch (e) { setState(() { _error = L.tr('err_biometric_fallback'); _loading = false; }); }
   }
 
   void _emailLogin() async {
-    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) { setState(() => _error = 'يرجى إدخال البريد وكلمة المرور'); return; }
+    if (_emailCtrl.text.isEmpty || _passCtrl.text.isEmpty) { setState(() => _error = L.tr('err_enter_email_pass')); return; }
     setState(() { _loading = true; _error = null; });
     try {
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
-      if (user != null) { widget.onLogin(user); } else { setState(() { _error = 'خطأ في تسجيل الدخول'; _loading = false; }); }
+      if (user != null) { widget.onLogin(user); } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
     } catch (e) {
-      String msg = 'خطأ في تسجيل الدخول';
+      String msg = L.tr('err_login');
       final errStr = e.toString();
-      if (errStr.contains('user-not-found')) msg = 'البريد غير مسجل في النظام';
-      else if (errStr.contains('wrong-password') || errStr.contains('invalid-credential')) msg = 'كلمة المرور غير صحيحة';
-      else if (errStr.contains('invalid-email')) msg = 'البريد الإلكتروني غير صحيح';
-      else if (errStr.contains('network')) msg = 'لا يوجد اتصال بالإنترنت';
-      else if (errStr.contains('حسابك مفتوح على جهاز آخر') || errStr.contains('تسجيل الخروج من الجهاز')) msg = errStr.replaceAll('Exception: ', '');
+      if (errStr.contains('user-not-found')) msg = L.tr('err_user_not_found');
+      else if (errStr.contains('wrong-password') || errStr.contains('invalid-credential')) msg = L.tr('err_wrong_password');
+      else if (errStr.contains('invalid-email')) msg = L.tr('err_invalid_email');
+      else if (errStr.contains('network')) msg = L.tr('err_network');
+      else if (errStr.contains(L.tr('account_on_other_device')) || errStr.contains(L.tr('logout_device'))) msg = errStr.replaceAll('Exception: ', '');
       setState(() { _error = msg; _loading = false; });
     }
   }
 
   void _forgotPass() async {
-    if (_emailCtrl.text.isEmpty) { setState(() => _error = 'يرجى إدخال البريد الإلكتروني'); return; }
-    _showMsg('تواصل مع المدير لإعادة تعيين كلمة المرور');
+    if (_emailCtrl.text.isEmpty) { setState(() => _error = L.tr('err_enter_email')); return; }
+    _showMsg(L.tr('contact_admin_reset'));
   }
 
   void _showMsg(String msg) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _tj(13, color: Colors.white)), backgroundColor: C.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)))); }
@@ -86,8 +97,49 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // ─── Language Selector Widget ───
+  Widget _langSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: C.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: C.border),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        _langBtn('العربية', 'ar'),
+        const SizedBox(width: 4),
+        _langBtn('English', 'en'),
+      ]),
+    );
+  }
+
+  Widget _langBtn(String label, String loc) {
+    final isActive = L.locale == loc;
+    return InkWell(
+      onTap: () => _switchLocale(loc),
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? C.pri : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.tajawal(
+            fontSize: 13,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            color: isActive ? Colors.white : C.sub,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════
-  //  📱 MOBILE — رصد style clean login
+  //  MOBILE layout
   // ════════════════════════════════════════════
   Widget _mobileLayout() {
     return SafeArea(
@@ -96,7 +148,12 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
+
+              // ─── Language Selector ───
+              _langSelector(),
+
+              const SizedBox(height: 20),
 
               // ─── Logo & Welcome ───
               Container(
@@ -108,9 +165,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover)),
               ),
               const SizedBox(height: 16),
-              Text('مرحباً بك,', style: _tj(22, weight: FontWeight.w800, color: C.text)),
+              Text(L.tr('welcome'), style: _tj(22, weight: FontWeight.w800, color: C.text)),
               const SizedBox(height: 4),
-              Text('يمكنك تسجيل الدخول في تطبيق داوِملي!', style: _tj(14, color: C.sub)),
+              Text(L.tr('login_subtitle'), style: _tj(14, color: C.sub)),
 
               const SizedBox(height: 32),
 
@@ -131,14 +188,14 @@ class _LoginPageState extends State<LoginPage> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: C.redL, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.redBd)),
-                      child: Text(_error!, style: _tj(12, weight: FontWeight.w600, color: C.red), textAlign: TextAlign.right),
+                      child: Text(_error!, style: _tj(12, weight: FontWeight.w600, color: C.red), textAlign: L.isAr ? TextAlign.right : TextAlign.left),
                     ),
 
                     // Email/Username field
-                    _formLabel('اسم المستخدم / البريد'),
+                    _formLabel(L.tr('username_email')),
                     _formField(
                       ctrl: _emailCtrl,
-                      hint: 'اسم المستخدم / البريد',
+                      hint: L.tr('username_email'),
                       icon: Icons.person_outline_rounded,
                       isLtr: true,
                     ),
@@ -146,10 +203,10 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 20),
 
                     // Password field
-                    _formLabel('كلمة المرور'),
+                    _formLabel(L.tr('password')),
                     _formField(
                       ctrl: _passCtrl,
-                      hint: 'كلمة المرور',
+                      hint: L.tr('password'),
                       icon: Icons.lock_outline_rounded,
                       isLtr: true,
                       isPass: true,
@@ -160,11 +217,11 @@ class _LoginPageState extends State<LoginPage> {
                     // Remember me + Forgot password
                     Row(
                       children: [
-                        // Remember me (RTL: appears on right)
+                        // Remember me
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('تذكرني', style: _tj(12, weight: FontWeight.w500, color: C.sub)),
+                            Text(L.tr('remember_me'), style: _tj(12, weight: FontWeight.w500, color: C.sub)),
                             const SizedBox(width: 4),
                             SizedBox(
                               width: 20, height: 20,
@@ -179,11 +236,11 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         const Spacer(),
-                        // Forgot password (RTL: appears on left)
+                        // Forgot password
                         TextButton(
                           onPressed: _forgotPass,
                           style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-                          child: Text('نسيت كلمة المرور؟', style: _tj(12, weight: FontWeight.w600, color: C.pri)),
+                          child: Text(L.tr('forgot_password'), style: _tj(12, weight: FontWeight.w600, color: C.pri)),
                         ),
                       ],
                     ),
@@ -193,7 +250,7 @@ class _LoginPageState extends State<LoginPage> {
                     // Login button + Biometric
                     Row(
                       children: [
-                        // Biometric button (RTL: appears on right)
+                        // Biometric button
                         InkWell(
                           onTap: _loading ? null : _biometricLogin,
                           borderRadius: BorderRadius.circular(14),
@@ -222,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: _loading
                                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                                : Text('تسجيل الدخول', style: _tj(16, weight: FontWeight.w700, color: Colors.white)),
+                                : Text(L.tr('login'), style: _tj(16, weight: FontWeight.w700, color: Colors.white)),
                             ),
                           ),
                         ),
@@ -235,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 32),
 
               // Footer
-              Text('داوِملي v1.0 — نظام إدارة الحضور © ${DateTime.now().year}', style: _tj(11, color: C.muted)),
+              Text(L.tr('app_footer_mobile', args: {'year': '${DateTime.now().year}'}), style: _tj(11, color: C.muted)),
               const SizedBox(height: 24),
             ],
           ),
@@ -246,7 +303,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _formLabel(String t) {
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: L.isAr ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Text(t, style: _tj(13, weight: FontWeight.w600, color: C.sub)),
@@ -264,8 +321,8 @@ class _LoginPageState extends State<LoginPage> {
     return TextField(
       controller: ctrl,
       obscureText: isPass && !_showPass,
-      textDirection: isLtr ? TextDirection.ltr : TextDirection.rtl,
-      textAlign: isLtr ? TextAlign.left : TextAlign.right,
+      textDirection: isLtr ? TextDirection.ltr : L.textDirection,
+      textAlign: isLtr ? TextAlign.left : (L.isAr ? TextAlign.right : TextAlign.left),
       keyboardType: isPass ? TextInputType.visiblePassword : TextInputType.emailAddress,
       style: _tj(14, color: C.text),
       decoration: InputDecoration(
@@ -274,13 +331,11 @@ class _LoginPageState extends State<LoginPage> {
         filled: true,
         fillColor: const Color(0xFFF9FAFB),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        // Icon on right side (suffix in RTL context)
         suffixIcon: Padding(
           padding: const EdgeInsets.only(right: 12),
           child: Icon(icon, size: 20, color: C.muted),
         ),
         suffixIconConstraints: const BoxConstraints(minWidth: 44),
-        // Eye icon for password on left side
         prefixIcon: isPass
           ? IconButton(
               icon: Icon(_showPass ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: C.muted),
@@ -296,10 +351,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ════════════════════════════════════════════
-  //  🖥️ WEB — URS style (unchanged)
+  //  WEB layout
   // ════════════════════════════════════════════
   Widget _webLayout() {
-    return Row(textDirection: TextDirection.rtl, children: [
+    return Row(textDirection: L.textDirection, children: [
       Expanded(
         flex: 45,
         child: Container(
@@ -307,9 +362,12 @@ class _LoginPageState extends State<LoginPage> {
           child: Center(child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
             child: SizedBox(width: 400, child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Text('تسجيل الدخول', style: _tj(28, weight: FontWeight.w800, color: _navy)),
+              // Language selector at top
+              _langSelector(),
+              const SizedBox(height: 24),
+              Text(L.tr('login'), style: _tj(28, weight: FontWeight.w800, color: _navy)),
               const SizedBox(height: 8),
-              Text('أدخل بياناتك للوصول إلى لوحة التحكم', style: _tj(14, color: const Color(0xFF6B7280))),
+              Text(L.tr('login_web_subtitle'), style: _tj(14, color: const Color(0xFF6B7280))),
               const SizedBox(height: 32),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Container(
@@ -319,33 +377,33 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('داوِملي', style: _tj(20, weight: FontWeight.w800, color: _navy)),
-                  Text('نظام إدارة الحضور والانصراف', style: _tj(11, color: const Color(0xFF6B7280))),
+                  Text(L.tr('app_name'), style: _tj(20, weight: FontWeight.w800, color: _navy)),
+                  Text(L.tr('app_subtitle'), style: _tj(11, color: const Color(0xFF6B7280))),
                 ]),
               ]),
               const SizedBox(height: 28),
               if (_error != null) Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), margin: const EdgeInsets.only(bottom: 22),
                 decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
-                child: Row(children: [Expanded(child: Text(_error!, style: _tj(13, color: const Color(0xFF991B1B)), textAlign: TextAlign.right)), const SizedBox(width: 10), const Icon(Icons.error_outline, size: 16, color: Color(0xFFDC2626))]),
+                child: Row(children: [Expanded(child: Text(_error!, style: _tj(13, color: const Color(0xFF991B1B)), textAlign: L.isAr ? TextAlign.right : TextAlign.left)), const SizedBox(width: 10), const Icon(Icons.error_outline, size: 16, color: Color(0xFFDC2626))]),
               ),
-              _webFormLabel('البريد الإلكتروني'),
-              _webInput(_emailCtrl, 'أدخل البريد الإلكتروني', icon: Icons.person_outline, isLtr: true),
+              _webFormLabel(L.tr('email')),
+              _webInput(_emailCtrl, L.tr('enter_email'), icon: Icons.person_outline, isLtr: true),
               const SizedBox(height: 22),
-              _webFormLabel('كلمة المرور'),
-              _webInput(_passCtrl, 'أدخل كلمة المرور', icon: Icons.lock_outline, isLtr: true, isPass: true),
+              _webFormLabel(L.tr('password')),
+              _webInput(_passCtrl, L.tr('enter_password'), icon: Icons.lock_outline, isLtr: true, isPass: true),
               const SizedBox(height: 8),
               SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
                 onPressed: _loading ? null : _emailLogin,
                 style: ElevatedButton.styleFrom(backgroundColor: _loading ? const Color(0xFF9CA3AF) : _navy, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
                 child: _loading
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.login_rounded, size: 16), const SizedBox(width: 8), Text('تسجيل الدخول', style: _tj(15, weight: FontWeight.w700, color: Colors.white))]),
+                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.login_rounded, size: 16), const SizedBox(width: 8), Text(L.tr('login'), style: _tj(15, weight: FontWeight.w700, color: Colors.white))]),
               )),
               Padding(padding: const EdgeInsets.only(top: 48), child: Column(children: [
-                Text('داوِملي © ${DateTime.now().year}', style: _tj(11, color: const Color(0xFF9CA3AF))),
+                Text(L.tr('app_footer_web', args: {'year': '${DateTime.now().year}'}), style: _tj(11, color: const Color(0xFF9CA3AF))),
                 const SizedBox(height: 4),
-                Text('تطوير: م. أحمد حسام', style: _tj(11, color: const Color(0xFF9CA3AF).withOpacity(0.7))),
+                Text(L.tr('developer'), style: _tj(11, color: const Color(0xFF9CA3AF).withOpacity(0.7))),
               ])),
             ])),
           )),
@@ -361,12 +419,12 @@ class _LoginPageState extends State<LoginPage> {
     ]);
   }
 
-  Widget _webFormLabel(String t) => Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(t, style: _tj(13, weight: FontWeight.w600, color: const Color(0xFF374151)))));
+  Widget _webFormLabel(String t) => Align(alignment: L.isAr ? Alignment.centerRight : Alignment.centerLeft, child: Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(t, style: _tj(13, weight: FontWeight.w600, color: const Color(0xFF374151)))));
 
   Widget _webInput(TextEditingController ctrl, String hint, {IconData? icon, bool isLtr = false, bool isPass = false}) {
     return TextField(
       controller: ctrl, obscureText: isPass && !_showPass,
-      textDirection: isLtr ? TextDirection.ltr : TextDirection.rtl, textAlign: isLtr ? TextAlign.left : TextAlign.right,
+      textDirection: isLtr ? TextDirection.ltr : L.textDirection, textAlign: isLtr ? TextAlign.left : (L.isAr ? TextAlign.right : TextAlign.left),
       keyboardType: isPass ? TextInputType.visiblePassword : TextInputType.emailAddress,
       style: _tj(14, color: const Color(0xFF1F2937)),
       decoration: InputDecoration(

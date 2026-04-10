@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminDevices extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -117,21 +118,21 @@ class _AdminDevicesState extends State<AdminDevices> {
             ),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('أمان الأجهزة', style: _tj(isWide ? 22 : 18, w: FontWeight.w800, color: W.text)),
-              Text('مراقبة وإدارة أجهزة الموظفين', style: _tj(11, color: W.muted)),
+              Text(L.tr('device_security'), style: _tj(isWide ? 22 : 18, w: FontWeight.w800, color: W.text)),
+              Text(L.tr('device_monitoring_desc'), style: _tj(11, color: W.muted)),
             ]),
           ]),
           const SizedBox(height: 20),
 
           // ══════ STATS ══════
           Row(children: [
-            _statCard('متصل الآن', '$online', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded),
+            _statCard(L.tr('connected_now'), '$online', const Color(0xFF059669), const Color(0xFFD1FAE5), Icons.wifi_rounded),
             const SizedBox(width: 10),
-            _statCard('غير متصل', '$offline', W.red, W.redL, Icons.wifi_off_rounded),
+            _statCard(L.tr('disconnected'), '$offline', W.red, W.redL, Icons.wifi_off_rounded),
             const SizedBox(width: 10),
-            _statCard('حاضر اليوم', '$present', W.pri, W.priLight, Icons.how_to_reg_rounded),
+            _statCard(L.tr('checked_in'), '$present', W.pri, W.priLight, Icons.how_to_reg_rounded),
             const SizedBox(width: 10),
-            _statCard('إجمالي', '$total', W.muted, W.bg, Icons.people_rounded),
+            _statCard(L.tr('total'), '$total', W.muted, W.bg, Icons.people_rounded),
           ]),
           const SizedBox(height: 16),
 
@@ -147,7 +148,7 @@ class _AdminDevicesState extends State<AdminDevices> {
                   textAlign: TextAlign.right,
                   style: _tj(12, color: W.text),
                   decoration: InputDecoration(
-                    hintText: 'بحث بالاسم أو الجهاز...',
+                    hintText: L.tr('search_name_device'),
                     hintStyle: _tj(12, color: W.hint),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -162,9 +163,9 @@ class _AdminDevicesState extends State<AdminDevices> {
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(9), border: Border.all(color: W.border)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                _filterTab('all', 'الكل'),
-                _filterTab('online', 'متصل'),
-                _filterTab('offline', 'غير متصل'),
+                _filterTab('all', L.tr('all')),
+                _filterTab('online', L.tr('connected')),
+                _filterTab('offline', L.tr('disconnected')),
               ]),
             ),
           ]),
@@ -183,18 +184,18 @@ class _AdminDevicesState extends State<AdminDevices> {
                   border: Border(bottom: BorderSide(color: W.div)),
                 ),
                 child: Row(children: [
-                  Expanded(flex: 2, child: Text('الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
-                  Expanded(flex: 3, child: Text('معلومات الجهاز', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
-                  Expanded(flex: 3, child: Text('الموظف', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
-                  Expanded(flex: 2, child: Text('الحالة', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
-                  if (isWide) Expanded(flex: 2, child: Text('إجراءات', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                  Expanded(flex: 2, child: Text(L.tr('device'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                  Expanded(flex: 3, child: Text(L.tr('device_info'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                  Expanded(flex: 3, child: Text(L.tr('employee_filter'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                  Expanded(flex: 2, child: Text(L.tr('status'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                  if (isWide) Expanded(flex: 2, child: Text(L.tr('actions'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
                 ]),
               ),
               if (_filtered.isEmpty)
                 Padding(padding: const EdgeInsets.all(40), child: Column(children: [
                   Icon(Icons.devices_rounded, size: 40, color: W.hint),
                   const SizedBox(height: 10),
-                  Text('لا يوجد نتائج', style: _tj(13, color: W.muted)),
+                  Text(L.tr('no_records'), style: _tj(13, color: W.muted)),
                 ]))
               else
                 ...(_filtered.map((u) => _deviceRow(u, isWide))),
@@ -228,16 +229,16 @@ class _AdminDevicesState extends State<AdminDevices> {
     final pLabel = _platformLabel(platform);
 
     final name = (emp['name'] ?? '').toString();
-    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : 'م');
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
 
     // Status
     String statusLabel;
     Color statusColor;
     Color statusBg;
-    if (isOnline && isCheckedIn) { statusLabel = 'حاضر'; statusColor = const Color(0xFF059669); statusBg = const Color(0xFFD1FAE5); }
-    else if (isOnline) { statusLabel = 'متصل'; statusColor = W.pri; statusBg = W.priLight; }
-    else if (isPresent && !isCheckedIn) { statusLabel = 'خروج'; statusColor = W.muted; statusBg = W.bg; }
-    else { statusLabel = 'غير متصل'; statusColor = W.red; statusBg = W.redL; }
+    if (isOnline && isCheckedIn) { statusLabel = L.tr('present'); statusColor = const Color(0xFF059669); statusBg = const Color(0xFFD1FAE5); }
+    else if (isOnline) { statusLabel = L.tr('connected'); statusColor = W.pri; statusBg = W.priLight; }
+    else if (isPresent && !isCheckedIn) { statusLabel = L.tr('exit_label'); statusColor = W.muted; statusBg = W.bg; }
+    else { statusLabel = L.tr('disconnected'); statusColor = W.red; statusBg = W.redL; }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: isWide ? 14 : 12),
@@ -272,7 +273,7 @@ class _AdminDevicesState extends State<AdminDevices> {
           _chip(pLabel, pColor),
           if (osVer.isNotEmpty) _chip(osVer, W.muted),
           if (appVer.isNotEmpty) _chip('v$appVer', W.pri),
-          if (multi) _chip('متعدد', W.orange),
+          if (multi) _chip(L.tr('multi_device'), W.orange),
         ]),
       ])),
 
@@ -302,17 +303,17 @@ class _AdminDevicesState extends State<AdminDevices> {
       // Actions
       Expanded(flex: 2, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         _actionBtn(
-          multi ? 'جهاز واحد' : 'متعدد',
+          multi ? L.tr('one_device') : L.tr('multi_device'),
           multi ? Icons.phone_android_rounded : Icons.devices_rounded,
           multi ? W.orange : W.pri,
           () async { await ApiService.post('users.php?action=update', {'uid': uid, 'multi_device_allowed': !multi}); _load(); },
         ),
         if (online) ...[
           const SizedBox(width: 6),
-          _actionBtn('فصل', Icons.logout_rounded, W.red, () async {
+          _actionBtn(L.tr('disconnect'), Icons.logout_rounded, W.red, () async {
             await ApiService.post('users.php?action=clear_session', {'uid': uid});
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('تم فصل ${u['name']}', style: _tj(13, color: Colors.white)),
+              content: Text(L.tr('disconnected_name', args: {'name': u['name'] ?? ''}), style: _tj(13, color: Colors.white)),
               backgroundColor: W.green, behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
             ));
@@ -356,9 +357,9 @@ class _AdminDevicesState extends State<AdminDevices> {
           decoration: BoxDecoration(color: pColor.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: pColor.withValues(alpha: 0.2))),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _actionBtn(multi ? 'جهاز واحد' : 'متعدد', multi ? Icons.phone_android_rounded : Icons.devices_rounded, multi ? W.orange : W.pri,
+              _actionBtn(multi ? L.tr('one_device') : L.tr('multi_device'), multi ? Icons.phone_android_rounded : Icons.devices_rounded, multi ? W.orange : W.pri,
                 () async { await ApiService.post('users.php?action=update', {'uid': uid, 'multi_device_allowed': !multi}); _load(); }),
-              if (online) ...[SizedBox(height: 4), _actionBtn('فصل الجلسة', Icons.logout_rounded, W.red, () async {
+              if (online) ...[SizedBox(height: 4), _actionBtn(L.tr('disconnect_session'), Icons.logout_rounded, W.red, () async {
                 await ApiService.post('users.php?action=clear_session', {'uid': uid});
                 _load();
               })],
@@ -375,7 +376,7 @@ class _AdminDevicesState extends State<AdminDevices> {
               Wrap(spacing: 4, alignment: WrapAlignment.end, children: [
                 _chip(pLabel, pColor),
                 if (osVer.isNotEmpty) _chip(osVer, W.muted),
-                if (multi) _chip('متعدد الأجهزة', W.orange),
+                if (multi) _chip(L.tr('multi_device'), W.orange),
               ]),
             ]),
           ]),

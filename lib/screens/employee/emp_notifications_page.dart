@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpNotificationsPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -35,14 +36,14 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     'verify_request': Icons.wifi_tethering,
     'verify': Icons.wifi_tethering,
   };
-  final _typeLabel = const {
-    'alert': 'تنبيه',
-    'urgent': 'مستعجل',
-    'warning': 'تحذير',
-    'security': 'أمان',
-    'info': 'معلومات',
-    'verify_request': 'تحقق',
-    'verify': 'تحقق',
+  final _typeLabel = {
+    'alert': L.tr('alert'),
+    'urgent': L.tr('urgent'),
+    'warning': L.tr('warning'),
+    'security': L.tr('security_label'),
+    'info': L.tr('info'),
+    'verify_request': L.tr('verifying'),
+    'verify': L.tr('verifying'),
   };
 
   @override
@@ -84,13 +85,13 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     final dt = _parseTs(ts);
     if (dt == null) return '';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   String _fmtDate(dynamic ts) {
     final dt = _parseTs(ts);
     if (dt == null) return '';
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    final months = L.months;
     return '${dt.day} ${months[dt.month - 1]}';
   }
 
@@ -98,10 +99,10 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     final dt = _parseTs(ts);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'الآن';
-    if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
-    if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
-    if (diff.inDays < 7) return 'منذ ${diff.inDays} يوم';
+    if (diff.inMinutes < 1) return L.tr('current_time');
+    if (diff.inMinutes < 60) return L.tr('ago_minutes', args: {'n': diff.inMinutes.toString()});
+    if (diff.inHours < 24) return L.tr('ago_hours', args: {'n': diff.inHours.toString()});
+    if (diff.inDays < 7) return L.tr('ago_days', args: {'n': diff.inDays.toString()});
     return _fmtDate(ts);
   }
 
@@ -140,7 +141,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('إشعاراتي', style: _tj(17, weight: FontWeight.w700, color: C.text)),
+            Text(L.tr('my_notifications'), style: _tj(17, weight: FontWeight.w700, color: C.text)),
             if (unread > 0) ...[
               const SizedBox(width: 8),
               Container(
@@ -159,7 +160,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
           if (unread > 0)
             TextButton(
               onPressed: _markAllRead,
-              child: Text('قراءة الكل', style: _tj(12, weight: FontWeight.w600, color: C.pri)),
+              child: Text(L.tr('read_all'), style: _tj(12, weight: FontWeight.w600, color: C.pri)),
             ),
         ],
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: C.border, height: 1)),
@@ -190,9 +191,9 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
             child: const Icon(Icons.notifications_off_outlined, size: 40, color: C.hint),
           ),
           const SizedBox(height: 16),
-          Text('لا توجد إشعارات', style: _tj(16, weight: FontWeight.w600, color: C.sub)),
+          Text(L.tr('no_notifications'), style: _tj(16, weight: FontWeight.w600, color: C.sub)),
           const SizedBox(height: 6),
-          Text('ستظهر الإشعارات هنا عند وصولها', style: _tj(13, color: C.muted)),
+          Text(L.tr('notifications_appear'), style: _tj(13, color: C.muted)),
         ],
       ),
     );
@@ -202,7 +203,7 @@ class _EmpNotificationsPageState extends State<EmpNotificationsPage> {
     final type = (n['type'] ?? 'info').toString();
     final color = _typeColor[type] ?? C.pri;
     final icon = _typeIcon[type] ?? Icons.notifications;
-    final label = _typeLabel[type] ?? 'معلومات';
+    final label = _typeLabel[type] ?? L.tr('info');
     final read = _isRead(n);
     final id = (n['id'] ?? '').toString();
 

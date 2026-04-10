@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminSchedules extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -25,21 +26,21 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   // Schedule form state
   String _schName = '';
   int _schShift = 1;
-  List<String> _schDays = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس'];
+  List<String> _schDays = L.dayNamesShort.sublist(0, 5);
 
   // Holiday form state
   String _holName = '';
   String _holDate = '';
-  String _holType = 'عامة';
+  String _holType = L.tr('general');
   int _holDayCount = 1;
   final Set<String> _holEmpIds = {};
 
-  static const _allDays = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+  static List<String> get _allDays => L.dayNamesShort;
 
   List<Map<String, dynamic>> get _shifts => [
-    {'id': 1, 'name': 'الفترة الأولى', 'start': '08:00 ص', 'end': '04:00 م', 'color': W.pri},
-    {'id': 2, 'name': 'الفترة الثانية', 'start': '01:00 م', 'end': '09:00 م', 'color': W.purple},
-    {'id': 3, 'name': 'الفترة الثالثة', 'start': '04:00 م', 'end': '12:00 ص', 'color': W.teal},
+    {'id': 1, 'name': L.tr('period_1'), 'start': '08:00 ${L.tr('am')}', 'end': '04:00 ${L.tr('pm')}', 'color': W.pri},
+    {'id': 2, 'name': L.tr('period_2'), 'start': '01:00 ${L.tr('pm')}', 'end': '09:00 ${L.tr('pm')}', 'color': W.purple},
+    {'id': 3, 'name': L.tr('period_3'), 'start': '04:00 ${L.tr('pm')}', 'end': '12:00 ${L.tr('am')}', 'color': W.teal},
   ];
 
   TextStyle _mono({double fontSize = 12, FontWeight fontWeight = FontWeight.w400, Color? color}) =>
@@ -98,13 +99,13 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   void _resetSchForm([Map<String, dynamic>? sch]) {
     _schName = sch?['name']?.toString() ?? '';
     _schShift = (sch?['shiftId'] is int ? sch!['shiftId'] : int.tryParse('${sch?['shiftId']}')) ?? 1;
-    _schDays = sch != null ? List<String>.from(sch['days'] ?? []) : ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس'];
+    _schDays = sch != null ? List<String>.from(sch['days'] ?? []) : L.dayNamesShort.sublist(0, 5);
   }
 
   void _resetHolForm() {
     _holName = '';
     _holDate = '';
-    _holType = 'عامة';
+    _holType = L.tr('general');
     _holDayCount = 1;
     _holEmpIds.clear();
   }
@@ -149,7 +150,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       'date': _holDate.trim(),
       'days': _holDayCount,
       'type': _holType,
-      'empIds': _holType == 'مخصصة' ? _holEmpIds.toList() : [],
+      'empIds': _holType == L.tr('custom_type') ? _holEmpIds.toList() : [],
     });
     _resetHolForm();
     _loadAll();
@@ -184,7 +185,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           indicator: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(7)),
           indicatorPadding: const EdgeInsets.all(3),
           dividerColor: Colors.transparent,
-          tabs: const [Tab(text: 'الجداول'), Tab(text: 'الإجازات')],
+          tabs: [Tab(text: L.tr('schedules_tab')), Tab(text: L.tr('leaves_tab'))],
         ),
       ),
       const SizedBox(height: 8),
@@ -306,7 +307,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(12)),
-              child: Text('$empCount موظف', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted, fontWeight: FontWeight.w600)),
+              child: Text(L.tr('n_employee', args: {'n': empCount.toString()}), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted, fontWeight: FontWeight.w600)),
             ),
             const Spacer(),
             Container(
@@ -369,14 +370,14 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           const Spacer(),
           Icon(isEditing ? Icons.edit_note : Icons.add_circle_outline, size: 18, color: accent),
           const SizedBox(width: 8),
-          Text(isEditing ? 'تعديل الجدول' : 'جدول جديد', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+          Text(isEditing ? L.tr('edit_schedule') : L.tr('new_schedule'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
         ]),
         const Divider(height: 24),
         // Name
-        _inputField('اسم الجدول', 'مثال: جدول رمضان', _schName, (v) => setState(() => _schName = v)),
+        _inputField(L.tr('schedule_name'), L.tr('schedule_example'), _schName, (v) => setState(() => _schName = v)),
         const SizedBox(height: 14),
         // Shift dropdown
-        Text('الفترة المرتبطة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+        Text(L.tr('linked_period'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -395,7 +396,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         ),
         const SizedBox(height: 14),
         // Day toggles
-        Text('أيام العمل', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+        Text(L.tr('work_days'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
         const SizedBox(height: 6),
         Row(children: _allDays.map((d) {
           final on = _schDays.contains(d);
@@ -422,7 +423,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         // Buttons
         Row(children: [
           Expanded(child: _actionBtn(
-            'إلغاء', W.white, W.sub,
+            L.tr('cancel'), W.white, W.sub,
             border: W.border,
             onTap: () {
               setState(() { _editSchId = null; _resetSchForm(); });
@@ -431,7 +432,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           )),
           const SizedBox(width: 10),
           Expanded(flex: 2, child: _actionBtn(
-            isEditing ? 'حفظ التعديلات' : 'إنشاء الجدول', accent, Colors.white,
+            isEditing ? L.tr('save_edits') : L.tr('create_schedule'), accent, Colors.white,
             onTap: () async {
               await _saveSchedule();
               if (isMobile && mounted) Navigator.pop(context);
@@ -498,21 +499,21 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             const Spacer(),
             Icon(Icons.people_outline, size: 18, color: c),
             const SizedBox(width: 8),
-            Flexible(child: Text('تعيين الموظفين - "${sch['name']}"', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
+            Flexible(child: Text(L.tr('assign_employees', args: {'name': sch['name'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
           ]),
         ),
         // Split: available | assigned
         if (isWide)
           IntrinsicHeight(child: Row(children: [
-            Expanded(child: _empList('موظفين متاحين', filtered, true, c, sch, search: true)),
+            Expanded(child: _empList(L.tr('available_employees'), filtered, true, c, sch, search: true)),
             Container(width: 1, color: W.div),
-            Expanded(child: _empList('الموظفين المعينين', assigned, false, c, sch)),
+            Expanded(child: _empList(L.tr('assigned_employees'), assigned, false, c, sch)),
           ]))
         else
           Column(children: [
-            _empList('الموظفين المعينين', assigned, false, c, sch),
+            _empList(L.tr('assigned_employees'), assigned, false, c, sch),
             Divider(height: 1, color: W.div),
-            _empList('موظفين متاحين', filtered, true, c, sch, search: true),
+            _empList(L.tr('available_employees'), filtered, true, c, sch, search: true),
           ]),
       ]),
     );
@@ -538,7 +539,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
               textAlign: TextAlign.right,
               style: GoogleFonts.tajawal(fontSize: 12),
               decoration: InputDecoration(
-                hintText: 'بحث عن موظف...',
+                hintText: L.tr('search'),
                 hintStyle: GoogleFonts.tajawal(color: W.hint, fontSize: 12),
                 prefixIcon: Icon(Icons.search, size: 18, color: W.hint),
                 filled: true,
@@ -555,7 +556,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       if (emps.isEmpty)
         Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(isAdd ? 'لا يوجد موظفين متاحين' : 'لا يوجد موظفين معينين', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+          child: Text(isAdd ? L.tr('no_available_employees') : L.tr('no_assigned_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
         )
       else
         ConstrainedBox(
@@ -569,7 +570,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _empRow(Map<String, dynamic> emp, bool isAdd, Color c, VoidCallback onTap) {
-    final initials = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0, 2) : 'م';
+    final initials = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0, 2) : L.tr('pm');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
@@ -633,7 +634,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             child: Center(child: Column(children: [
               Icon(Icons.beach_access_outlined, size: 36, color: W.hint),
               const SizedBox(height: 8),
-              Text('لا توجد إجازات', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+              Text(L.tr('no_leaves'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
             ])),
           ),
         const SizedBox(height: 80),
@@ -651,7 +652,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _holidayCard(Map<String, dynamic> hol) {
-    final isGeneral = hol['type'] == 'عامة';
+    final isGeneral = hol['type'] == L.tr('general');
     final c = isGeneral ? W.green : W.purple;
     final bg = isGeneral ? W.greenL : W.purpleL;
     final empIds = (hol['empIds'] as List?) ?? [];
@@ -670,7 +671,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-            child: Text('${hol['days'] ?? 1} يوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
+            child: Text('${hol['days'] ?? 1} ${L.tr('day_unit')}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
           ),
           const SizedBox(width: 6),
           Container(
@@ -697,7 +698,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         ],
         if (isGeneral) ...[
           const SizedBox(height: 6),
-          Text('تُطبق على جميع الموظفين', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
+          Text(L.tr('applies_to_all'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.green)),
         ],
       ]),
     );
@@ -720,12 +721,12 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             border: Border(bottom: BorderSide(color: W.div)),
           ),
           child: Row(children: [
-            SizedBox(width: 50, child: Text('إجراء', style: _headerStyle, textAlign: TextAlign.center)),
-            SizedBox(width: 70, child: Text('الحالة', style: _headerStyle, textAlign: TextAlign.center)),
-            SizedBox(width: 50, child: Text('أيام', style: _headerStyle, textAlign: TextAlign.center)),
-            Expanded(flex: 2, child: Text('التاريخ', style: _headerStyle, textAlign: TextAlign.right)),
-            SizedBox(width: 80, child: Text('النوع', style: _headerStyle, textAlign: TextAlign.center)),
-            Expanded(flex: 3, child: Text('اسم الإجازة', style: _headerStyle, textAlign: TextAlign.right)),
+            SizedBox(width: 50, child: Text(L.tr('action_col'), style: _headerStyle, textAlign: TextAlign.center)),
+            SizedBox(width: 70, child: Text(L.tr('status'), style: _headerStyle, textAlign: TextAlign.center)),
+            SizedBox(width: 50, child: Text(L.tr('days_col'), style: _headerStyle, textAlign: TextAlign.center)),
+            Expanded(flex: 2, child: Text(L.tr('date'), style: _headerStyle, textAlign: TextAlign.right)),
+            SizedBox(width: 80, child: Text(L.tr('type'), style: _headerStyle, textAlign: TextAlign.center)),
+            Expanded(flex: 3, child: Text(L.tr('leave_name'), style: _headerStyle, textAlign: TextAlign.right)),
           ]),
         ),
         if (_holidays.isEmpty)
@@ -734,14 +735,14 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             child: Column(children: [
               Icon(Icons.beach_access_outlined, size: 36, color: W.hint),
               const SizedBox(height: 8),
-              Text('لا توجد إجازات مسجلة', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+              Text(L.tr('no_leaves_recorded'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
             ]),
           )
         else
           ..._holidays.asMap().entries.map((e) {
             final i = e.key;
             final hol = e.value;
-            final isGen = hol['type'] == 'عامة';
+            final isGen = hol['type'] == L.tr('general');
             final c = isGen ? W.green : W.purple;
             final bg = isGen ? W.greenL : W.purpleL;
             final empIds = (hol['empIds'] as List?) ?? [];
@@ -757,7 +758,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 SizedBox(width: 70, child: Center(child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-                  child: Text(isGen ? 'للكل' : '${empIds.length} موظف', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
+                  child: Text(isGen ? L.tr('for_all') : L.tr('n_employee', args: {'n': empIds.length.toString()}), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
                 ))),
                 SizedBox(width: 50, child: Center(child: Text('${hol['days'] ?? 1}', style: _mono(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)))),
                 Expanded(flex: 2, child: Text(hol['date'] ?? '', style: _mono(fontSize: 12, color: W.sub), textAlign: TextAlign.right)),
@@ -787,18 +788,18 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           const Spacer(),
           Icon(Icons.event_note_outlined, size: 18, color: W.green),
           const SizedBox(width: 8),
-          Text('إضافة إجازة', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+          Text(L.tr('add_leave'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
         ]),
         const Divider(height: 24),
-        _inputField('اسم الإجازة', 'مثال: عيد الفطر', _holName, (v) => setState(() => _holName = v)),
+        _inputField(L.tr('leave_name'), L.tr('leave_example'), _holName, (v) => setState(() => _holName = v)),
         const SizedBox(height: 12),
-        _inputField('التاريخ', '2026-03-20', _holDate, (v) => setState(() => _holDate = v)),
+        _inputField(L.tr('date'), '2026-03-20', _holDate, (v) => setState(() => _holDate = v)),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: _inputField('عدد الأيام', '1', _holDayCount.toString(), (v) => setState(() => _holDayCount = int.tryParse(v) ?? 1))),
+          Expanded(child: _inputField(L.tr('number_of_days'), '1', _holDayCount.toString(), (v) => setState(() => _holDayCount = int.tryParse(v) ?? 1))),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('النوع', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+            Text(L.tr('type'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -808,15 +809,15 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 value: _holType,
                 isExpanded: true,
                 style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-                items: ['عامة', 'مخصصة'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (v) => setState(() { _holType = v ?? 'عامة'; _holEmpIds.clear(); }),
+                items: [L.tr('general'), L.tr('custom_type')].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (v) => setState(() { _holType = v ?? L.tr('general'); _holEmpIds.clear(); }),
               )),
             ),
           ])),
         ]),
-        if (_holType == 'مخصصة') ...[
+        if (_holType == L.tr('custom_type')) ...[
           const SizedBox(height: 14),
-          Text('اختر الموظفين (${_holEmpIds.length} محدد)', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+          Text(L.tr('choose_employees', args: {'count': _holEmpIds.length.toString()}), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
           const SizedBox(height: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 180),
@@ -851,7 +852,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         const SizedBox(height: 18),
         SizedBox(
           width: double.infinity,
-          child: _actionBtn('إضافة الإجازة', W.green, Colors.white, onTap: () async {
+          child: _actionBtn(L.tr('add_leave_btn'), W.green, Colors.white, onTap: () async {
             await _saveHoliday();
             if (isMobile && mounted) Navigator.pop(context);
           }),

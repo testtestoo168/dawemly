@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class SaDashboard extends StatefulWidget {
   const SaDashboard({super.key});
@@ -55,14 +56,14 @@ class _SaDashboardState extends State<SaDashboard> {
         // Header
         Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('نظرة عامة', style: _tj(24, weight: FontWeight.w800, color: W.text)),
+            Text(L.tr('overview'), style: _tj(24, weight: FontWeight.w800, color: W.text)),
             const SizedBox(height: 4),
-            Text('إحصائيات النظام الشاملة', style: _tj(14, color: W.sub)),
+            Text(L.tr('system_stats_desc'), style: _tj(14, color: W.sub)),
           ])),
           OutlinedButton.icon(
             onPressed: _loadStats,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: Text('تحديث', style: _tj(13, weight: FontWeight.w600)),
+            label: Text(L.tr('update'), style: _tj(13, weight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: W.pri,
               side: BorderSide(color: W.border),
@@ -75,12 +76,12 @@ class _SaDashboardState extends State<SaDashboard> {
 
         // Main stat cards
         Wrap(spacing: 16, runSpacing: 16, children: [
-          _statCard('إجمالي المؤسسات', '${_stats['total_organizations'] ?? 0}', Icons.business_rounded, const Color(0xFF175CD3), const Color(0xFFE7EFFF)),
-          _statCard('المؤسسات النشطة', '${_stats['active_organizations'] ?? 0}', Icons.check_circle_rounded, const Color(0xFF17B26A), const Color(0xFFECFDF3)),
-          _statCard('إجمالي الموظفين', '${_stats['total_employees'] ?? 0}', Icons.people_rounded, const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
-          _statCard('حضور الي��م', '${_stats['today_attendance'] ?? 0}', Icons.fingerprint_rounded, const Color(0xFFF79009), const Color(0xFFFFFAEB)),
-          _statCard('الإيراد الشهري', '${_stats['mrr'] ?? 0} ر.س', Icons.payments_rounded, const Color(0xFF0BA5EC), const Color(0xFFF0F9FF)),
-          _statCard('مؤسسات جديدة (هذا الشهر)', '${_stats['new_this_month'] ?? 0}', Icons.trending_up_rounded, const Color(0xFFEE46BC), const Color(0xFFFDF2FA)),
+          _statCard(L.tr('total_orgs'), '${_stats['total_organizations'] ?? 0}', Icons.business_rounded, const Color(0xFF175CD3), const Color(0xFFE7EFFF)),
+          _statCard(L.tr('active_orgs'), '${_stats['active_organizations'] ?? 0}', Icons.check_circle_rounded, const Color(0xFF17B26A), const Color(0xFFECFDF3)),
+          _statCard(L.tr('total_employees'), '${_stats['total_employees'] ?? 0}', Icons.people_rounded, const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
+          _statCard(L.tr('sa_today_attendance'), '${_stats['today_attendance'] ?? 0}', Icons.fingerprint_rounded, const Color(0xFFF79009), const Color(0xFFFFFAEB)),
+          _statCard(L.tr('monthly_revenue'), '${_stats['mrr'] ?? 0} ${L.tr("sar")}', Icons.payments_rounded, const Color(0xFF0BA5EC), const Color(0xFFF0F9FF)),
+          _statCard(L.tr('new_orgs_month'), '${_stats['new_this_month'] ?? 0}', Icons.trending_up_rounded, const Color(0xFFEE46BC), const Color(0xFFFDF2FA)),
         ]),
         const SizedBox(height: 32),
 
@@ -88,15 +89,15 @@ class _SaDashboardState extends State<SaDashboard> {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Expiring subscriptions
           Expanded(child: _alertCard(
-            'اشتراكات قربت تنتهي',
+            L.tr('expiring_subs'),
             Icons.warning_amber_rounded,
             const Color(0xFFF79009),
             const Color(0xFFFFFAEB),
             expiringOrgs.isEmpty
-              ? [Padding(padding: const EdgeInsets.all(16), child: Text('لا توجد اشتراكات قربت تنتهي', style: _tj(13, color: W.muted)))]
+              ? [Padding(padding: const EdgeInsets.all(16), child: Text(L.tr('no_expiring'), style: _tj(13, color: W.muted)))]
               : expiringOrgs.map((o) => _alertRow(
                   o['name'] ?? '',
-                  'تنتهي: ${o['subscription_end'] ?? '-'}',
+                  L.tr('sa_sub_end', args: {'date': (o['subscription_end'] ?? '-').toString()}),
                   Icons.schedule_rounded,
                   const Color(0xFFF79009),
                 )).toList(),
@@ -104,15 +105,15 @@ class _SaDashboardState extends State<SaDashboard> {
           const SizedBox(width: 16),
           // At capacity
           Expanded(child: _alertCard(
-            'مؤسسات وصلت الحد الأقصى',
+            L.tr('sa_maxed_orgs'),
             Icons.group_off_rounded,
             const Color(0xFFF04438),
             const Color(0xFFFEF3F2),
             atCapacity.isEmpty
-              ? [Padding(padding: const EdgeInsets.all(16), child: Text('لا توجد مؤسسات في حدها الأقصى', style: _tj(13, color: W.muted)))]
+              ? [Padding(padding: const EdgeInsets.all(16), child: Text(L.tr('sa_no_maxed'), style: _tj(13, color: W.muted)))]
               : atCapacity.map((o) => _alertRow(
                   o['name'] ?? '',
-                  '${o['current_employees']}/${o['max_employees']} موظف',
+                  L.tr('sa_emp_of_max', args: {'current': (o['current_employees'] ?? 0).toString(), 'max': (o['max_employees'] ?? 0).toString()}),
                   Icons.people_rounded,
                   const Color(0xFFF04438),
                 )).toList(),
@@ -132,7 +133,7 @@ class _SaDashboardState extends State<SaDashboard> {
             child: Row(children: [
               const Icon(Icons.error_outline_rounded, color: Color(0xFFF04438), size: 20),
               const SizedBox(width: 12),
-              Text('${_stats['expired_subscriptions']} مؤسسة اشتراكها منتهي', style: _tj(14, weight: FontWeight.w600, color: const Color(0xFFF04438))),
+              Text(L.tr('sa_expired_subs', args: {'n': (_stats['expired_subscriptions'] ?? 0).toString()}), style: _tj(14, weight: FontWeight.w600, color: const Color(0xFFF04438))),
             ]),
           ),
         ],
@@ -145,7 +146,7 @@ class _SaDashboardState extends State<SaDashboard> {
             padding: const EdgeInsets.all(20),
             decoration: DS.cardDecoration(radius: DS.radiusMd),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('نمو المؤسسات (آخر 6 أشهر)', style: _tj(15, weight: FontWeight.w700, color: W.text)),
+              Text(L.tr('sa_org_growth'), style: _tj(15, weight: FontWeight.w700, color: W.text)),
               const SizedBox(height: 20),
               SizedBox(
                 height: 120,

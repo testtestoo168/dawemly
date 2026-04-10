@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminAudit extends StatefulWidget {
   const AdminAudit({super.key});
@@ -10,21 +11,21 @@ class AdminAudit extends StatefulWidget {
 }
 
 class _AdminAuditState extends State<AdminAudit> {
-  String _fType = 'الكل';
+  String _fType = L.tr('all');
   List<Map<String, dynamic>> _logs = [];
   bool _loading = true;
 
-  static const _typeMap = {
-    'create':   {'l': 'إنشاء',    'c': 0xFF16A34A, 'bg': 0xFFDCFCE7},
-    'edit':     {'l': 'تعديل',    'c': 0xFFF59E0B, 'bg': 0xFFFEF9C3},
-    'approve':  {'l': 'موافقة',   'c': 0xFF16A34A, 'bg': 0xFFDCFCE7},
-    'reject':   {'l': 'رفض',      'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
-    'disable':  {'l': 'تعطيل',    'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
-    'settings': {'l': 'إعدادات',  'c': 0xFF0F3460, 'bg': 0xFFE8EDF2},
-    'verify':   {'l': 'إثبات',    'c': 0xFF3B82F6, 'bg': 0xFFDBEAFE},
-    'security': {'l': 'أمان',     'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
-    'login':    {'l': 'دخول',     'c': 0xFF0F3460, 'bg': 0xFFE8EDF2},
-    'delete':   {'l': 'حذف',      'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
+  static Map<String, Map<String, dynamic>> get _typeMap => {
+    'create':   {'l': L.tr('create'),    'c': 0xFF16A34A, 'bg': 0xFFDCFCE7},
+    'edit':     {'l': L.tr('edit'),    'c': 0xFFF59E0B, 'bg': 0xFFFEF9C3},
+    'approve':  {'l': L.tr('approve'),   'c': 0xFF16A34A, 'bg': 0xFFDCFCE7},
+    'reject':   {'l': L.tr('reject'),      'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
+    'disable':  {'l': L.tr('disable'),    'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
+    'settings': {'l': L.tr('settings'),  'c': 0xFF0F3460, 'bg': 0xFFE8EDF2},
+    'verify':   {'l': L.tr('nav_verify'),    'c': 0xFF3B82F6, 'bg': 0xFFDBEAFE},
+    'security': {'l': L.tr('security_label'),     'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
+    'login':    {'l': L.tr('entry_label'),     'c': 0xFF0F3460, 'bg': 0xFFE8EDF2},
+    'delete':   {'l': L.tr('delete'),      'c': 0xFFD4183D, 'bg': 0xFFFEE2E2},
   };
 
   static const _typeIcons = {
@@ -58,9 +59,9 @@ class _AdminAuditState extends State<AdminAudit> {
     if (v == null) return '—';
     try {
       final dt = DateTime.parse(v.toString());
-      final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      final months = L.months;
       final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-      final time = '${h.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+      final time = '${h.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
       return '${dt.day} ${months[dt.month-1]} — $time';
     } catch (_) { return '—'; }
   }
@@ -71,7 +72,7 @@ class _AdminAuditState extends State<AdminAudit> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 800;
-    final filtered = _fType == 'الكل' ? _logs : _logs.where((l) => l['type'] == _fType).toList();
+    final filtered = _fType == L.tr('all') ? _logs : _logs.where((l) => l['type'] == _fType).toList();
 
     return RefreshIndicator(
       onRefresh: _loadLogs,
@@ -85,10 +86,10 @@ class _AdminAuditState extends State<AdminAudit> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(color: W.div, borderRadius: BorderRadius.circular(4), border: Border.all(color: W.border)),
-              child: Text('${filtered.length} سجل', style: _tj(12, color: W.muted)),
+              child: Text(L.tr('n_record', args: {'n': filtered.length.toString()}), style: _tj(12, color: W.muted)),
             ),
             const Spacer(),
-            Text('سجل التدقيق', style: _tj(MediaQuery.of(context).size.width < 400 ? 18 : 22, w: FontWeight.w800)),
+            Text(L.tr('audit_log'), style: _tj(MediaQuery.of(context).size.width < 400 ? 18 : 22, w: FontWeight.w800)),
           ]),
           const SizedBox(height: 20),
 
@@ -98,7 +99,7 @@ class _AdminAuditState extends State<AdminAudit> {
             padding: const EdgeInsets.all(16),
             decoration: DS.cardDecoration(),
             child: Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.end, children: [
-              _filterTab('الكل', null, _logs.length),
+              _filterTab(L.tr('all'), null, _logs.length),
               ..._typeMap.entries.map((e) {
                 final count = _logs.where((l) => l['type'] == e.key).length;
                 return _filterTab(e.key, e.value, count);
@@ -117,9 +118,9 @@ class _AdminAuditState extends State<AdminAudit> {
               child: Center(child: Column(children: [
                 Icon(Icons.history_rounded, size: 48, color: W.hint),
                 const SizedBox(height: 12),
-                Text('لا توجد سجلات', style: _tj(14, color: W.muted)),
+                Text(L.tr('no_records'), style: _tj(14, color: W.muted)),
                 const SizedBox(height: 4),
-                Text('ستظهر هنا تلقائياً عند إجراء أي عملية', style: _tj(12, color: W.hint)),
+                Text(L.tr('operations_appear'), style: _tj(12, color: W.hint)),
               ])),
             )
           else
@@ -135,10 +136,10 @@ class _AdminAuditState extends State<AdminAudit> {
                     border: Border(bottom: BorderSide(color: W.border)),
                   ),
                   child: Row(children: [
-                    Expanded(flex: 2, child: Text('التوقيت', style: _tj(11, w: FontWeight.w700, color: W.sub))),
-                    Expanded(flex: 2, child: Text('النوع', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
-                    Expanded(flex: 3, child: Text('العملية', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
-                    Expanded(flex: 3, child: Text('بواسطة / الهدف', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                    Expanded(flex: 2, child: Text(L.tr('timing'), style: _tj(11, w: FontWeight.w700, color: W.sub))),
+                    Expanded(flex: 2, child: Text(L.tr('type'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
+                    Expanded(flex: 3, child: Text(L.tr('operation'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
+                    Expanded(flex: 3, child: Text(L.tr('user_target'), style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.right)),
                     if (isWide) Expanded(flex: 2, child: Text('IP', style: _tj(11, w: FontWeight.w700, color: W.sub), textAlign: TextAlign.center)),
                   ]),
                 ),
@@ -234,7 +235,7 @@ class _AdminAuditState extends State<AdminAudit> {
     final on = _fType == key;
     final color = tm != null ? Color(tm['c'] as int) : W.pri;
     final bg = tm != null ? Color(tm['bg'] as int) : W.priLight;
-    final label = tm != null ? tm['l'] as String : 'الكل';
+    final label = tm != null ? tm['l'] as String : L.tr('all');
     return InkWell(
       onTap: () => setState(() => _fType = key),
       borderRadius: BorderRadius.circular(DS.radiusSm),

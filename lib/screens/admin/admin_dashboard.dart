@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/shimmer.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminDashboard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -76,7 +77,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final dt = _parseTs(v);
     if (dt == null) return '';
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   @override
@@ -116,10 +117,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
               childAspectRatio: isWide ? 2.6 : (isSmall ? 1.4 : 1.8),
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               children: [
-                _statCard(Icons.people_rounded, 'إجمالي الموظفين', '$totalEmps', 'موظف', W.pri),
-                _statCard(Icons.check_circle_rounded, 'الحاضرون', '$present', '$complete مكتمل', W.green),
-                _statCard(Icons.cancel_rounded, 'الغائبون', '$absent', 'غائب', W.red),
-                _statCard(Icons.pending_actions_rounded, 'طلبات معلقة', '$pendingReqs', 'طلب', W.orange),
+                _statCard(Icons.people_rounded, L.tr('total_employees'), '$totalEmps', L.tr('employee_unit'), W.pri),
+                _statCard(Icons.check_circle_rounded, L.tr('present_employees'), '$present', L.tr('n_complete_label', args: {'n': complete.toString()}), W.green),
+                _statCard(Icons.cancel_rounded, L.tr('absent_employees'), '$absent', L.tr('absent'), W.red),
+                _statCard(Icons.pending_actions_rounded, L.tr('pending_requests'), '$pendingReqs', L.tr('request_unit'), W.orange),
               ],
             ),
           const SizedBox(height: 24),
@@ -132,10 +133,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             childAspectRatio: isWide ? 3.5 : (isSmall ? 2.2 : 2.8),
             shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
             children: [
-              _quickAction(Icons.wifi_tethering_rounded, 'إثبات الحالة', () => widget.onNav('verify')),
-              _quickAction(Icons.person_add_alt_1_rounded, 'إضافة موظف', () => widget.onNav('usermgmt')),
-              _quickAction(Icons.assignment_rounded, 'الطلبات المعلقة', () => widget.onNav('requests')),
-              _quickAction(Icons.bar_chart_rounded, 'التقارير', () => widget.onNav('reports')),
+              _quickAction(Icons.wifi_tethering_rounded, L.tr('nav_verify'), () => widget.onNav('verify')),
+              _quickAction(Icons.person_add_alt_1_rounded, L.tr('add_employee'), () => widget.onNav('usermgmt')),
+              _quickAction(Icons.assignment_rounded, L.tr('pending_requests_action'), () => widget.onNav('requests')),
+              _quickAction(Icons.bar_chart_rounded, L.tr('reports'), () => widget.onNav('reports')),
             ],
           ),
           const SizedBox(height: 24),
@@ -247,7 +248,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Chart 1: Bar Chart — حضور آخر 7 أيام ───
   Widget _barChartCard(double chartHeight) {
     return _chartWrapper(
-      title: 'حضور آخر 7 أيام',
+      title: L.tr('last_7_days'),
       icon: Icons.bar_chart_rounded,
       height: chartHeight,
       child: FutureBuilder<List<int>>(
@@ -258,7 +259,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           }
           final counts = snap.data ?? List.filled(7, 0);
           final now = DateTime.now();
-          final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+          final dayNames = L.dayNamesShort;
           final maxY = counts.isEmpty ? 5.0 : (counts.reduce((a, b) => a > b ? a : b)).toDouble();
           final topY = maxY < 1 ? 5.0 : (maxY * 1.3).ceilToDouble();
 
@@ -280,7 +281,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final d = now.subtract(Duration(days: 6 - group.x.toInt()));
                         return BarTooltipItem(
-                          '${dayNames[d.weekday % 7]}\n${rod.toY.toInt()} حاضر',
+                          '${dayNames[d.weekday % 7]}\n${rod.toY.toInt()} ${L.tr('present')}',
                           GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                         );
                       },
@@ -349,13 +350,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Chart 2: Pie/Donut Chart — حالة اليوم ───
   Widget _pieChartCard(int present, int absent, int complete, int totalEmps, double chartHeight) {
     return _chartWrapper(
-      title: 'حالة اليوم',
+      title: L.tr('today_status'),
       icon: Icons.pie_chart_rounded,
       height: chartHeight + 60, // extra for legend
       child: Column(children: [
         Expanded(
           child: totalEmps == 0
-            ? Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted)))
+            ? Center(child: Text(L.tr('no_data'), style: _tj(13, color: _muted)))
             : PieChart(
                 PieChartData(
                   sectionsSpace: 3,
@@ -408,11 +409,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             textDirection: TextDirection.rtl,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _legendDot(_chartGreen, 'حاضر ($present)'),
+              _legendDot(_chartGreen, L.tr('present_n', args: {'n': present.toString()})),
               const SizedBox(width: 14),
-              _legendDot(_chartRed, 'غائب ($absent)'),
+              _legendDot(_chartRed, L.tr('absent_n', args: {'n': absent.toString()})),
               const SizedBox(width: 14),
-              _legendDot(_chartBlue, 'مكتمل ($complete)'),
+              _legendDot(_chartBlue, L.tr('complete_n', args: {'n': complete.toString()})),
             ],
           ),
         ),
@@ -431,7 +432,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Chart 3: Line Chart — التأخير الأسبوعي ───
   Widget _lineChartCard(double chartHeight) {
     return _chartWrapper(
-      title: 'التأخير الأسبوعي',
+      title: L.tr('weekly_lateness'),
       icon: Icons.show_chart_rounded,
       height: chartHeight,
       child: FutureBuilder<List<int>>(
@@ -442,7 +443,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           }
           final minutes = snap.data ?? List.filled(7, 0);
           final now = DateTime.now();
-          final dayNames = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+          final dayNames = L.dayNamesShort;
           final maxY = minutes.isEmpty ? 10.0 : (minutes.reduce((a, b) => a > b ? a : b)).toDouble();
           final topY = maxY < 1 ? 10.0 : (maxY * 1.3).ceilToDouble();
 
@@ -463,7 +464,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       getTooltipItems: (spots) => spots.map((spot) {
                         final d = now.subtract(Duration(days: 6 - spot.x.toInt()));
                         return LineTooltipItem(
-                          '${dayNames[d.weekday % 7]}\n${spot.y.toInt()} دقيقة',
+                          '${dayNames[d.weekday % 7]}\n${spot.y.toInt()} ${L.tr('minute')}',
                           GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                         );
                       }).toList(),
@@ -591,7 +592,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── Absent Today — غائبون اليوم ───
   Widget _absentTodayCard() {
     // Day name mapping: Dart weekday 1=Mon..7=Sun -> Arabic short names
-    final dayMap = {1: 'إثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت', 7: 'أحد'};
+    final dayMap = {1: L.tr('mon'), 2: L.tr('tue'), 3: L.tr('wed'), 4: L.tr('thu'), 5: L.tr('fri'), 6: L.tr('sat'), 7: L.tr('sun')};
     final todayName = dayMap[DateTime.now().weekday] ?? '';
 
     // Get all active employees (not admin/superadmin)
@@ -643,7 +644,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(Icons.person_off_rounded, size: 14, color: _chartRed),
             const SizedBox(width: 8),
-            Text('غائبون اليوم', style: _tj(15, weight: FontWeight.w600, color: _fg)),
+            Text(L.tr('absent_today'), style: _tj(15, weight: FontWeight.w600, color: _fg)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -658,13 +659,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: Center(child: Column(children: [
               Icon(Icons.check_circle_outline, size: 36, color: _chartGreen),
               const SizedBox(height: 8),
-              Text('جميع الموظفين حاضرون', style: _tj(13, color: _muted)),
+              Text(L.tr('all_present'), style: _tj(13, color: _muted)),
             ])),
           )
         else
           Column(children: absentEmps.take(10).map((emp) {
             final av = (emp['name'] ?? '').toString().length >= 2
-                ? emp['name'].toString().substring(0, 2) : 'م';
+                ? emp['name'].toString().substring(0, 2) : L.tr('pm');
             final dept = emp['dept'] ?? '';
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -686,7 +687,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                  child: Text('غائب', style: _tj(10, weight: FontWeight.w500, color: _chartRed)),
+                  child: Text(L.tr('absent'), style: _tj(10, weight: FontWeight.w500, color: _chartRed)),
                 ),
               ]),
             );
@@ -694,7 +695,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         if (absentEmps.length > 10)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text('و ${absentEmps.length - 10} آخرين...', style: _tj(12, color: _muted)),
+            child: Text(L.tr('and_n_more', args: {'n': (absentEmps.length - 10).toString()}), style: _tj(12, color: _muted)),
           ),
       ]),
     );
@@ -711,16 +712,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
           child: Row(textDirection: TextDirection.rtl, children: [
             Icon(Icons.local_fire_department_rounded, size: 14, color: _muted),
             const SizedBox(width: 8),
-            Text('آخر الحضور', style: _tj(15, weight: FontWeight.w600, color: _fg)),
+            Text(L.tr('latest_attendance'), style: _tj(15, weight: FontWeight.w600, color: _fg)),
           ]),
         ),
         if (_attRecords.isEmpty)
-          Padding(padding: const EdgeInsets.all(40), child: Center(child: Text('لا توجد بيانات', style: _tj(13, color: _muted))))
+          Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(L.tr('no_data'), style: _tj(13, color: _muted))))
         else
           Column(children: _attRecords.take(5).map((r) {
             final hasOut = (r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out']) != null;
             final isCheckedIn = r['isCheckedIn'] == true || r['is_checked_in'] == 1 || r['is_checked_in'] == true;
-            final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : 'م';
+            final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : L.tr('pm');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -738,7 +739,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                  child: Text(hasOut && !isCheckedIn ? 'مكتمل' : 'حاضر', style: _tj(11, weight: FontWeight.w500, color: W.green)),
+                  child: Text(hasOut && !isCheckedIn ? L.tr('complete') : L.tr('present'), style: _tj(11, weight: FontWeight.w500, color: W.green)),
                 ),
               ]),
             );
@@ -770,9 +771,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       if (isIn) {
         inList.add({...u, '_att': att});
       } else if (hasCheckIn) {
-        outList.add({...u, '_att': att, '_status': 'مكتمل'});
+        outList.add({...u, '_att': att, '_status': L.tr('complete')});
       } else {
-        outList.add({...u, '_att': null, '_status': 'غائب'});
+        outList.add({...u, '_att': null, '_status': L.tr('absent')});
       }
     }
 
@@ -788,7 +789,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Row(textDirection: TextDirection.rtl, children: [
                   Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
                   const SizedBox(width: 8),
-                  Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
+                  Text(L.tr('n_employee', args: {'n': allUsers.length.toString()}), style: _tj(12, color: _muted)),
                 ]),
                 const SizedBox(height: 8),
                 Row(textDirection: TextDirection.rtl, mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -802,7 +803,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             : Row(textDirection: TextDirection.rtl, children: [
                 Text("Who's in/out", style: _tj(15, weight: FontWeight.w700, color: _fg)),
                 const SizedBox(width: 8),
-                Text('${allUsers.length} موظف', style: _tj(12, color: _muted)),
+                Text(L.tr('n_employee', args: {'n': allUsers.length.toString()}), style: _tj(12, color: _muted)),
                 const Spacer(),
                 // Counters
                 Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(DS.radiusMd)),
@@ -816,11 +817,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // IN list
         if (inList.isNotEmpty) ...[
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFF0FDF4),
-            child: Text('حاضرون الآن', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
+            child: Text(L.tr('present_now'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFF166534)), textDirection: TextDirection.rtl)),
           ...inList.map((u) {
             final att = u['_att'] as Map<String, dynamic>?;
             final checkInTime = att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in'];
-            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
+            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : L.tr('pm');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -843,10 +844,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         // OUT list
         if (outList.isNotEmpty) ...[
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFFEF3F2),
-            child: Text('غير متواجدين', style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: TextDirection.rtl)),
+            child: Text(L.tr('not_available'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: TextDirection.rtl)),
           ...outList.take(10).map((u) {
-            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : 'م';
-            final st = u['_status'] ?? 'غائب';
+            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : L.tr('pm');
+            final st = u['_status'] ?? L.tr('absent');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -858,8 +859,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 const SizedBox(width: 10),
                 Expanded(child: Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _muted))),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == 'مكتمل' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                  child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == 'مكتمل' ? const Color(0xFF166534) : _muted))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == L.tr('complete') ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
+                  child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == L.tr('complete') ? const Color(0xFF166534) : _muted))),
               ]),
             );
           }),
@@ -877,15 +878,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
       color: _secondary,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(textDirection: TextDirection.rtl, children: [
-        Expanded(flex: 2, child: Text('الموظف', style: _tj(12, weight: FontWeight.w500, color: _muted))),
-        Expanded(flex: 2, child: Text('نوع الطلب', style: _tj(12, weight: FontWeight.w500, color: _muted))),
-        Expanded(child: Text('الحالة', style: _tj(12, weight: FontWeight.w500, color: _muted))),
+        Expanded(flex: 2, child: Text(L.tr('employee_filter'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
+        Expanded(flex: 2, child: Text(L.tr('request_type'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
+        Expanded(child: Text(L.tr('status'), style: _tj(12, weight: FontWeight.w500, color: _muted))),
       ]),
     );
 
     Widget tableBody;
     if (_pendingReqs.isEmpty) {
-      tableBody = Padding(padding: const EdgeInsets.all(32), child: Center(child: Text('لا توجد طلبات معلقة', style: _tj(13, color: _muted))));
+      tableBody = Padding(padding: const EdgeInsets.all(32), child: Center(child: Text(L.tr('no_pending_requests'), style: _tj(13, color: _muted))));
     } else {
       tableBody = Column(children: _pendingReqs.take(8).map((r) {
         return Container(
@@ -897,7 +898,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(DS.radiusMd)),
-              child: Text('تحت الإجراء', style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
+              child: Text(L.tr('pending'), style: _tj(11, weight: FontWeight.w500, color: const Color(0xFF854D0E))),
             )),
           ]),
         );
@@ -927,13 +928,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Expanded(child: Row(children: [
               Icon(Icons.assignment_rounded, size: 14, color: _muted),
               const SizedBox(width: 8),
-              Text('الطلبات المعلقة', style: _tj(15, weight: FontWeight.w600, color: _fg)),
+              Text(L.tr('pending_requests_action'), style: _tj(15, weight: FontWeight.w600, color: _fg)),
             ])),
             Material(
               color: _primary, borderRadius: BorderRadius.circular(DS.radiusMd),
               child: InkWell(onTap: () => widget.onNav('requests'), borderRadius: BorderRadius.circular(DS.radiusMd),
                 child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(children: [const Icon(Icons.visibility_rounded, size: 12, color: Colors.white), const SizedBox(width: 4), Text('عرض الكل', style: _tj(12, weight: FontWeight.w500, color: Colors.white))]))),
+                  child: Row(children: [const Icon(Icons.visibility_rounded, size: 12, color: Colors.white), const SizedBox(width: 4), Text(L.tr('show_all'), style: _tj(12, weight: FontWeight.w500, color: Colors.white))]))),
             ),
           ]),
         ),

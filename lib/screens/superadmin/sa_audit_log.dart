@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class SaAuditLog extends StatefulWidget {
   const SaAuditLog({super.key});
@@ -61,12 +62,12 @@ class _SaAuditLogState extends State<SaAuditLog> {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Row(children: [
-          Text('سجل العمليات (${_logs.length})', style: _tj(18, weight: FontWeight.w700, color: W.text)),
+          Text(L.tr('sa_audit_count', args: {'n': _logs.length.toString()}), style: _tj(18, weight: FontWeight.w700, color: W.text)),
           const Spacer(),
           OutlinedButton.icon(
             onPressed: _loadLogs,
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: Text('تحديث', style: _tj(12, weight: FontWeight.w600)),
+            label: Text(L.tr('update'), style: _tj(12, weight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: W.pri,
               side: BorderSide(color: W.border),
@@ -82,7 +83,7 @@ class _SaAuditLogState extends State<SaAuditLog> {
         Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.history_rounded, size: 48, color: W.muted.withOpacity(0.4)),
           const SizedBox(height: 12),
-          Text('لا توجد عمليات مسجلة', style: _tj(16, color: W.muted)),
+          Text(L.tr('no_operations'), style: _tj(16, color: W.muted)),
         ])))
       else
         Expanded(child: ListView.builder(

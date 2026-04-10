@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import 'leave_request_page.dart';
 import 'permission_request_page.dart';
+import '../../l10n/app_locale.dart';
 
 class EmpNewRequestPage extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -11,13 +12,13 @@ class EmpNewRequestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      {'name': 'طلب إذن', 'desc': 'انصراف مبكر أو تأخير عن الحضور', 'color': C.orange, 'bg': C.orangeL, 'icon': Icons.access_time, 'type': 'permission'},
-      {'name': 'طلب إجازة', 'desc': 'سنوية، مرضية، طارئة، أو بدون راتب', 'color': C.teal, 'bg': C.priLight, 'icon': Icons.beach_access, 'type': 'leave'},
+      {'name': L.tr('permission_request'), 'desc': L.tr('early_leave_or_late'), 'color': C.orange, 'bg': C.orangeL, 'icon': Icons.access_time, 'type': 'permission'},
+      {'name': L.tr('leave_request'), 'desc': L.tr('leave_types_list'), 'color': C.teal, 'bg': C.priLight, 'icon': Icons.beach_access, 'type': 'leave'},
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('إنشاء طلب جديد', style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
+        title: Text(L.tr('create_new_request'), style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: C.text)),
         centerTitle: true,
         backgroundColor: C.white,
         surfaceTintColor: C.white,

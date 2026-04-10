@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
+import '../l10n/app_locale.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -17,34 +18,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   TextStyle _tj(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
     GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color);
 
-  static const _slides = [
+  List<_Slide> get _slides => [
     _Slide(
       icon: Icons.dashboard_customize_rounded,
-      title: 'مرحباً بك في داوِملي',
-      subtitle: 'نظام إدارة الحضور والانصراف',
-      color: Color(0xFF175CD3),
-      bgColor: Color(0xFFE7EFFF),
+      title: L.tr('onb_welcome_title'),
+      subtitle: L.tr('onb_welcome_sub'),
+      color: const Color(0xFF175CD3),
+      bgColor: const Color(0xFFE7EFFF),
     ),
     _Slide(
       icon: Icons.fingerprint_rounded,
-      title: 'سجّل حضورك بسهولة',
-      subtitle: 'بصمة الإصبع أو الوجه أو GPS',
-      color: Color(0xFF17B26A),
-      bgColor: Color(0xFFECFDF3),
+      title: L.tr('onb_checkin_title'),
+      subtitle: L.tr('onb_checkin_sub'),
+      color: const Color(0xFF17B26A),
+      bgColor: const Color(0xFFECFDF3),
     ),
     _Slide(
       icon: Icons.bar_chart_rounded,
-      title: 'تابع سجلك',
-      subtitle: 'سجل حضورك، إجازاتك، وطلباتك',
-      color: Color(0xFF7F56D9),
-      bgColor: Color(0xFFF4F3FF),
+      title: L.tr('onb_track_title'),
+      subtitle: L.tr('onb_track_sub'),
+      color: const Color(0xFF7F56D9),
+      bgColor: const Color(0xFFF4F3FF),
     ),
     _Slide(
       icon: Icons.check_circle_rounded,
-      title: 'ابدأ الآن',
-      subtitle: 'كل شيء جاهز لتبدأ رحلتك',
-      color: Color(0xFFF79009),
-      bgColor: Color(0xFFFFFAEB),
+      title: L.tr('onb_start_title'),
+      subtitle: L.tr('onb_start_sub'),
+      color: const Color(0xFFF79009),
+      bgColor: const Color(0xFFFFFAEB),
     ),
   ];
 
@@ -74,6 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final slides = _slides;
     return Scaffold(
       backgroundColor: C.white,
       body: SafeArea(
@@ -82,10 +84,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(children: [
-              if (_currentPage < _slides.length - 1)
+              if (_currentPage < slides.length - 1)
                 TextButton(
                   onPressed: _skip,
-                  child: Text('تخطي', style: _tj(14, weight: FontWeight.w600, color: C.sub)),
+                  child: Text(L.tr('skip'), style: _tj(14, weight: FontWeight.w600, color: C.sub)),
                 ),
             ]),
           ),
@@ -95,9 +97,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: PageView.builder(
               controller: _pc,
               onPageChanged: (i) => setState(() => _currentPage = i),
-              itemCount: _slides.length,
+              itemCount: slides.length,
               itemBuilder: (ctx, i) {
-                final slide = _slides[i];
+                final slide = slides[i];
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Column(
@@ -146,7 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(children: [
               // Dots
               Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(
-                _slides.length,
+                slides.length,
                 (i) => AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -172,7 +174,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    _currentPage == _slides.length - 1 ? 'دخول' : 'التالي',
+                    _currentPage == slides.length - 1 ? L.tr('enter') : L.tr('next'),
                     style: _tj(16, weight: FontWeight.w700, color: Colors.white),
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminSalary extends StatefulWidget {
   final Map<String, dynamic>? adminUser;
@@ -12,7 +13,7 @@ class AdminSalary extends StatefulWidget {
 
 class _AdminSalaryState extends State<AdminSalary> {
   final _mono = GoogleFonts.ibmPlexMono;
-  final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  final _months = L.months;
   late int _selMonth, _selYear;
   List<Map<String, dynamic>> _records = [];
   Map<String, dynamic> _settings = {};
@@ -156,7 +157,7 @@ class _AdminSalaryState extends State<AdminSalary> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.download_rounded, size: 14, color: W.green),
                     const SizedBox(width: 6),
-                    Text('تصدير CSV', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.green)),
+                    Text(L.tr('export_csv'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.green)),
                   ]),
                 ),
               ),
@@ -169,12 +170,12 @@ class _AdminSalaryState extends State<AdminSalary> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.settings_outlined, size: 14, color: _showSettings ? W.pri : W.sub),
                     const SizedBox(width: 6),
-                    Text('الإعدادات', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: _showSettings ? W.pri : W.sub)),
+                    Text(L.tr('settings'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: _showSettings ? W.pri : W.sub)),
                   ]),
                 ),
               ),
               const Spacer(),
-              Text('كشف الرواتب', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+              Text(L.tr('salary_sheet'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
             ]),
           ),
 
@@ -184,25 +185,25 @@ class _AdminSalaryState extends State<AdminSalary> {
           // ─── Summary cards ───
           if (isWide)
             Row(children: [
-              Expanded(child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${_fmtNum(totalAbsentDeduction)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
+              Expanded(child: _stat(Icons.trending_down_rounded, L.tr('absence_deduction'), '${_fmtNum(totalAbsentDeduction)} ${L.tr("sar")}', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} ${L.tr("absence_days")}')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.access_time, 'خصم التأخير', '${_fmtNum(totalLateDeduction)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
+              Expanded(child: _stat(Icons.access_time, L.tr('late_deduction'), '${_fmtNum(totalLateDeduction)} ${L.tr("sar")}', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} ${L.tr("minute")}')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${_fmtNum(totalOvertimeAmt)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
+              Expanded(child: _stat(Icons.more_time, L.tr('overtime_pay'), '${_fmtNum(totalOvertimeAmt)} ${L.tr("sar")}', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ${L.tr("hour")}')),
               const SizedBox(width: 14),
-              Expanded(child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${_fmtNum(totalDeductions)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
+              Expanded(child: _stat(Icons.receipt_long_rounded, L.tr('total_deductions'), '${_fmtNum(totalDeductions)} ${L.tr("sar")}', W.purple, W.purpleL, '${_records.length} ${L.tr("employee_unit")}')),
             ])
           else
             SizedBox(
               height: 130,
               child: ListView(scrollDirection: Axis.horizontal, children: [
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.trending_down_rounded, 'خصم الغياب', '${_fmtNum(totalAbsentDeduction)} ر.س', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} يوم غياب')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.trending_down_rounded, L.tr('absence_deduction'), '${_fmtNum(totalAbsentDeduction)} ${L.tr("sar")}', W.red, W.redL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['days_absent']))} ${L.tr("absence_days")}')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, 'خصم التأخير', '${_fmtNum(totalLateDeduction)} ر.س', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} دقيقة')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, L.tr('late_deduction'), '${_fmtNum(totalLateDeduction)} ${L.tr("sar")}', W.orange, W.orangeL, '${_records.fold<int>(0, (s, r) => s + _toInt(r['total_late_minutes']))} ${L.tr("minute")}')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, 'بدل الأوفرتايم', '${_fmtNum(totalOvertimeAmt)} ر.س', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ساعة')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.more_time, L.tr('overtime_pay'), '${_fmtNum(totalOvertimeAmt)} ${L.tr("sar")}', W.green, W.greenL, '${(_records.fold<int>(0, (s, r) => s + _toInt(r['overtime_minutes'])) / 60.0).toStringAsFixed(1)} ${L.tr("hour")}')),
                 const SizedBox(width: 10),
-                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.receipt_long_rounded, 'إجمالي الخصومات', '${_fmtNum(totalDeductions)} ر.س', W.purple, W.purpleL, '${_records.length} موظف')),
+                SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.receipt_long_rounded, L.tr('total_deductions'), '${_fmtNum(totalDeductions)} ${L.tr("sar")}', W.purple, W.purpleL, '${_records.length} ${L.tr("employee_unit")}')),
               ]),
             ),
           const SizedBox(height: 20),
@@ -215,7 +216,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               child: Center(child: Column(children: [
                 Icon(Icons.account_balance_wallet_outlined, size: 36, color: W.hint),
                 const SizedBox(height: 10),
-                Text('لا يوجد بيانات رواتب في هذا الشهر', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+                Text(L.tr('no_salary_data'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
               ])),
             )
           else if (isWide)
@@ -271,27 +272,27 @@ class _AdminSalaryState extends State<AdminSalary> {
         Row(children: [
           InkWell(onTap: () => setState(() => _showSettings = false), child: Icon(Icons.close, size: 18, color: W.muted)),
           const Spacer(),
-          Text('إعدادات الرواتب (للكل)', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+          Text(L.tr('salary_settings'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(width: 8),
           Icon(Icons.settings_outlined, size: 18, color: W.pri),
         ]),
         const SizedBox(height: 16),
 
         // General settings
-        _settingsField('معامل الأوفرتايم', 'x', overtimeCtrl),
+        _settingsField(L.tr('overtime_multiplier'), 'x', overtimeCtrl),
         const SizedBox(height: 10),
-        _settingsField('فترة السماح (تأخير)', 'دقيقة', graceCtrl),
+        _settingsField(L.tr('grace_period_late'), L.tr('minute'), graceCtrl),
         const SizedBox(height: 10),
-        _settingsField('ساعات العمل اليومية', 'ساعة', hoursCtrl),
+        _settingsField(L.tr('daily_work_hours'), L.tr('hour'), hoursCtrl),
 
         const SizedBox(height: 16),
         Container(height: 1, color: W.border),
         const SizedBox(height: 16),
 
         // Late deductions per occurrence
-        Text('خصومات التأخير (تطبق على الكل)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+        Text(L.tr('late_deductions_all'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
         const SizedBox(height: 4),
-        Text('المرة الرابعة تتكرر تلقائياً لكل مرة بعدها', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+        Text(L.tr('time_n_repeats'), style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
         const SizedBox(height: 8),
         Row(children: List.generate(4, (i) => Expanded(child: Padding(
           padding: EdgeInsets.only(left: i < 3 ? 6 : 0),
@@ -299,7 +300,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL, borderRadius: BorderRadius.circular(4)),
-              child: Text('المرة ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
+              child: Text(L.tr('time_n_label', args: {'n': '${i + 1}${i == 3 ? "+" : ""}'}), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
             ),
             const SizedBox(height: 4),
             TextField(
@@ -307,7 +308,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center, textDirection: TextDirection.ltr,
               style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: L.tr('sar'), suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
             ),
           ]),
         )))),
@@ -315,9 +316,9 @@ class _AdminSalaryState extends State<AdminSalary> {
         const SizedBox(height: 16),
 
         // Absent deductions per occurrence
-        Text('خصومات الغياب (تطبق على الكل)', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+        Text(L.tr('absence_deductions_all'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
         const SizedBox(height: 4),
-        Text('اليوم الرابع يتكرر تلقائياً لكل يوم بعده', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+        Text(L.tr('day_n_repeats'), style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
         const SizedBox(height: 8),
         Row(children: List.generate(4, (i) => Expanded(child: Padding(
           padding: EdgeInsets.only(left: i < 3 ? 6 : 0),
@@ -325,7 +326,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: i < 2 ? W.orangeL : W.redL, borderRadius: BorderRadius.circular(4)),
-              child: Text('اليوم ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.orange : W.red)),
+              child: Text(L.tr('day_n_label', args: {'n': '${i + 1}${i == 3 ? "+" : ""}'}), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: i < 2 ? W.orange : W.red)),
             ),
             const SizedBox(height: 4),
             TextField(
@@ -333,7 +334,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center, textDirection: TextDirection.ltr,
               style: _mono(fontSize: 14, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
+              decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8), suffixText: L.tr('sar'), suffixStyle: GoogleFonts.tajawal(fontSize: 8, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
             ),
           ]),
         )))),
@@ -356,7 +357,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               final res = await ApiService.post('salary.php?action=save_settings', body);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(res['success'] == true ? 'تم حفظ الإعدادات للكل' : 'فشل الحفظ', style: GoogleFonts.tajawal()),
+                  content: Text(res['success'] == true ? L.tr('saved_for_all') : L.tr('save_failed'), style: GoogleFonts.tajawal()),
                   backgroundColor: res['success'] == true ? W.green : W.red,
                   behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                 ));
@@ -364,7 +365,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               }
             },
             icon: const Icon(Icons.save, size: 16),
-            label: Text('حفظ (تطبق على الكل)', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            label: Text(L.tr('save_all'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
           ),
         ),
@@ -406,7 +407,7 @@ class _AdminSalaryState extends State<AdminSalary> {
         width: min(400, MediaQuery.of(context).size.width - 40),
         padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('تحديد الراتب الأساسي', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+          Text(L.tr('set_base_salary'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(height: 4),
           Text(name, style: GoogleFonts.tajawal(fontSize: 13, color: W.sub)),
           const SizedBox(height: 16),
@@ -418,7 +419,7 @@ class _AdminSalaryState extends State<AdminSalary> {
             style: _mono(fontSize: 24, fontWeight: FontWeight.w800, color: W.pri),
             decoration: InputDecoration(
               hintText: '0',
-              suffixText: 'ر.س',
+              suffixText: L.tr('sar'),
               suffixStyle: GoogleFonts.tajawal(fontSize: 14, color: W.muted),
               filled: true, fillColor: W.bg,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -428,7 +429,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           ),
           const SizedBox(height: 16),
           Row(children: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.muted))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.muted))),
             const Spacer(),
             ElevatedButton.icon(
               onPressed: () async {
@@ -436,10 +437,10 @@ class _AdminSalaryState extends State<AdminSalary> {
                 await ApiService.post('salary.php?action=set_base_salary', {'uid': uid, 'base_salary': val});
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadAll();
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تحديد الراتب: $val ر.س', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('salary_set_msg', args: {'val': val.toString()}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
               },
               icon: const Icon(Icons.save, size: 16),
-              label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              label: Text(L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
             ),
           ]),
@@ -479,7 +480,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               InkWell(onTap: () => Navigator.pop(ctx), child: Icon(Icons.close, size: 18, color: W.sub)),
               const Spacer(),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('خصومات فردية', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+                Text(L.tr('individual_deductions'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
                 Text(name, style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
               ]),
               const SizedBox(width: 8),
@@ -493,12 +494,12 @@ class _AdminSalaryState extends State<AdminSalary> {
               if (hasOverride) Container(
                 width: double.infinity, padding: const EdgeInsets.all(10), margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                child: Text('هذا الموظف لديه خصومات فردية مختلفة عن الإعدادات العامة', style: GoogleFonts.tajawal(fontSize: 11, color: W.orange), textAlign: TextAlign.right),
+                child: Text(L.tr('has_individual_deductions'), style: GoogleFonts.tajawal(fontSize: 11, color: W.orange), textAlign: TextAlign.right),
               ),
               // Late deductions
-              Text('خصومات التأخير (لكل مرة)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+              Text(L.tr('late_deductions_per'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
               const SizedBox(height: 4),
-              Text('المرة الرابعة تتكرر تلقائياً لكل مرة بعدها', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              Text(L.tr('time_n_repeats'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               const SizedBox(height: 10),
               ...List.generate(4, (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -508,10 +509,10 @@ class _AdminSalaryState extends State<AdminSalary> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
                     style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: L.tr('sar'), suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
-                  Text('المرة ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
+                  Text(L.tr('time_n_label', args: {'n': '${i + 1}${i == 3 ? "+" : ""}'}), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)),
                   const SizedBox(width: 8),
                   Container(width: 28, height: 28, decoration: BoxDecoration(color: (i < 2 ? W.greenL : i < 3 ? W.orangeL : W.redL), borderRadius: BorderRadius.circular(DS.radiusMd)),
                     child: Center(child: Text('${i + 1}${i == 3 ? '+' : ''}', style: _mono(fontSize: 12, fontWeight: FontWeight.w700, color: i < 2 ? W.green : i < 3 ? W.orange : W.red)))),
@@ -523,9 +524,9 @@ class _AdminSalaryState extends State<AdminSalary> {
               const SizedBox(height: 16),
 
               // Absent deductions
-              Text('خصومات الغياب (لكل يوم)', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+              Text(L.tr('absence_deductions_per'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
               const SizedBox(height: 4),
-              Text('اليوم الرابع يتكرر تلقائياً لكل يوم بعده', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+              Text(L.tr('day_n_repeats'), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               const SizedBox(height: 10),
               ...List.generate(4, (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -535,10 +536,10 @@ class _AdminSalaryState extends State<AdminSalary> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center, textDirection: TextDirection.ltr,
                     style: _mono(fontSize: 15, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: 'ر.س', suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
+                    decoration: InputDecoration(isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10), suffixText: L.tr('sar'), suffixStyle: GoogleFonts.tajawal(fontSize: 10, color: W.muted), filled: true, fillColor: W.bg, border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border))),
                   )),
                   const Spacer(),
-                  Text('اليوم ${i + 1}${i == 3 ? '+' : ''}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.orange : W.red)),
+                  Text(L.tr('day_n_label', args: {'n': '${i + 1}${i == 3 ? "+" : ""}'}), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: i < 2 ? W.orange : W.red)),
                 ]),
               )),
             ]),
@@ -551,8 +552,8 @@ class _AdminSalaryState extends State<AdminSalary> {
                 await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'has_override': false, 'late_deductions': [], 'absent_deductions': []});
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadAll();
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إزالة الخصومات الفردية — يستخدم الإعدادات العامة', style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
-              }, child: Text('إزالة الفردي', style: GoogleFonts.tajawal(fontSize: 12, color: W.red))),
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('individual_removed_msg'), style: GoogleFonts.tajawal()), backgroundColor: W.orange, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+              }, child: Text(L.tr('remove_individual'), style: GoogleFonts.tajawal(fontSize: 12, color: W.red))),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -561,10 +562,10 @@ class _AdminSalaryState extends State<AdminSalary> {
                   await ApiService.post('salary.php?action=set_employee_deduction', {'uid': uid, 'late_deductions': lateList, 'absent_deductions': absentList});
                   if (ctx.mounted) Navigator.pop(ctx);
                   _loadAll();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الخصومات الفردية لـ $name', style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('individual_saved_msg', args: {'name': name}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                 },
                 icon: const Icon(Icons.save, size: 16),
-                label: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                label: Text(L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
               ),
             ]),
@@ -610,12 +611,12 @@ class _AdminSalaryState extends State<AdminSalary> {
             InkWell(
               onTap: () => _editBaseSalaryDialog(uid, name, baseSalary),
               child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.pri), const SizedBox(width: 4), Text('الراتب', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.pri))])),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, size: 12, color: W.pri), const SizedBox(width: 4), Text(L.tr('base_salary'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.pri))])),
             ),
             InkWell(
               onTap: () => _editEmployeeDeductionDialog(uid, name),
               child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.orange), const SizedBox(width: 4), Text('خصومات', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))])),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.tune, size: 12, color: W.orange), const SizedBox(width: 4), Text(L.tr('deductions'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.orange))])),
             ),
           ]),
           const Spacer(),
@@ -639,12 +640,12 @@ class _AdminSalaryState extends State<AdminSalary> {
           child: Row(children: [
             Expanded(child: Column(children: [
               Text(_fmtNum(netSalary), style: _mono(fontSize: 18, fontWeight: FontWeight.w800, color: netSalary >= 0 ? W.green : W.red)),
-              Text('صافي الراتب', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
+              Text(L.tr('net_salary'), style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
             ])),
             Container(width: 1, height: 30, color: W.border),
             Expanded(child: Column(children: [
-              Text(baseSalary > 0 ? _fmtNum(baseSalary) : 'غير محدد', style: _mono(fontSize: baseSalary > 0 ? 18 : 12, fontWeight: FontWeight.w800, color: baseSalary > 0 ? W.pri : W.red)),
-              Text('الراتب الأساسي', style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
+              Text(baseSalary > 0 ? _fmtNum(baseSalary) : L.tr('not_specified'), style: _mono(fontSize: baseSalary > 0 ? 18 : 12, fontWeight: FontWeight.w800, color: baseSalary > 0 ? W.pri : W.red)),
+              Text(L.tr('base_salary'), style: GoogleFonts.tajawal(fontSize: 9, color: W.muted)),
             ])),
           ]),
         ),
@@ -655,23 +656,23 @@ class _AdminSalaryState extends State<AdminSalary> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)),
           child: Row(children: [
-            _miniStat('$lateCount', 'مرة تأخير', W.orange),
+            _miniStat('$lateCount', L.tr('late_time_unit'), W.orange),
             _miniStatSep(),
-            _miniStat('$daysAbsent', 'غياب', W.red),
+            _miniStat('$daysAbsent', L.tr('absence'), W.red),
             _miniStatSep(),
-            _miniStat('$daysPresent', 'حضور', W.green),
+            _miniStat('$daysPresent', L.tr('check_in'), W.green),
             _miniStatSep(),
-            _miniStat('$workingDays', 'أيام العمل', W.sub),
+            _miniStat('$workingDays', L.tr('work_days'), W.sub),
           ]),
         ),
         const SizedBox(height: 10),
 
         // ─── Deductions breakdown ───
-        _deductionRow(Icons.event_busy_outlined, 'خصم الغياب', '$daysAbsent يوم', deductionAbsent, W.red),
+        _deductionRow(Icons.event_busy_outlined, L.tr('absence_deduction'), '$daysAbsent ${L.tr("day_unit")}', deductionAbsent, W.red),
         const SizedBox(height: 6),
-        _deductionRow(Icons.access_time, 'خصم التأخير', '$lateMin دقيقة', deductionLate, W.orange),
+        _deductionRow(Icons.access_time, L.tr('late_deduction'), '$lateMin ${L.tr("minute")}', deductionLate, W.orange),
         const SizedBox(height: 6),
-        _deductionRow(Icons.more_time, 'بدل الأوفرتايم', '${(overtimeMin / 60.0).toStringAsFixed(1)} ساعة', overtimeAmt, W.green, isPositive: true),
+        _deductionRow(Icons.more_time, L.tr('overtime_pay'), '${(overtimeMin / 60.0).toStringAsFixed(1)} ${L.tr("hour")}', overtimeAmt, W.green, isPositive: true),
 
         // ─── Totals ───
         const SizedBox(height: 10),
@@ -683,11 +684,11 @@ class _AdminSalaryState extends State<AdminSalary> {
           ),
           child: Row(children: [
             Text(
-              '${_fmtNum(totalDeductions)} ر.س',
+              '${_fmtNum(totalDeductions)} ${L.tr("sar")}',
               style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: W.red),
             ),
             const Spacer(),
-            Text('إجمالي الخصومات', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.red)),
+            Text(L.tr('total_deductions'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.red)),
             const SizedBox(width: 6),
             Icon(Icons.remove_circle_outline, size: 14, color: W.red),
           ]),
@@ -699,11 +700,11 @@ class _AdminSalaryState extends State<AdminSalary> {
             decoration: BoxDecoration(color: W.greenL, borderRadius: BorderRadius.circular(DS.radiusMd)),
             child: Row(children: [
               Text(
-                '+${_fmtNum(overtimeAmt)} ر.س',
+                '+${_fmtNum(overtimeAmt)} ${L.tr("sar")}',
                 style: _mono(fontSize: 13, fontWeight: FontWeight.w700, color: W.green),
               ),
               const Spacer(),
-              Text('بدل الأوفرتايم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.green)),
+              Text(L.tr('overtime_pay'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.green)),
               const SizedBox(width: 6),
               Icon(Icons.add_circle_outline, size: 14, color: W.green),
             ]),
@@ -716,7 +717,7 @@ class _AdminSalaryState extends State<AdminSalary> {
   Widget _deductionRow(IconData icon, String label, String detail, double amount, Color color, {bool isPositive = false}) {
     return Row(children: [
       Text(
-        '${isPositive ? '+' : '-'}${_fmtNum(amount)} ر.س',
+        '${isPositive ? '+' : '-'}${_fmtNum(amount)} ${L.tr("sar")}',
         style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: color),
       ),
       const SizedBox(width: 8),
@@ -759,7 +760,7 @@ class _AdminSalaryState extends State<AdminSalary> {
   void _exportCSV() {
     if (_records.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('لا يوجد بيانات للتصدير', style: GoogleFonts.tajawal()),
+        content: Text(L.tr('no_export_data'), style: GoogleFonts.tajawal()),
         backgroundColor: W.orange,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
@@ -768,11 +769,11 @@ class _AdminSalaryState extends State<AdminSalary> {
     }
 
     final headers = [
-      'الاسم', 'الرقم الوظيفي', 'القسم',
-      'أيام العمل', 'أيام الحضور', 'أيام الغياب',
-      'دقائق التأخير', 'مرات التأخير',
-      'دقائق الأوفرتايم', 'بدل الأوفرتايم',
-      'خصم الغياب', 'خصم التأخير', 'إجمالي الخصومات',
+      L.tr('name'), L.tr('employee_id'), L.tr('department'),
+      L.tr('work_days'), L.tr('attendance_days'), L.tr('absence_days'),
+      L.tr('late_minutes_label'), L.tr('late_count'),
+      L.tr('overtime_minutes'), L.tr('overtime_pay'),
+      L.tr('absence_deduction'), L.tr('late_deduction'), L.tr('total_deductions'),
     ];
 
     final rows = <List<String>>[headers];
@@ -811,7 +812,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              Flexible(child: Text('تصدير كشف الرواتب', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text))),
+              Flexible(child: Text(L.tr('export_salary'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text))),
               const SizedBox(width: 8),
               Icon(Icons.download_rounded, size: 18, color: W.green),
             ]),
@@ -823,7 +824,7 @@ class _AdminSalaryState extends State<AdminSalary> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(filename, style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.text)),
                 const SizedBox(height: 4),
-                Text('${_records.length} موظف  •  ${_months[_selMonth - 1]} $_selYear', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+                Text(L.tr('n_employee_month', args: {'n': _records.length.toString(), 'month': _months[_selMonth - 1], 'year': _selYear.toString()}), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
               ]),
             ),
             const SizedBox(height: 12),
@@ -839,11 +840,11 @@ class _AdminSalaryState extends State<AdminSalary> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('انسخ البيانات من المربع أعلاه والصقها في ملف CSV', style: GoogleFonts.tajawal(fontSize: 12, color: W.muted), textAlign: TextAlign.center),
+            Text(L.tr('copy_csv_data'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted), textAlign: TextAlign.center),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('إغلاق', style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+              child: Text(L.tr('close'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
             ),
           ]),
         ),

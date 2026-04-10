@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminRequests extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -47,7 +48,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
     DateTime? dt;
     if (ts is String) { try { dt = DateTime.parse(ts); } catch(_) {} }
     if (dt == null) return '—';
-    final months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    final months = L.months;
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
@@ -57,9 +58,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
-        title: Text(action == 'تم الموافقة' ? 'موافقة على الطلب' : 'رفض الطلب', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+        title: Text(action == L.tr('approved') ? L.tr('approve_request') : L.tr('reject_request'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('هل أنت متأكد؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+          Text(L.tr('are_you_sure'), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
           const SizedBox(height: 12),
           TextField(
             controller: noteCtrl,
@@ -67,17 +68,17 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             maxLines: 2,
             style: GoogleFonts.tajawal(fontSize: 13),
             decoration: InputDecoration(
-              hintText: 'ملاحظة (اختياري)...',
+              hintText: L.tr('note_optional'),
               hintStyle: GoogleFonts.tajawal(color: W.hint),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
             ),
           ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal(color: W.sub))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.sub))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('تأكيد', style: GoogleFonts.tajawal(color: action == 'تم الموافقة' ? W.green : W.red, fontWeight: FontWeight.w700)),
+            child: Text(L.tr('confirm'), style: GoogleFonts.tajawal(color: action == L.tr('approved') ? W.green : W.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -88,13 +89,13 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         'id': docId,
         'status': action,
         'admin_note': noteCtrl.text.trim(),
-        'adminName': widget.user['name'] ?? 'مدير النظام',
+        'adminName': widget.user['name'] ?? L.tr('system_admin'),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(action == 'تم الموافقة' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب', style: GoogleFonts.tajawal()),
-          backgroundColor: action == 'تم الموافقة' ? W.green : W.red,
+          content: Text(action == L.tr('approved') ? L.tr('request_approved') : L.tr('request_rejected'), style: GoogleFonts.tajawal()),
+          backgroundColor: action == L.tr('approved') ? W.green : W.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
         ));
@@ -122,9 +123,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           unselectedLabelColor: W.sub,
           labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600),
           tabs: [
-            Tab(text: 'معلقة (${_requests.where((r) => r['status'] == 'تحت الإجراء').length})', height: 36),
-            Tab(text: 'تمت الموافقة (${_requests.where((r) => r['status'] == 'تم الموافقة' || r['status'] == 'approved').length})', height: 36),
-            Tab(text: 'مرفوضة (${_requests.where((r) => r['status'] == 'مرفوض' || r['status'] == 'rejected').length})', height: 36),
+            Tab(text: L.tr('pending_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('pending')).length.toString()}), height: 36),
+            Tab(text: L.tr('approved_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('approved') || r['status'] == 'approved').length.toString()}), height: 36),
+            Tab(text: L.tr('rejected_tab_count', args: {'n': _requests.where((r) => r['status'] == L.tr('rejected') || r['status'] == 'rejected').length.toString()}), height: 36),
           ],
         ),
       ),
@@ -135,9 +136,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           : TabBarView(
               controller: _tabCtrl,
               children: [
-                _buildList('تحت الإجراء', showActions: true),
-                _buildList('تم الموافقة'),
-                _buildList('مرفوض'),
+                _buildList(L.tr('pending'), showActions: true),
+                _buildList(L.tr('approved')),
+                _buildList(L.tr('rejected')),
               ],
             ),
       ),
@@ -147,9 +148,9 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   Widget _buildList(String statusFilter, {bool showActions = false}) {
     var docs = _requests.where((r) {
       final s = r['status'] ?? '';
-      if (statusFilter == 'تحت الإجراء') return s == 'تحت الإجراء' || s == 'pending';
-      if (statusFilter == 'تم الموافقة') return s == 'تم الموافقة' || s == 'approved';
-      if (statusFilter == 'مرفوض') return s == 'مرفوض' || s == 'rejected';
+      if (statusFilter == L.tr('pending')) return s == L.tr('pending') || s == 'pending';
+      if (statusFilter == L.tr('approved')) return s == L.tr('approved') || s == 'approved';
+      if (statusFilter == L.tr('rejected')) return s == L.tr('rejected') || s == 'rejected';
       return s == statusFilter;
     }).toList();
     docs.sort((a, b) {
@@ -163,7 +164,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
       return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.description_outlined, size: 48, color: W.hint),
         const SizedBox(height: 12),
-        Text('لا توجد طلبات', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
+        Text(L.tr('no_requests'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
       ]));
     }
 
@@ -181,16 +182,16 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
   Widget _requestCard(Map<String, dynamic> r, String docId, bool showActions) {
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 400;
-    final isLeave = (r['request_type'] ?? r['requestType']) == 'إجازة';
+    final isLeave = (r['request_type'] ?? r['requestType']) == L.tr('leave_request');
     final typeColor = isLeave ? const Color(0xFF2E90FA) : W.orange;
     final typeIcon = isLeave ? Icons.beach_access : Icons.access_time;
 
     String desc = '';
     if (isLeave) {
-      desc = '${r['leave_type'] ?? r['leaveType'] ?? ''} — ${r['days'] ?? 0} يوم\nمن ${_fmtDate(r['start_date'] ?? r['startDate'])} إلى ${_fmtDate(r['end_date'] ?? r['endDate'])}';
+      desc = '${r['leave_type'] ?? r['leaveType'] ?? ''} — ${r['days'] ?? 0} ${L.tr('day_unit')}\n${L.tr('from')} ${_fmtDate(r['start_date'] ?? r['startDate'])} ${L.tr('to')} ${_fmtDate(r['end_date'] ?? r['endDate'])}';
     } else {
       final hours = (r['hours'] as num?)?.toStringAsFixed(1);
-      desc = '${r['perm_type'] ?? r['permType'] ?? ''}${hours != null ? ' — $hours ساعة' : ''}\nمن ${r['from_time'] ?? r['fromTime'] ?? ''} إلى ${r['to_time'] ?? r['toTime'] ?? ''}';
+      desc = '${r['perm_type'] ?? r['permType'] ?? ''}${hours != null ? ' — $hours ${L.tr('hour')}' : ''}\n${L.tr('from')} ${r['from_time'] ?? r['fromTime'] ?? ''} ${L.tr('to')} ${r['to_time'] ?? r['toTime'] ?? ''}';
     }
 
     return Container(
@@ -201,7 +202,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         Row(children: [
           if (showActions) ...[
             InkWell(
-              onTap: () => _handleRequest(docId, 'مرفوض'),
+              onTap: () => _handleRequest(docId, L.tr('rejected')),
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFFEF3F2), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFFECDCA))),
@@ -210,7 +211,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             ),
             const SizedBox(width: 6),
             InkWell(
-              onTap: () => _handleRequest(docId, 'تم الموافقة'),
+              onTap: () => _handleRequest(docId, L.tr('approved')),
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(color: const Color(0xFFECFDF3), borderRadius: BorderRadius.circular(4), border: Border.all(color: const Color(0xFFABEFC6))),
@@ -222,14 +223,14 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             Container(
               padding: EdgeInsets.symmetric(horizontal: isSmall ? 6 : 10, vertical: 3),
               decoration: BoxDecoration(
-                color: r['status'] == 'تم الموافقة' ? W.greenL : W.redL,
+                color: r['status'] == L.tr('approved') ? W.greenL : W.redL,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: r['status'] == 'تم الموافقة' ? W.greenBd : W.redBd),
+                border: Border.all(color: r['status'] == L.tr('approved') ? W.greenBd : W.redBd),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 10 : 11, fontWeight: FontWeight.w600, color: r['status'] == 'تم الموافقة' ? W.green : W.red)),
+                Text(r['status'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 10 : 11, fontWeight: FontWeight.w600, color: r['status'] == L.tr('approved') ? W.green : W.red)),
                 const SizedBox(width: 3),
-                Icon(r['status'] == 'تم الموافقة' ? Icons.check_circle : Icons.cancel, size: 13, color: r['status'] == 'تم الموافقة' ? W.green : W.red),
+                Icon(r['status'] == L.tr('approved') ? Icons.check_circle : Icons.cancel, size: 13, color: r['status'] == L.tr('approved') ? W.green : W.red),
               ]),
             ),
           ],
@@ -257,7 +258,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
             width: double.infinity,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(4)),
-            child: Text('السبب: ${r['reason']}', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub), textAlign: TextAlign.right),
+            child: Text(L.tr('reason_prefix', args: {'reason': r['reason'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub), textAlign: TextAlign.right),
           ),
         ],
       ]),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminVerify extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -13,7 +14,7 @@ class _AdminVerifyState extends State<AdminVerify> {
   final Set<String> _sel = {};
   bool _selectAll = false, _sending = false;
   final _mono = GoogleFonts.ibmPlexMono;
-  final _months = const ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  final _months = L.months;
 
   // Date filter
   late int _filterMonth;
@@ -102,9 +103,9 @@ class _AdminVerifyState extends State<AdminVerify> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.all(MediaQuery.of(context).size.width > 800 ? 28 : 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('إثبات الحالة', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 18 : 24, fontWeight: FontWeight.w800, color: W.text)),
+          Text(L.tr('nav_verify'), style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 18 : 24, fontWeight: FontWeight.w800, color: W.text)),
           const SizedBox(height: 4),
-          Text('أرسل طلب إثبات تواجد للتأكد من وجودهم في نطاق العمل', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+          Text(L.tr('send_verify_desc'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
           const SizedBox(height: 24),
 
           // ═══ Send Card — Grouped by Locations ═══
@@ -115,7 +116,7 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Title row
               Row(children: [
                 const Spacer(),
-                Flexible(child: Text('إرسال طلب جديد', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16, fontWeight: FontWeight.w700, color: W.text))),
+                Flexible(child: Text(L.tr('submit_new_request'), style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16, fontWeight: FontWeight.w700, color: W.text))),
                 const SizedBox(width: 8),
                 Container(width: 32, height: 32, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(10)), child: Icon(Icons.cell_tower, size: 16, color: W.pri)),
               ]),
@@ -127,8 +128,8 @@ class _AdminVerifyState extends State<AdminVerify> {
                   padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 14 : 24, vertical: 10),
                   decoration: BoxDecoration(color: _sending ? W.muted : _sel.isEmpty ? W.hint : W.pri, borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (_sending) ...[const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)), const SizedBox(width: 6), Text('جارٍ الإرسال...', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))]
-                    else ...[const Icon(Icons.send, size: 14, color: Colors.white), const SizedBox(width: 6), Text('إرسال (${_sel.length})', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))],
+                    if (_sending) ...[const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)), const SizedBox(width: 6), Text(L.tr('sending'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))]
+                    else ...[const Icon(Icons.send, size: 14, color: Colors.white), const SizedBox(width: 6), Text(L.tr('send_label', args: {'n': _sel.length.toString()}), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white))],
                   ]),
                 ),
               )),
@@ -137,7 +138,7 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Locations with their employees
               ...locations.map((loc) {
                 final locId = loc['_locId'] ?? loc['id'] ?? '';
-                final locName = loc['name'] ?? 'موقع';
+                final locName = loc['name'] ?? L.tr('locations');
                 final assignedEmps = ((loc['assigned_employees'] ?? loc['assignedEmployees']) as List?)?.cast<String>() ?? [];
                 // Get employees for this location ONLY (strictly assigned, or all if empty)
                 final locEmployees = active.where((emp) {
@@ -168,7 +169,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                           decoration: BoxDecoration(color: allLocSelected ? W.pri.withOpacity(0.1) : W.div, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                          child: Text(allLocSelected ? 'إلغاء' : 'الكل', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: allLocSelected ? W.pri : W.sub)),
+                          child: Text(allLocSelected ? L.tr('cancel') : L.tr('all'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: allLocSelected ? W.pri : W.sub)),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -185,7 +186,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                       final empKey = emp['_id'] ?? emp['uid'] ?? '';
                       final selKey = '${locId}_$empKey';
                       final sel = _sel.contains(selKey);
-                      final av = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0,2) : 'م';
+                      final av = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0,2) : L.tr('pm');
                       return InkWell(
                         onTap: () => setState(() { sel ? _sel.remove(selKey) : _sel.add(selKey); }),
                         child: Container(
@@ -208,7 +209,7 @@ class _AdminVerifyState extends State<AdminVerify> {
           const SizedBox(height: 20),
 
           // ═══ Date/Month Filter ═══
-          Text('نتائج الإثبات', style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 16 : 18, fontWeight: FontWeight.w700, color: W.text)),
+          Text(L.tr('verify_results'), style: GoogleFonts.tajawal(fontSize: MediaQuery.of(context).size.width < 400 ? 16 : 18, fontWeight: FontWeight.w700, color: W.text)),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -216,7 +217,7 @@ class _AdminVerifyState extends State<AdminVerify> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               // Label row on its own line
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                Text('فلتر حسب التاريخ', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                Text(L.tr('filter_by_date'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
                 const SizedBox(width: 6),
                 Icon(Icons.filter_list, size: 18, color: W.pri),
               ]),
@@ -225,7 +226,7 @@ class _AdminVerifyState extends State<AdminVerify> {
               Row(children: [
                 // Day picker
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('اليوم', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  Text(L.tr('day'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -235,7 +236,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                       value: _filterDay, isExpanded: true,
                       style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
                       items: [
-                        DropdownMenuItem(value: 0, child: Text('الكل', style: GoogleFonts.tajawal(fontSize: 12))),
+                        DropdownMenuItem(value: 0, child: Text(L.tr('all'), style: GoogleFonts.tajawal(fontSize: 12))),
                         ...List.generate(_daysInMonth, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}', style: GoogleFonts.ibmPlexMono(fontSize: 13)))),
                       ],
                       onChanged: (v) => setState(() => _filterDay = v ?? 0),
@@ -245,7 +246,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 const SizedBox(width: 8),
                 // Month picker
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('الشهر', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  Text(L.tr('month_label'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -262,7 +263,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 const SizedBox(width: 8),
                 // Year picker
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('السنة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
+                  Text(L.tr('year_label'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)),
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
@@ -301,7 +302,7 @@ class _AdminVerifyState extends State<AdminVerify> {
     if (requests.isEmpty) return Container(
       width: double.infinity, padding: const EdgeInsets.all(50),
       decoration: DS.cardDecoration(),
-      child: Column(children: [Icon(Icons.cell_tower, size: 40, color: W.hint), SizedBox(height: 12), Text('لا توجد طلبات إثبات في هذا التاريخ', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))]),
+      child: Column(children: [Icon(Icons.cell_tower, size: 40, color: W.hint), SizedBox(height: 12), Text(L.tr('no_verify_requests'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))]),
     );
 
     final responded = requests.where((r) => r['status'] == 'responded').length;
@@ -311,19 +312,19 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     return Column(children: [
       Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.start, children: [
-        _rBadge('$outRange خارج', W.red, W.redL),
-        _rBadge('$inRange داخل', W.green, W.greenL),
-        _rBadge('$pending بانتظار', W.orange, W.orangeL),
-        _rBadge('$responded استجاب', W.pri, W.priLight),
+        _rBadge(L.tr('n_outside', args: {'n': outRange.toString()}), W.red, W.redL),
+        _rBadge(L.tr('n_inside', args: {'n': inRange.toString()}), W.green, W.greenL),
+        _rBadge(L.tr('n_waiting', args: {'n': pending.toString()}), W.orange, W.orangeL),
+        _rBadge(L.tr('n_responded', args: {'n': responded.toString()}), W.pri, W.priLight),
       ]),
       const SizedBox(height: 14),
       ...requests.map((r) {
         final isPending = r['status'] == 'pending';
         final isInRange = r['inRange'] == true || r['in_range'] == 1 || r['in_range'] == true;
         final stColor = isPending ? W.orange : (isInRange ? W.green : W.red);
-        final stText = isPending ? 'بانتظار الاستجابة' : (isInRange ? 'داخل النطاق ✓' : 'خارج النطاق ⚠');
+        final stText = isPending ? L.tr('waiting_response') : (isInRange ? L.tr('in_range_check') : L.tr('out_range_warning'));
         final dist = r['distance'];
-        final av = (r['emp_name'] ?? r['empName'] ?? 'م').toString().length >= 2 ? (r['emp_name'] ?? r['empName']).toString().substring(0, 2) : 'م';
+        final av = (r['emp_name'] ?? r['empName'] ?? L.tr('pm')).toString().length >= 2 ? (r['emp_name'] ?? r['empName']).toString().substring(0, 2) : L.tr('pm');
         final sentAt = _parseTs(r['sent_at'] ?? r['sentAt']);
         final sentTime = sentAt != null ? _fmtTime(sentAt) : '';
 
@@ -337,7 +338,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                 child: Text(stText, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: stColor))),
               if (dist != null) ...[
                 const SizedBox(height: 3),
-                Text('${(dist as num).toInt()} م', style: _mono(fontSize: 10, color: W.sub)),
+                Text(L.tr('n_m_distance', args: {'n': (dist as num).toInt().toString()}), style: _mono(fontSize: 10, color: W.sub)),
               ],
               if (sentTime.isNotEmpty) ...[
                 const SizedBox(height: 2),
@@ -360,7 +361,7 @@ class _AdminVerifyState extends State<AdminVerify> {
 
   String _fmtTime(DateTime dt) {
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'م' : 'ص'}';
+    return '${h.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? L.tr('pm') : L.tr('am')}';
   }
 
   Future<void> _sendVerification(List<Map<String, dynamic>> all) async {
@@ -392,10 +393,10 @@ class _AdminVerifyState extends State<AdminVerify> {
 
     // Audit log
     await ApiService.post('admin.php?action=audit_log', {
-      'user': widget.user['name'] ?? 'مدير النظام',
-      'action': 'إرسال إثبات حالة',
-      'target': '${_sel.length} موظفين',
-      'details': 'تم إرسال طلب إثبات لـ ${employees.length} موظف',
+      'user': widget.user['name'] ?? L.tr('system_admin'),
+      'action': L.tr('send_verify'),
+      'target': L.tr('n_employees_target', args: {'n': _sel.length.toString()}),
+      'details': L.tr('verify_sent_count', args: {'count': employees.length.toString()}),
       'type': 'verify',
     });
 

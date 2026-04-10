@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_locale.dart';
 
 class ApiService {
   // On web: use same origin as the page
@@ -134,7 +135,7 @@ class ApiService {
         final cached = _cache[cacheKey];
         if (cached != null) return cached.data;
       }
-      return {'success': false, 'error': 'لا يوجد اتصال بالسيرفر'};
+      return {'success': false, 'error': L.tr('no_server_connection')};
     }
   }
 
@@ -159,7 +160,7 @@ class ApiService {
           .timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
-      return {'success': false, 'error': 'لا يوجد اتصال بالسيرفر'};
+      return {'success': false, 'error': L.tr('no_server_connection')};
     }
   }
 
@@ -192,7 +193,7 @@ class ApiService {
       final response = await http.Response.fromStream(streamed);
       return _handleResponse(response);
     } catch (e) {
-      return {'success': false, 'error': 'فشل رفع الملف'};
+      return {'success': false, 'error': L.tr('upload_failed')};
     }
   }
 
@@ -203,22 +204,22 @@ class ApiService {
       clearToken();
       _cache.clear();
       onUnauthorized?.call();
-      return {'success': false, 'error': 'انتهت الجلسة — يرجى تسجيل الدخول مرة أخرى', 'unauthorized': true};
+      return {'success': false, 'error': L.tr('session_expired'), 'unauthorized': true};
     }
     if (response.statusCode == 403) {
-      return {'success': false, 'error': 'غير مصرح لك بهذا الإجراء'};
+      return {'success': false, 'error': L.tr('unauthorized')};
     }
     if (response.statusCode >= 500) {
-      return {'success': false, 'error': 'خطأ في السيرفر (${response.statusCode})'};
+      return {'success': false, 'error': L.tr('server_error', args: {'code': response.statusCode.toString()})};
     }
     try {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;
-      return {'success': false, 'error': 'استجابة غير صحيحة من السيرفر'};
+      return {'success': false, 'error': L.tr('bad_server_response')};
     } catch (_) {
       return {
         'success': false,
-        'error': 'خطأ في السيرفر (${response.statusCode})',
+        'error': L.tr('server_error', args: {'code': response.statusCode.toString()}),
       };
     }
   }

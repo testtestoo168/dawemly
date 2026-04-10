@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:device_info_plus/device_info_plus.dart';
+import '../l10n/app_locale.dart';
 
 class DeviceInfoService {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
@@ -52,14 +53,14 @@ class DeviceInfoService {
 
       return {
         'platform': 'unknown',
-        'deviceModel': 'جهاز غير معروف',
+        'deviceModel': L.tr('unknown_device'),
         'osVersion': '',
         'deviceBrand': '',
       };
     } catch (e) {
       return {
         'platform': 'unknown',
-        'deviceModel': 'جهاز غير معروف',
+        'deviceModel': L.tr('unknown_device'),
         'osVersion': '',
         'deviceBrand': '',
       };
@@ -73,7 +74,7 @@ class DeviceInfoService {
       case 'safari': return 'Safari';
       case 'edge': return 'Edge';
       case 'opera': return 'Opera';
-      default: return 'متصفح';
+      default: return L.tr('browser');
     }
   }
 }

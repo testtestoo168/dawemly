@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../theme/app_colors.dart';
 import '../../services/face_recognition_service.dart';
+import '../../l10n/app_locale.dart';
 
 /// Shows a camera dialog that verifies the user's face.
 Future<Map<String, dynamic>?> showFaceVerifyDialog(BuildContext context, String uid) async {
@@ -30,7 +31,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
   bool _initialized = false;
   bool _processing = false;
   bool _verifying = false;
-  String _status = 'جارٍ تشغيل الكاميرا...';
+  String _status = L.tr('starting_camera');
   Color _statusColor = C.pri;
   int _attempts = 0;
   static const _maxAttempts = 5; // more attempts
@@ -51,7 +52,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       final perm = await Permission.camera.request();
       if (!perm.isGranted) {
         if (mounted) {
-          setState(() { _status = 'يجب السماح باستخدام الكاميرا'; _statusColor = C.red; });
+          setState(() { _status = L.tr('camera_permission'); _statusColor = C.red; });
           if (perm.isPermanentlyDenied) openAppSettings();
         }
         return;
@@ -66,11 +67,11 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       _camCtrl = CameraController(frontCam, ResolutionPreset.medium, enableAudio: false);
       await _camCtrl!.initialize();
       if (mounted) {
-        setState(() { _initialized = true; _status = 'انظر للكاميرا'; _statusColor = C.pri; });
+        setState(() { _initialized = true; _status = L.tr('look_camera'); _statusColor = C.pri; });
         _startDetection();
       }
     } catch (e) {
-      if (mounted) setState(() { _status = 'خطأ في الكاميرا'; _statusColor = C.red; });
+      if (mounted) setState(() { _status = L.tr('camera_error'); _statusColor = C.red; });
     }
   }
 
@@ -98,14 +99,14 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (!mounted) return;
 
       if (faces.isEmpty) {
-        setState(() { _status = 'وجّه الكاميرا لوجهك'; _statusColor = C.orange; });
+        setState(() { _status = L.tr('face_camera'); _statusColor = C.orange; });
         _processing = false;
         try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
       if (faces.length > 1) {
-        setState(() { _status = 'يجب وجه واحد فقط'; _statusColor = C.red; });
+        setState(() { _status = L.tr('one_face_only'); _statusColor = C.red; });
         _processing = false;
         try { File(filePath).deleteSync(); } catch (_) {}
         return;
@@ -117,14 +118,14 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       final bbox = face.boundingBox;
 
       if (bbox.width < 50 || bbox.height < 50) {
-        setState(() { _status = 'قرّب وجهك'; _statusColor = C.orange; });
+        setState(() { _status = L.tr('move_closer'); _statusColor = C.orange; });
         _processing = false;
         try { File(filePath).deleteSync(); } catch (_) {}
         return;
       }
 
       if (yAngle > 35 || xAngle > 35) {
-        setState(() { _status = 'انظر للأمام'; _statusColor = C.orange; });
+        setState(() { _status = L.tr('look_ahead'); _statusColor = C.orange; });
         _processing = false;
         try { File(filePath).deleteSync(); } catch (_) {}
         return;
@@ -132,7 +133,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
 
       // Face is good — verify!
       _detectTimer?.cancel();
-      setState(() { _verifying = true; _status = 'جارٍ التحقق...'; _statusColor = C.pri; });
+      setState(() { _verifying = true; _status = L.tr('verifying'); _statusColor = C.pri; });
 
       final photoBytes = await File(filePath).readAsBytes();
       try { File(filePath).deleteSync(); } catch (_) {}
@@ -143,18 +144,18 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        setState(() { _status = '✓ تم التحقق'; _statusColor = C.green; });
+        setState(() { _status = L.tr('verification_done'); _statusColor = C.green; });
         await Future.delayed(const Duration(milliseconds: 200));
         if (mounted) Navigator.pop(context, result);
       } else {
         _attempts++;
         if (_attempts >= _maxAttempts) {
-          setState(() { _status = 'فشل التحقق'; _statusColor = C.red; });
+          setState(() { _status = L.tr('verify_failed'); _statusColor = C.red; });
           await Future.delayed(const Duration(milliseconds: 300));
-          if (mounted) Navigator.pop(context, {'success': false, 'error': 'فشل التحقق من الوجه'});
+          if (mounted) Navigator.pop(context, {'success': false, 'error': L.tr('face_verify_failed')});
         } else {
           setState(() {
-            _status = 'حاول تاني — $_attempts/$_maxAttempts';
+            _status = L.tr('try_again', args: {'attempts': _attempts.toString(), 'max': _maxAttempts.toString()});
             _statusColor = C.orange;
             _verifying = false;
           });
@@ -165,7 +166,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() { _status = 'خطأ — حاول تاني'; _statusColor = C.orange; });
+      if (mounted) setState(() { _status = L.tr('error_try_again'); _statusColor = C.orange; });
       debugPrint('[FaceVerify] capture error: $e');
     }
     _processing = false;
@@ -195,7 +196,7 @@ class _FaceVerifyDialogState extends State<_FaceVerifyDialog> {
           child: Row(children: [
             GestureDetector(onTap: () => Navigator.pop(context, null), child: const Icon(Icons.close, size: 20, color: Colors.white54)),
             const Spacer(),
-            Text('التحقق من الوجه', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+            Text(L.tr('face_check'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(width: 8),
             const Icon(Icons.face, size: 18, color: Colors.white70),
           ]),

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
 import 'admin_face_detail.dart';
+import '../../l10n/app_locale.dart';
 
 class AdminUserMgmt extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -14,8 +15,8 @@ class AdminUserMgmt extends StatefulWidget {
 
 class _AdminUserMgmtState extends State<AdminUserMgmt> {
   String _search = '';
-  String _fRole = 'الكل';
-  String _fActive = 'الكل';
+  String _fRole = L.tr('all');
+  String _fActive = L.tr('all');
   List<Map<String, dynamic>> _users = [];
   bool _loading = true;
 
@@ -32,11 +33,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
 
   Future<void> _audit(String action, String target, String details, String type) async {
     await ApiService.post('admin.php?action=audit_log', {
-      'user': widget.user['name'] ?? 'مدير النظام', 'action': action, 'target': target, 'details': details, 'type': type,
+      'user': widget.user['name'] ?? L.tr('system_admin'), 'action': action, 'target': target, 'details': details, 'type': type,
     });
   }
 
-  final _depts = ['تكنولوجيا المعلومات', 'الموارد البشرية', 'المالية', 'التسويق', 'خدمة العملاء'];
+  final _depts = [L.tr('it'), L.tr('hr'), L.tr('finance'), L.tr('marketing'), L.tr('customer_service')];
 
   void _showAddEditDialog({Map<String, dynamic>? existing, String? docId}) {
     final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
@@ -44,7 +45,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     final phoneCtrl = TextEditingController(text: existing?['phone'] ?? '');
     final passCtrl = TextEditingController();
     final roleCtrl = TextEditingController(text: existing?['jobTitle'] ?? '');
-    String dept = existing?['dept'] ?? 'تكنولوجيا المعلومات';
+    String dept = existing?['dept'] ?? L.tr('it');
     if (!_depts.contains(dept)) dept = _depts.first;
     String userRole = existing?['role'] ?? 'employee';
     if (!['employee', 'moderator', 'admin'].contains(userRole)) userRole = 'employee';
@@ -52,10 +53,10 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     if (![1, 2, 3].contains(shift)) shift = 1;
     bool loading = false;
     // Custom work schedule
-    String workStart = existing?['workStart'] ?? '08:00 ص';
-    String workEnd = existing?['workEnd'] ?? '04:00 م';
+    String workStart = existing?['workStart'] ?? '08:00 ${L.tr('am')}';
+    String workEnd = existing?['workEnd'] ?? '04:00 ${L.tr('pm')}';
     bool customSchedule = existing?['customSchedule'] ?? false;
-    String scheduleType = existing?['scheduleType'] ?? 'دائم'; // دائم أو مؤقت
+    String scheduleType = existing?['scheduleType'] ?? L.tr('permanent'); // دائم أو مؤقت
     String scheduleUntil = existing?['scheduleUntil'] ?? '';
 
     showDialog(
@@ -80,7 +81,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   InkWell(onTap: () => Navigator.pop(ctx), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(4)), child: const Icon(Icons.close, size: 16, color: Colors.white))),
-                  Text(existing == null ? 'إضافة مستخدم جديد' : 'تعديل بيانات المستخدم', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                  Text(existing == null ? L.tr('add_new_user') : L.tr('edit_user_data'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
                 ]),
               ),
               // Form
@@ -90,59 +91,59 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   child: Column(children: [
                     if (isWebWide)
                       Row(children: [
-                        Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
+                        Expanded(child: _formField(L.tr('email_required'), emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
                         const SizedBox(width: 12),
-                        Expanded(child: _formField('الاسم الكامل *', nameCtrl)),
+                        Expanded(child: _formField(L.tr('full_name'), nameCtrl)),
                       ])
                     else ...[
-                      _formField('الاسم الكامل *', nameCtrl),
+                      _formField(L.tr('full_name'), nameCtrl),
                     ],
                     const SizedBox(height: 12),
                     if (isMobile) ...[
-                      _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true),
+                      _formField(L.tr('email_required'), emailCtrl, hint: 'user@dawemli.sa', isLtr: true),
                       const SizedBox(height: 12),
-                      _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true),
+                      _formField(L.tr('phone_number'), phoneCtrl, hint: '05xxxxxxxx', isLtr: true),
                     ] else if (isWebWide) ...[
                       Row(children: [
                         if (existing == null) ...[
-                          Expanded(child: _formField('كلمة المرور *', passCtrl, hint: '••••••••', isPass: true)),
+                          Expanded(child: _formField(L.tr('password_required'), passCtrl, hint: '••••••••', isPass: true)),
                           const SizedBox(width: 12),
                         ],
-                        Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
+                        Expanded(child: _formField(L.tr('phone_number'), phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
                       ]),
                     ] else
                       Row(children: [
-                        Expanded(child: _formField('رقم الهاتف', phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
+                        Expanded(child: _formField(L.tr('phone_number'), phoneCtrl, hint: '05xxxxxxxx', isLtr: true)),
                         const SizedBox(width: 12),
-                        Expanded(child: _formField('البريد الإلكتروني *', emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
+                        Expanded(child: _formField(L.tr('email_required'), emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
                       ]),
                     if (!isWebWide && existing == null) ...[
                       const SizedBox(height: 12),
-                      _formField('كلمة المرور *', passCtrl, hint: '••••••••', isPass: true),
+                      _formField(L.tr('password_required'), passCtrl, hint: '••••••••', isPass: true),
                     ],
                     const SizedBox(height: 12),
                     if (isWebWide)
                       Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('shift_label'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<int>(
                             value: shift,
-                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text('فترة $s', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text(L.tr('shift_n', args: {'n': s.toString()}), style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
                             onChanged: (v) => setDState(() => shift = v!),
                             decoration: _dropDecor(),
                           ),
                         ])),
                         const SizedBox(width: 12),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('permission'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
                             value: userRole,
                             items: [
-                              DropdownMenuItem(value: 'employee', child: Text('موظف', style: GoogleFonts.tajawal(fontSize: 13))),
-                              DropdownMenuItem(value: 'moderator', child: Text('مشرف', style: GoogleFonts.tajawal(fontSize: 13))),
-                              DropdownMenuItem(value: 'admin', child: Text('مدير النظام', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'employee', child: Text(L.tr('employee_unit'), style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'moderator', child: Text(L.tr('role_supervisor'), style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'admin', child: Text(L.tr('system_admin'), style: GoogleFonts.tajawal(fontSize: 13))),
                             ],
                             onChanged: (v) => setDState(() => userRole = v!),
                             decoration: _dropDecor(),
@@ -150,7 +151,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         ])),
                         const SizedBox(width: 12),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('department'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
                             value: dept,
@@ -160,12 +161,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           ),
                         ])),
                         const SizedBox(width: 12),
-                        Expanded(child: _formField('المسمى الوظيفي', roleCtrl)),
+                        Expanded(child: _formField(L.tr('job_title'), roleCtrl)),
                       ])
                     else ...[
                       Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('القسم', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('department'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
                             value: dept,
@@ -175,30 +176,30 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           ),
                         ])),
                         const SizedBox(width: 12),
-                        Expanded(child: _formField('المسمى الوظيفي', roleCtrl)),
+                        Expanded(child: _formField(L.tr('job_title'), roleCtrl)),
                       ]),
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('الفترة', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('shift_label'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<int>(
                             value: shift,
-                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text('فترة $s', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+                            items: [1, 2, 3].map((s) => DropdownMenuItem(value: s, child: Text(L.tr('shift_n', args: {'n': s.toString()}), style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
                             onChanged: (v) => setDState(() => shift = v!),
                             decoration: _dropDecor(),
                           ),
                         ])),
                         const SizedBox(width: 12),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text('الصلاحية', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                          Text(L.tr('permission'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                           const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
                             value: userRole,
                             items: [
-                              DropdownMenuItem(value: 'employee', child: Text('موظف', style: GoogleFonts.tajawal(fontSize: 13))),
-                              DropdownMenuItem(value: 'moderator', child: Text('مشرف', style: GoogleFonts.tajawal(fontSize: 13))),
-                              DropdownMenuItem(value: 'admin', child: Text('مدير النظام', style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'employee', child: Text(L.tr('employee_unit'), style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'moderator', child: Text(L.tr('role_supervisor'), style: GoogleFonts.tajawal(fontSize: 13))),
+                              DropdownMenuItem(value: 'admin', child: Text(L.tr('system_admin'), style: GoogleFonts.tajawal(fontSize: 13))),
                             ],
                             onChanged: (v) => setDState(() => userRole = v!),
                             decoration: _dropDecor(),
@@ -215,40 +216,40 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         Row(children: [
                           Switch(value: customSchedule, activeColor: W.green, onChanged: (v) => setDState(() => customSchedule = v)),
                           const Spacer(),
-                          Text('دوام مخصص لهذا الموظف', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+                          Text(L.tr('custom_schedule'), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
                           const SizedBox(width: 6),
                           Icon(Icons.schedule, size: 16, color: W.orange),
                         ]),
                         if (customSchedule) ...[
                           const SizedBox(height: 12),
                           Row(children: [
-                            Expanded(child: _formField('وقت الخروج', TextEditingController(text: workEnd), hint: '04:00 م', isLtr: true, onChanged: (v) => workEnd = v)),
+                            Expanded(child: _formField(L.tr('departure_time'), TextEditingController(text: workEnd), hint: '04:00 ${L.tr('pm')}', isLtr: true, onChanged: (v) => workEnd = v)),
                             const SizedBox(width: 12),
-                            Expanded(child: _formField('وقت الحضور', TextEditingController(text: workStart), hint: '08:00 ص', isLtr: true, onChanged: (v) => workStart = v)),
+                            Expanded(child: _formField(L.tr('attendance_time'), TextEditingController(text: workStart), hint: '08:00 ${L.tr('am')}', isLtr: true, onChanged: (v) => workStart = v)),
                           ]),
                           const SizedBox(height: 10),
                           Row(children: [
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                              Text('نوع الدوام', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+                              Text(L.tr('schedule_type'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
                               const SizedBox(height: 4),
-                              Row(children: ['دائم', 'مؤقت'].map((t) => Expanded(child: Padding(
-                                padding: EdgeInsets.only(left: t == 'مؤقت' ? 0 : 8),
+                              Row(children: [L.tr('permanent'), L.tr('temporary')].map((t) => Expanded(child: Padding(
+                                padding: EdgeInsets.only(left: t == L.tr('temporary') ? 0 : 8),
                                 child: InkWell(onTap: () => setDState(() => scheduleType = t),
                                   child: Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: scheduleType == t ? W.orange.withOpacity(0.1) : W.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: scheduleType == t ? W.orange : W.border)),
                                     child: Center(child: Text(t, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: scheduleType == t ? W.orange : W.sub))))),
                               ))).toList()),
                             ])),
                           ]),
-                          if (scheduleType == 'مؤقت') ...[
+                          if (scheduleType == L.tr('temporary')) ...[
                             const SizedBox(height: 10),
-                            _formField('حتى تاريخ', TextEditingController(text: scheduleUntil), hint: '2026-04-30', isLtr: true, onChanged: (v) => scheduleUntil = v),
+                            _formField(L.tr('until_date'), TextEditingController(text: scheduleUntil), hint: '2026-04-30', isLtr: true, onChanged: (v) => scheduleUntil = v),
                           ],
                         ],
                       ]),
                     ),
                     const SizedBox(height: 20),
                     Row(children: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.sub))),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.sub))),
                       const SizedBox(width: 10),
                       Expanded(child: ElevatedButton(
                         onPressed: loading ? null : () async {
@@ -261,7 +262,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                               if (passCtrl.text.isEmpty) {
                                 if (ctx.mounted) {
                                   setDState(() => loading = false);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('كلمة المرور مطلوبة', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(L.tr('password_required_field'), style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
                                 }
                                 return;
                               }
@@ -276,11 +277,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                               if (result['success'] != true) {
                                 if (ctx.mounted) {
                                   setDState(() => loading = false);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? 'فشل إضافة المستخدم', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? L.tr('err_add_user'), style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
                                 }
                                 return;
                               }
-                              await _audit('إضافة مستخدم', '${nameCtrl.text.trim()} (${emailCtrl.text.trim()})', 'تم إضافة مستخدم جديد — القسم: $dept — الصلاحية: $userRole', 'create');
+                              await _audit(L.tr('add_user'), '${nameCtrl.text.trim()} (${emailCtrl.text.trim()})', L.tr('user_added_audit', args: {'dept': dept, 'role': userRole}), 'create');
                             } else {
                               result = await ApiService.post('users.php?action=update', {
                                 'uid': existing['uid'] ?? docId,
@@ -293,25 +294,25 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                               if (result['success'] != true) {
                                 if (ctx.mounted) {
                                   setDState(() => loading = false);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? 'فشل تعديل المستخدم', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(result['error'] ?? L.tr('err_edit_user'), style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
                                 }
                                 return;
                               }
-                              await _audit('تعديل مستخدم', nameCtrl.text.trim(), 'تم تعديل بيانات المستخدم — القسم: $dept — الصلاحية: $userRole', 'edit');
+                              await _audit(L.tr('edit_user'), nameCtrl.text.trim(), L.tr('user_edited_audit', args: {'dept': dept, 'role': userRole}), 'edit');
                             }
                             if (mounted) nav.pop();
                             _load();
                           } catch (e) {
                             if (ctx.mounted) {
                               setDState(() => loading = false);
-                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('خطأ: $e', style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
+                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(L.tr('error_prefix', args: {'error': e.toString()}), style: GoogleFonts.tajawal()), backgroundColor: Colors.red));
                             }
                           }
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: W.green, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                         child: loading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text(existing == null ? '✓ إضافة المستخدم' : '✓ حفظ التعديلات', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
+                            : Text(existing == null ? L.tr('add_user_btn') : L.tr('save_edits_btn'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700)),
                       )),
                     ]),
                   ]),
@@ -368,7 +369,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           child: ElevatedButton.icon(
             onPressed: () => _showAddEditDialog(),
             icon: const Icon(Icons.person_add, size: 16),
-            label: Text('إضافة مستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            label: Text(L.tr('add_user'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(backgroundColor: W.pri, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
           ),
         ),
@@ -381,21 +382,21 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           final isWide = MediaQuery.of(context).size.width > 700;
           if (isWide) {
             return Row(children: [
-              _stat(Icons.people, 'إجمالي', '${_users.length}', W.pri, W.priLight),
+              _stat(Icons.people, L.tr('total'), '${_users.length}', W.pri, W.priLight),
               const SizedBox(width: 14),
-              _stat(Icons.check_circle, 'نشط', '$active', W.green, Color(0xFFECFDF3)),
+              _stat(Icons.check_circle, L.tr('active'), '$active', W.green, Color(0xFFECFDF3)),
               const SizedBox(width: 14),
-              _stat(Icons.block, 'معطّل', '${_users.length - active}', W.red, Color(0xFFFEF3F2)),
+              _stat(Icons.block, L.tr('inactive'), '${_users.length - active}', W.red, Color(0xFFFEF3F2)),
               const SizedBox(width: 14),
-              _stat(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
+              _stat(Icons.vpn_key, L.tr('supervisors_managers'), '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
             ]);
           } else {
             final halfW = (MediaQuery.of(context).size.width - 36) / 2;
             return Wrap(spacing: 8, runSpacing: 8, children: [
-              SizedBox(width: halfW, child: _statBox(Icons.people, 'إجمالي', '${_users.length}', W.pri, W.priLight)),
-              SizedBox(width: halfW, child: _statBox(Icons.check_circle, 'نشط', '$active', W.green, Color(0xFFECFDF3))),
-              SizedBox(width: halfW, child: _statBox(Icons.block, 'معطّل', '${_users.length - active}', W.red, Color(0xFFFEF3F2))),
-              SizedBox(width: halfW, child: _statBox(Icons.vpn_key, 'مشرفين ومدراء', '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF))),
+              SizedBox(width: halfW, child: _statBox(Icons.people, L.tr('total'), '${_users.length}', W.pri, W.priLight)),
+              SizedBox(width: halfW, child: _statBox(Icons.check_circle, L.tr('active'), '$active', W.green, Color(0xFFECFDF3))),
+              SizedBox(width: halfW, child: _statBox(Icons.block, L.tr('inactive'), '${_users.length - active}', W.red, Color(0xFFFEF3F2))),
+              SizedBox(width: halfW, child: _statBox(Icons.vpn_key, L.tr('supervisors_managers'), '$admins', const Color(0xFF7F56D9), const Color(0xFFF4F3FF))),
             ]);
           }
         }),
@@ -412,7 +413,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
               textAlign: TextAlign.right,
               style: GoogleFonts.tajawal(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'بحث بالاسم أو الإيميل...',
+                hintText: L.tr('search_name_email'),
                 hintStyle: GoogleFonts.tajawal(color: W.hint),
                 prefixIcon: Icon(Icons.search, size: 18, color: W.muted),
                 filled: true, fillColor: W.white,
@@ -429,7 +430,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             child: DropdownButtonHideUnderline(child: DropdownButton<String>(
               value: _fActive, isDense: true,
               style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-              items: ['الكل', 'نشط', 'معطّل'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: [L.tr('all'), L.tr('active'), L.tr('inactive')].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (v) => setState(() => _fActive = v!),
             )),
           );
@@ -439,7 +440,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             child: DropdownButtonHideUnderline(child: DropdownButton<String>(
               value: _fRole, isDense: true,
               style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-              items: ['الكل', 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == 'الكل' ? 'كل الصلاحيات' : s == 'admin' ? 'مدير' : s == 'moderator' ? 'مشرف' : 'موظف', style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
+              items: [L.tr('all'), 'admin', 'moderator', 'employee'].map((s) => DropdownMenuItem(value: s, child: Text(s == L.tr('all') ? L.tr('all_permissions') : s == 'admin' ? L.tr('role_admin') : s == 'moderator' ? L.tr('role_supervisor') : L.tr('employee_unit'), style: GoogleFonts.tajawal(fontSize: 13)))).toList(),
               onChanged: (v) => setState(() => _fRole = v!),
             )),
           );
@@ -468,9 +469,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             if (_loading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
             final filtered = _users.where((r) {
               if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['email'] ?? '').toString().contains(_search)) return false;
-              if (_fRole != 'الكل' && r['role'] != _fRole) return false;
-              if (_fActive == 'نشط' && r['active'] != true && r['active'] != 1) return false;
-              if (_fActive == 'معطّل' && r['active'] != false && r['active'] != 0) return false;
+              if (_fRole != L.tr('all') && r['role'] != _fRole) return false;
+              if (_fActive == L.tr('active') && r['active'] != true && r['active'] != 1) return false;
+              if (_fActive == L.tr('inactive') && r['active'] != false && r['active'] != 0) return false;
               return true;
             }).toList();
 
@@ -485,12 +486,12 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   headingRowColor: WidgetStateProperty.all(W.bg),
                   columnSpacing: 20,
                   horizontalMargin: 16,
-                  columns: ['الإجراءات', 'الحالة', 'الصلاحية', 'الفترة', 'القسم', 'الهاتف', 'الإيميل', 'المستخدم'].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
+                  columns: [L.tr('actions'), L.tr('status'), L.tr('permission'), L.tr('shift_label'), L.tr('department'), L.tr('phone'), L.tr('email'), L.tr('name')].map((h) => DataColumn(label: Text(h, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.sub)))).toList(),
                   rows: filtered.map((r) {
                     final uid = r['uid'] ?? r['_id'] ?? '';
                     final active = r['active'] ?? true;
                     final role = r['role'] ?? 'employee';
-                    final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
+                    final roleLabel = {'admin': L.tr('role_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
                     final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
 
                     return DataRow(cells: [
@@ -510,19 +511,19 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         const SizedBox(width: 4),
                         _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                            title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                            content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            title: Text(L.tr('delete_user'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                            content: Text(L.tr('confirm_delete', args: {'name': r['name'] ?? ''}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal())),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.tr('delete'), style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
                             ],
                           ));
                           if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
                         }),
                       ])),
-                      DataCell(_badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
-                      DataCell(_badge(roleLabel[role] ?? 'موظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
-                      DataCell(_badge('فترة ${r['shift'] ?? 1}', r['shift'] == 2 ? Color(0xFF7F56D9) : r['shift'] == 3 ? Color(0xFF0BA5EC) : W.pri, r['shift'] == 2 ? Color(0xFFF4F3FF) : r['shift'] == 3 ? Color(0xFFE8F8FD) : W.priLight)),
+                      DataCell(_badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
+                      DataCell(_badge(roleLabel[role] ?? L.tr('employee_unit'), roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
+                      DataCell(_badge(L.tr('shift_n', args: {'n': (r['shift'] ?? 1).toString()}), r['shift'] == 2 ? Color(0xFF7F56D9) : r['shift'] == 3 ? Color(0xFF0BA5EC) : W.pri, r['shift'] == 2 ? Color(0xFFF4F3FF) : r['shift'] == 3 ? Color(0xFFE8F8FD) : W.priLight)),
                       DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
@@ -535,15 +536,15 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 ),
               ));
             } else {
-              if (filtered.isEmpty) return Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مستخدمين', style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))));
+              if (filtered.isEmpty) return Padding(padding: EdgeInsets.all(30), child: Center(child: Text(L.tr('no_users'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted))));
               return Column(children: filtered.map((r) {
                 final uid = r['uid'] ?? r['_id'] ?? '';
                 final active = r['active'] ?? true;
                 final role = r['role'] ?? 'employee';
-                final roleLabel = {'admin': 'مدير', 'moderator': 'مشرف', 'employee': 'موظف'};
+                final roleLabel = {'admin': L.tr('role_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
                 final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
                 final name = r['name'] ?? '—';
-                final av = name.length >= 2 ? name.substring(0, 2) : 'م';
+                final av = name.length >= 2 ? name.substring(0, 2) : L.tr('pm');
 
                 return InkWell(
                   onTap: () => _showUserDetailSheet(context, r, uid),
@@ -567,11 +568,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         const SizedBox(width: 4),
                         _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-                            title: Text('حذف المستخدم', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                            content: Text('هل تريد حذف ${r['name']}؟', style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            title: Text(L.tr('delete_user'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+                            content: Text(L.tr('confirm_delete', args: {'name': r['name'] ?? ''}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('حذف', style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal())),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.tr('delete'), style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
                             ],
                           ));
                           if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
@@ -583,9 +584,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         Text(r['email'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
                         const SizedBox(height: 4),
                         Row(mainAxisSize: MainAxisSize.min, children: [
-                          _badge(active ? 'نشط' : 'معطّل', active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
+                          _badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
                           const SizedBox(width: 4),
-                          _badge(roleLabel[role] ?? 'م��ظف', roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
+                          _badge(roleLabel[role] ?? L.tr('role_employee'), roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
                         ]),
                       ]),
                     ]),
@@ -602,10 +603,10 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
   void _showUserDetailSheet(BuildContext context, Map<String, dynamic> r, String docId) {
     final active = r['active'] ?? true;
     final role = r['role'] ?? 'employee';
-    final roleLabel = {'admin': 'مدير النظام', 'moderator': 'مشرف', 'employee': 'موظف'};
+    final roleLabel = {'admin': L.tr('system_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
     final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
     final name = r['name'] ?? '—';
-    final av = name.length >= 2 ? name.substring(0, 2) : 'م';
+    final av = name.length >= 2 ? name.substring(0, 2) : L.tr('pm');
 
     showModalBottomSheet(
       context: context,
@@ -638,16 +639,16 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           Flexible(child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(children: [
-              _detailRow(Icons.email, 'البريد الإلكتروني', r['email'] ?? '—'),
-              _detailRow(Icons.phone, 'رقم الهاتف', r['phone'] ?? '—'),
-              _detailRow(Icons.business, 'القسم', r['dept'] ?? '—'),
-              _detailRow(Icons.work, 'المسمى الوظيفي', r['jobTitle'] ?? '—'),
-              _detailRow(Icons.schedule, 'الفترة', 'فترة ${r['shift'] ?? 1}'),
-              _detailRow(Icons.vpn_key, 'الصلاحية', roleLabel[role] ?? 'موظف'),
-              _detailRow(Icons.circle, 'الحالة', active ? 'نشط' : 'معطّل'),
+              _detailRow(Icons.email, L.tr('email'), r['email'] ?? '—'),
+              _detailRow(Icons.phone, L.tr('phone_number'), r['phone'] ?? '—'),
+              _detailRow(Icons.business, L.tr('department'), r['dept'] ?? '—'),
+              _detailRow(Icons.work, L.tr('job_title'), r['jobTitle'] ?? '—'),
+              _detailRow(Icons.schedule, L.tr('shift_label'), L.tr('shift_n', args: {'n': (r['shift'] ?? 1).toString()})),
+              _detailRow(Icons.vpn_key, L.tr('permission'), roleLabel[role] ?? L.tr('employee_unit')),
+              _detailRow(Icons.circle, L.tr('status'), active ? L.tr('active') : L.tr('inactive')),
               if (r['customSchedule'] == true) ...[
-                _detailRow(Icons.access_time, 'وقت الحضور', r['workStart'] ?? '—'),
-                _detailRow(Icons.access_time_filled, 'وقت الخروج', r['workEnd'] ?? '—'),
+                _detailRow(Icons.access_time, L.tr('attendance_time'), r['workStart'] ?? '—'),
+                _detailRow(Icons.access_time_filled, L.tr('departure_time'), r['workEnd'] ?? '—'),
               ],
               const SizedBox(height: 20),
               // Action buttons
@@ -658,7 +659,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                     _showAddEditDialog(existing: r, docId: docId);
                   },
                   icon: const Icon(Icons.edit, size: 16),
-                  label: Text('تعديل', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                  label: Text(L.tr('edit'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(foregroundColor: W.pri, side: BorderSide(color: W.pri), padding: EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                 )),
                 if (ApiService.hasFeature('allow_face_auth')) ...[
@@ -671,7 +672,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => AdminFaceDetail(employee: emp)));
                     },
                     icon: const Icon(Icons.face, size: 16),
-                    label: Text('بصمة الوجه', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                    label: Text(L.tr('face_punch'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7F56D9), side: const BorderSide(color: Color(0xFF7F56D9)), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
                   )),
                 ],

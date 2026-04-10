@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'api_service.dart';
 import 'attendance_service.dart';
+import '../l10n/app_locale.dart';
 
 class FaceRecognitionService {
   static final _faceDetector = FaceDetector(
@@ -99,15 +100,15 @@ class FaceRecognitionService {
     final xAngle = face.headEulerAngleX ?? 0;
     final zAngle = face.headEulerAngleZ ?? 0;
 
-    if (yAngle.abs() > 25) issues.add('وجّه رأسك للأمام');
-    if (xAngle.abs() > 20) issues.add('ارفع/انزل رأسك قليلاً');
+    if (yAngle.abs() > 25) issues.add(L.tr('face_forward'));
+    if (xAngle.abs() > 20) issues.add(L.tr('tilt_head'));
 
     final leftEyeOpen = face.leftEyeOpenProbability ?? 1.0;
     final rightEyeOpen = face.rightEyeOpenProbability ?? 1.0;
-    if (leftEyeOpen < 0.5 || rightEyeOpen < 0.5) issues.add('افتح عينيك');
+    if (leftEyeOpen < 0.5 || rightEyeOpen < 0.5) issues.add(L.tr('open_eyes'));
 
     final bbox = face.boundingBox;
-    if (bbox.width < 100 || bbox.height < 100) issues.add('قرّب وجهك من الكاميرا');
+    if (bbox.width < 100 || bbox.height < 100) issues.add(L.tr('move_closer_camera'));
 
     final smile = face.smilingProbability ?? 0;
 
@@ -205,9 +206,9 @@ class FaceRecognitionService {
       if (result['success'] == true) {
         return {'success': true, 'photoUrl': photoUrl};
       }
-      return {'success': false, 'error': result['error'] ?? 'فشل حفظ بصمة الوجه'};
+      return {'success': false, 'error': result['error'] ?? L.tr('face_save_failed')};
     } catch (e) {
-      return {'success': false, 'error': 'فشل حفظ بصمة الوجه: $e'};
+      return {'success': false, 'error': L.tr('face_save_error', args: {'error': e.toString()})};
     }
   }
 
@@ -230,7 +231,7 @@ class FaceRecognitionService {
     if (registered == null || registered.isEmpty) {
       return {
         'success': false,
-        'error': 'لم يتم تسجيل بصمة الوجه بعد',
+        'error': L.tr('face_not_registered_msg'),
         'needsRegistration': true,
       };
     }
@@ -243,7 +244,7 @@ class FaceRecognitionService {
       // Fast fail: no upload, no server round-trip
       return {
         'success': false,
-        'error': 'الوجه غير مطابق — تأكد من الإضاءة وأعد المحاولة',
+        'error': L.tr('face_not_matching'),
         'similarity': similarity,
       };
     }

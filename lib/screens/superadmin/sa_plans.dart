@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_locale.dart';
 
 class SaPlans extends StatefulWidget {
   const SaPlans({super.key});
@@ -50,12 +51,12 @@ class _SaPlansState extends State<SaPlans> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Header
         Row(children: [
-          Text('الباقات (${_plans.length})', style: _tj(20, weight: FontWeight.w800, color: W.text)),
+          Text(L.tr('sa_plans_count', args: {'n': _plans.length.toString()}), style: _tj(20, weight: FontWeight.w800, color: W.text)),
           const Spacer(),
           OutlinedButton.icon(
             onPressed: _loadPlans,
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: Text('تحديث', style: _tj(12, weight: FontWeight.w600)),
+            label: Text(L.tr('update'), style: _tj(12, weight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: W.pri,
               side: BorderSide(color: W.border),
@@ -72,7 +73,7 @@ class _SaPlansState extends State<SaPlans> {
             child: Column(children: [
               Icon(Icons.card_membership_rounded, size: 48, color: W.muted.withOpacity(0.4)),
               const SizedBox(height: 12),
-              Text('لا توجد باقات', style: _tj(16, color: W.muted)),
+              Text(L.tr('no_plans'), style: _tj(16, color: W.muted)),
             ]),
           ))
         else
@@ -83,22 +84,22 @@ class _SaPlansState extends State<SaPlans> {
 
   Widget _planCard(Map<String, dynamic> plan) {
     final features = <_Feature>[
-      _Feature(Icons.people_rounded, 'الحد الأقصى للموظفين', '${plan['max_employees'] ?? '-'}'),
-      _Feature(Icons.store_rounded, 'الفروع', '${plan['max_branches'] ?? '-'}'),
-      _Feature(Icons.location_on_rounded, 'المواقع', '${plan['max_locations'] ?? '-'}'),
-      _Feature(Icons.radar_rounded, 'نطاق GPS', '${plan['max_radius'] ?? '-'} م'),
-      _Feature(Icons.supervisor_account_rounded, 'المشرفين', '${plan['max_supervisors'] ?? '-'}'),
+      _Feature(Icons.people_rounded, L.tr('max_employees'), '${plan['max_employees'] ?? '-'}'),
+      _Feature(Icons.store_rounded, L.tr('branches'), '${plan['max_branches'] ?? '-'}'),
+      _Feature(Icons.location_on_rounded, L.tr('locations'), '${plan['max_locations'] ?? '-'}'),
+      _Feature(Icons.radar_rounded, L.tr('gps_range'), L.tr('n_m_distance', args: {'n': (plan['max_radius'] ?? '-').toString()})),
+      _Feature(Icons.supervisor_account_rounded, L.tr('dept_supervisors'), '${plan['max_supervisors'] ?? '-'}'),
     ];
 
     final boolFeatures = <_BoolFeature>[
-      _BoolFeature('بصمة الوجه', plan['allow_face_auth'] == 1 || plan['allow_face_auth'] == true),
-      _BoolFeature('تقارير PDF', plan['allow_reports_pdf'] == 1 || plan['allow_reports_pdf'] == true),
-      _BoolFeature('تقارير Excel', plan['allow_reports_excel'] == 1 || plan['allow_reports_excel'] == true),
-      _BoolFeature('رصيد الإجازات', plan['allow_leave_balance'] == 1 || plan['allow_leave_balance'] == true),
-      _BoolFeature('حساب الرواتب', plan['allow_salary_calc'] == 1 || plan['allow_salary_calc'] == true),
-      _BoolFeature('الأوفرتايم', plan['allow_overtime'] == 1 || plan['allow_overtime'] == true),
-      _BoolFeature('إثبات الحالة', plan['allow_verification'] == 1 || plan['allow_verification'] == true),
-      _BoolFeature('الجداول', plan['allow_schedules'] == 1 || plan['allow_schedules'] == true),
+      _BoolFeature(L.tr('face_punch'), plan['allow_face_auth'] == 1 || plan['allow_face_auth'] == true),
+      _BoolFeature(L.tr('pdf_reports'), plan['allow_reports_pdf'] == 1 || plan['allow_reports_pdf'] == true),
+      _BoolFeature(L.tr('excel_reports'), plan['allow_reports_excel'] == 1 || plan['allow_reports_excel'] == true),
+      _BoolFeature(L.tr('leave_balance'), plan['allow_leave_balance'] == 1 || plan['allow_leave_balance'] == true),
+      _BoolFeature(L.tr('salary_calc'), plan['allow_salary_calc'] == 1 || plan['allow_salary_calc'] == true),
+      _BoolFeature(L.tr('overtime'), plan['allow_overtime'] == 1 || plan['allow_overtime'] == true),
+      _BoolFeature(L.tr('nav_verify'), plan['allow_verification'] == 1 || plan['allow_verification'] == true),
+      _BoolFeature(L.tr('schedules_tab'), plan['allow_schedules'] == 1 || plan['allow_schedules'] == true),
     ];
 
     return SizedBox(
@@ -124,12 +125,12 @@ class _SaPlansState extends State<SaPlans> {
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Text('ر.س / شهر', style: _tj(12, color: Colors.white.withOpacity(0.6))),
+                  child: Text(L.tr('sar_month'), style: _tj(12, color: Colors.white.withOpacity(0.6))),
                 ),
               ]),
               if (plan['price_yearly'] != null) ...[
                 const SizedBox(height: 4),
-                Text('${plan['price_yearly']} ر.س / سنة', style: _tj(12, color: Colors.white.withOpacity(0.4))),
+                Text(L.tr('sa_sar_year', args: {'price': (plan['price_yearly'] ?? '').toString()}), style: _tj(12, color: Colors.white.withOpacity(0.4))),
               ],
             ]),
           ),
@@ -137,7 +138,7 @@ class _SaPlansState extends State<SaPlans> {
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('الحدود', style: _tj(13, weight: FontWeight.w700, color: W.sub)),
+              Text(L.tr('limitations'), style: _tj(13, weight: FontWeight.w700, color: W.sub)),
               const SizedBox(height: 10),
               ...features.map((f) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -150,7 +151,7 @@ class _SaPlansState extends State<SaPlans> {
                 ]),
               )),
               const SizedBox(height: 16),
-              Text('الميزات', style: _tj(13, weight: FontWeight.w700, color: W.sub)),
+              Text(L.tr('features'), style: _tj(13, weight: FontWeight.w700, color: W.sub)),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: boolFeatures.map((bf) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
