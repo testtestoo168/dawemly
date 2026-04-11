@@ -1210,8 +1210,8 @@ class EmpHomePageState extends State<EmpHomePage> {
                         const SizedBox(width: 8),
                       ] else if (!isRead) ...[Container(width: 8, height: 8, decoration: BoxDecoration(color: isUrgent ? C.red : C.pri, shape: BoxShape.circle)), const SizedBox(width: 8)],
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        Text(n['title'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: isRead ? FontWeight.w500 : FontWeight.w700, color: C.text)),
-                        Text(n['body'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: C.sub)),
+                        Text(L.serverText(n['title'] ?? ''), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: isRead ? FontWeight.w500 : FontWeight.w700, color: C.text)),
+                        Text(L.serverText(n['body'] ?? ''), style: GoogleFonts.tajawal(fontSize: 11, color: C.sub)),
                       ])),
                       const SizedBox(width: 10),
                       Icon(isVerifyRequest ? Icons.wifi_tethering : (isUrgent ? Icons.notifications_active : Icons.notifications), size: 18, color: isVerifyRequest ? C.orange : (isUrgent ? C.red : C.pri)),
