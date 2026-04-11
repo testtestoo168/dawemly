@@ -32,6 +32,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
 
   // Schedule form state
   String _schName = '';
+  String _schNameEn = '';
   int _schShift = 1;
   List<String> _schDays = L.dayNamesShort.sublist(0, 5);
 
@@ -88,7 +89,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       }
       if (res[2]['success'] == true) {
         _emps = (res[2]['users'] as List? ?? []).cast<Map<String, dynamic>>();
-        _emps.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+        _emps.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
       }
       if (_schedules.isNotEmpty && _selSchId == null) {
         _selSchId = _schedules.first['id']?.toString();
@@ -110,6 +111,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
 
   void _resetSchForm([Map<String, dynamic>? sch]) {
     _schName = sch?['name']?.toString() ?? '';
+    _schNameEn = sch?['name_en']?.toString() ?? '';
     _schShift = (sch?['shiftId'] is int ? sch!['shiftId'] : int.tryParse('${sch?['shiftId']}')) ?? 1;
     _schDays = sch != null ? List<String>.from(sch['days'] ?? []) : L.dayNamesShort.sublist(0, 5);
   }
@@ -126,6 +128,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     if (_schName.trim().isEmpty) return;
     final payload = <String, dynamic>{
       'name': _schName.trim(),
+      'name_en': _schNameEn.trim(),
       'shiftId': _schShift,
       'days': _schDays,
     };
@@ -328,7 +331,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
               ),
               const SizedBox(width: 12),
               Flexible(
-                child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+                child: Text(L.localName(sch), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
               ),
             ]),
           ),
@@ -445,7 +448,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // Row 1: name + actions
             Row(children: [
-              Flexible(child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w700, color: W.text))),
+              Flexible(child: Text(L.localName(sch), style: GoogleFonts.tajawal(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w700, color: W.text))),
               const Spacer(),
               _iconBtn(Icons.edit_outlined, W.orange, W.orangeL, () {
                 _editSchId = sch['id']?.toString();
@@ -534,6 +537,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           Divider(color: W.div, height: 24),
           // Name
           _inputField(L.tr('schedule_name'), L.tr('schedule_example'), _schName, (v) => setState(() => _schName = v)),
+          const SizedBox(height: 10),
+          _inputField(L.tr('schedule_name_en'), 'e.g. Morning Shift', _schNameEn, (v) => setState(() => _schNameEn = v), isLtr: true),
           const SizedBox(height: 16),
           // Shift dropdown
           Text(L.tr('linked_period'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
@@ -637,7 +642,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final available = _emps.where((e) => !ids.contains(_uidOf(e))).toList();
     final filtered = _empSearch.isEmpty
         ? available
-        : available.where((e) => (e['name'] ?? '').toString().contains(_empSearch)).toList();
+        : available.where((e) => (e['name'] ?? '').toString().contains(_empSearch) || (e['name_en'] ?? '').toString().toLowerCase().contains(_empSearch.toLowerCase())).toList();
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Container(
@@ -660,7 +665,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             child: Row(children: [
               Icon(Icons.people_outline, size: 18, color: c),
               const SizedBox(width: 10),
-              Flexible(child: Text(L.tr('assign_employees', args: {'name': sch['name'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
+              Flexible(child: Text(L.tr('assign_employees', args: {'name': L.localName(sch)}), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -775,8 +780,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _empRow(Map<String, dynamic> emp, bool isAdd, Color c, VoidCallback onTap) {
-    final name = (emp['name'] ?? '').toString();
-    final dept = (emp['dept'] ?? emp['department'] ?? '').toString();
+    final name = L.localName(emp);
+    final dept = L.localDept(emp).isNotEmpty ? L.localDept(emp) : (emp['dept'] ?? emp['department'] ?? '').toString();
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : '?');
     return InkWell(
       onTap: onTap,
@@ -909,7 +914,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: W.purpleL, borderRadius: BorderRadius.circular(DS.radiusMd)),
-              child: Text(emp['name']?.toString() ?? '-', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.purple)),
+              child: Text(L.localName(emp), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w600, color: W.purple)),
             );
           }).toList()),
         ],
@@ -1059,7 +1064,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     )),
                     const SizedBox(width: 4),
-                    Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.text)),
+                    Text(L.localName(emp), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: W.text)),
                   ]),
                 ),
               );
@@ -1205,7 +1210,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _leaveBalanceRow(Map<String, dynamic> bal, int index) {
-    final name = (bal['name'] ?? '').toString();
+    final name = L.localName(bal);
     final dept = (bal['dept'] ?? '').toString();
     final uid = (bal['uid'] ?? '').toString();
     final isExpanded = _expandedLeaveUid == uid;
@@ -1404,14 +1409,14 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
 
   TextStyle get _headerStyle => GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: W.sub);
 
-  Widget _inputField(String label, String hint, String value, ValueChanged<String> onChanged) {
+  Widget _inputField(String label, String hint, String value, ValueChanged<String> onChanged, {bool isLtr = false}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Text(label, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
       const SizedBox(height: 4),
       TextFormField(
         initialValue: value.isEmpty ? null : value,
         onChanged: onChanged,
-        textAlign: TextAlign.right,
+        textAlign: isLtr ? TextAlign.left : TextAlign.right,
         style: GoogleFonts.tajawal(fontSize: 13),
         decoration: InputDecoration(
           hintText: hint,

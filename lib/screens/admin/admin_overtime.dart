@@ -131,7 +131,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             const SizedBox(width: 14),
             Expanded(child: _stat(Icons.people, L.tr('total_employees'), '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, L.tr('n_record', args: {'n': records.length.toString()}))),
             const SizedBox(width: 14),
-            Expanded(child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            Expanded(child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? L.localName(withOT.first) : '—')),
           ])
         else
           SizedBox(height: 130, child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -139,7 +139,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
             const SizedBox(width: 10),
             SizedBox(width: isMobile ? 140 : 160, child: _stat(Icons.people, L.tr('total_employees'), '${withOT.where((e) => (e['overtime'] as double) > 0).length}', W.pri, W.priLight, L.tr('n_employee', args: {'n': records.length.toString()}))),
             const SizedBox(width: 10),
-            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? withOT.first['name'] ?? '' : '—')),
+            SizedBox(width: isMobile ? 160 : 180, child: _stat(Icons.access_time, L.tr('top_overtime'), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? '${withOT.first['overtime'].toStringAsFixed(1)}h' : '—', W.green, const Color(0xFFECFDF3), withOT.isNotEmpty && (withOT.first['overtime'] as double) > 0 ? L.localName(withOT.first) : '—')),
           ])),
         const SizedBox(height: 20),
 
@@ -215,7 +215,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
         ...withOT.asMap().entries.map((entry) {
           final i = entry.key;
           final emp = entry.value;
-          final name = emp['name'] ?? '—';
+          final name = L.localName(emp).isNotEmpty ? L.localName(emp) : '—';
           final ot = emp['overtime'] as double;
           final workH = emp['workH'] as double;
           final otCancelled = emp['otCancelled'] == true;
@@ -312,7 +312,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
     // Aggregate by employee name for top 5
     final Map<String, double> byEmployee = {};
     for (final e in withOT) {
-      final name = e['name'] ?? '—';
+      final name = L.localName(e).isNotEmpty ? L.localName(e) : '—';
       final ot = e['overtime'] as double;
       byEmployee[name] = (byEmployee[name] ?? 0) + ot;
     }
@@ -577,7 +577,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
               DataCell(ot > 0 ? Text('+${ot.toStringAsFixed(1)}h', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: W.orange)) : Text('—', style: GoogleFonts.tajawal(color: W.muted))),
               DataCell(Text('${workH.toStringAsFixed(1)}h', style: _mono(fontSize: 12))),
               DataCell(_badge(hasOut ? L.tr('complete') : L.tr('present'), hasOut ? W.green : W.pri, hasOut ? const Color(0xFFECFDF3) : W.priLight)),
-              DataCell(Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
+              DataCell(Text(L.localName(r), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
             ]);
           }).toList(),
         )),
@@ -598,7 +598,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
   //  MOBILE: Original overtime card (unchanged)
   // ────────────────────────────────────────────────────────
   Widget _overtimeCard(Map<String, dynamic> emp, bool isMobile) {
-    final name = emp['name'] ?? '—';
+    final name = L.localName(emp).isNotEmpty ? L.localName(emp) : '—';
     final ot = emp['overtime'] as double;
     final workH = emp['workH'] as double;
     final otCancelled = emp['otCancelled'] == true;

@@ -68,6 +68,7 @@ class _AdminSettingsState extends State<AdminSettings> {
   bool _showAddLoc = false;
   String? _editingLocId; // null = adding new, non-null = editing existing
   final _locName = TextEditingController();
+  final _locNameEn = TextEditingController();
   final _locLat = TextEditingController();
   final _locLng = TextEditingController();
   final _locRadius = TextEditingController(text: '300');
@@ -228,7 +229,7 @@ class _AdminSettingsState extends State<AdminSettings> {
         _singleDeviceMode = _parseBool(d['singleDeviceMode'], _singleDeviceMode);
         _lateGraceMinutes = (d['lateGraceMinutes'] as int?) ?? _lateGraceMinutes;
         _settingsUsers = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>().where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
-        _settingsUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+        _settingsUsers.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
         _settingsLocations = (locsRes['locations'] as List? ?? []).cast<Map<String, dynamic>>();
         _settingsSessions = (sessRes['sessions'] as List? ?? []).cast<Map<String, dynamic>>();
       });
@@ -348,6 +349,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       _editingLocId = docId;
       _showAddLoc = true;
       _locName.text = loc['name'] ?? '';
+      _locNameEn.text = loc['name_en'] ?? '';
       _locRadius.text = (loc['radius'] ?? 300).toString();
       final lat = (loc['lat'] as num?)?.toDouble();
       final lng = (loc['lng'] as num?)?.toDouble();
@@ -367,7 +369,7 @@ class _AdminSettingsState extends State<AdminSettings> {
   }
 
   void _resetLocForm() {
-    _locName.clear(); _locLat.clear(); _locLng.clear(); _locSearchCtrl.clear();
+    _locName.clear(); _locNameEn.clear(); _locLat.clear(); _locLng.clear(); _locSearchCtrl.clear();
     _locRadius.text = '300';
     setState(() { _showAddLoc = false; _pickedLatLng = null; _locSelectedEmps.clear(); _editingLocId = null; });
   }
@@ -388,6 +390,8 @@ class _AdminSettingsState extends State<AdminSettings> {
       ]),
       const SizedBox(height: 12),
       _input(_locName, L.tr('location_name'), L.tr('school_name')),
+      const SizedBox(height: 10),
+      _input(_locNameEn, L.tr('location_name_en'), 'e.g. Main Office', isLtr: true),
       const SizedBox(height: 10),
       // ─── Search with Autocomplete Suggestions ───
       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -506,6 +510,7 @@ class _AdminSettingsState extends State<AdminSettings> {
           if (_locName.text.isEmpty || _pickedLatLng == null) return;
           final data = {
             'name': _locName.text.trim(),
+            'name_en': _locNameEn.text.trim(),
             'lat': _pickedLatLng!.latitude,
             'lng': _pickedLatLng!.longitude,
             'radius': int.tryParse(_locRadius.text) ?? 300,
@@ -551,7 +556,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? W.pri : W.muted),
                   const SizedBox(width: 6),
-                  Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text)),
+                  Text(L.localName(emp), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text)),
                 ]),
               ),
             );
@@ -574,7 +579,7 @@ class _AdminSettingsState extends State<AdminSettings> {
             SizedBox(width: 44, child: Switch(value: active, activeColor: W.green, onChanged: (v) async { await ApiService.post('admin.php?action=save_location', {...loc, 'id': locId, 'active': v}); _loadSettings(); })),
           ]),
           const Spacer(),
-          Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text('${(loc['lat'] ?? 0).toStringAsFixed(4)}, ${(loc['lng'] ?? 0).toStringAsFixed(4)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted))])), SizedBox(width: 8), Container(width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, decoration: BoxDecoration(color: active ? Color(0xFFECFDF3) : W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.location_on, size: 14, color: active ? W.green : W.muted))])),
+          Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(L.localName(loc), style: GoogleFonts.tajawal(fontSize: isMobile ? 13 : 14, fontWeight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis), Text('${(loc['lat'] ?? 0).toStringAsFixed(4)}, ${(loc['lng'] ?? 0).toStringAsFixed(4)}', style: GoogleFonts.ibmPlexMono(fontSize: 10, color: W.muted))])), SizedBox(width: 8), Container(width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, decoration: BoxDecoration(color: active ? Color(0xFFECFDF3) : W.bg, borderRadius: BorderRadius.circular(DS.radiusMd)), child: Icon(Icons.location_on, size: 14, color: active ? W.green : W.muted))])),
         ]),
         const SizedBox(height: 8),
         Container(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(4)),
@@ -593,7 +598,7 @@ class _AdminSettingsState extends State<AdminSettings> {
     for (final s in _settingsSessions) sessionMap[(s['uid'] ?? '').toString()] = s;
 
     final employees = _settingsUsers.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
-    employees.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    employees.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
 
     // Filter
     var filtered = employees.where((emp) {
@@ -604,6 +609,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       if (_devSearch.isNotEmpty) {
         final q = _devSearch.toLowerCase();
         return (emp['name'] ?? '').toString().toLowerCase().contains(q) ||
+               (emp['name_en'] ?? '').toString().toLowerCase().contains(q) ||
                (emp['dept'] ?? '').toString().toLowerCase().contains(q) ||
                (sessionMap[uid]?['device_model'] ?? '').toString().toLowerCase().contains(q);
       }
@@ -724,9 +730,9 @@ class _AdminSettingsState extends State<AdminSettings> {
               final isFirst = i == 0;
               final isLast = i == filtered.length - 1;
 
-              final name = (emp['name'] ?? '').toString();
+              final name = L.localName(emp);
               final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
-              final dept = (emp['dept'] ?? '').toString();
+              final dept = L.localDept(emp);
               final empId = (emp['emp_id'] ?? emp['empId'] ?? '').toString();
               final multi = emp['multi_device_allowed'] == 1 || emp['multi_device_allowed'] == true || emp['multiDeviceAllowed'] == true;
 
@@ -1095,7 +1101,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       const SizedBox(height: 12),
       Builder(builder: (_) {
           final users = _settingsUsers.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin').toList();
-          users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+          users.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
           if (users.isEmpty) return Text(L.tr('no_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted));
           return Column(children: users.map((emp) {
             final uid = emp['uid'] ?? emp['_id'];
@@ -1131,7 +1137,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                     ),
                   ),
                   const Spacer(),
-                  Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                  Text(L.localName(emp), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
                   const SizedBox(width: 6),
                   Icon(hasOverride ? Icons.tune : Icons.person_outline, size: 16, color: hasOverride ? Color(0xFF7F56D9) : W.muted),
                 ]),
@@ -1169,7 +1175,7 @@ class _AdminSettingsState extends State<AdminSettings> {
                   InkWell(
                     onTap: () async {
                       await ApiService.post('face.php?action=reset', {'uid': uid});
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('face_reset_for_name', args: {'name': emp['name'] ?? ''}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L.tr('face_reset_for_name', args: {'name': L.localName(emp)}), style: GoogleFonts.tajawal()), backgroundColor: W.green, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

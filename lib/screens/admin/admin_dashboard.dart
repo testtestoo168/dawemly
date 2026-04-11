@@ -664,9 +664,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           )
         else
           Column(children: absentEmps.take(10).map((emp) {
-            final av = (emp['name'] ?? '').toString().length >= 2
-                ? emp['name'].toString().substring(0, 2) : L.tr('pm');
-            final dept = emp['dept'] ?? '';
+            final empN = L.localName(emp);
+            final av = empN.length >= 2 ? empN.substring(0, 2) : L.tr('pm');
+            final dept = L.localDept(emp);
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -681,7 +681,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(emp['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg)),
+                  Text(empN, style: _tj(13, weight: FontWeight.w600, color: _fg)),
                   if (dept.toString().isNotEmpty) Text(dept.toString(), style: _tj(10, color: _muted)),
                 ])),
                 Container(
@@ -721,7 +721,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Column(children: _attRecords.take(5).map((r) {
             final hasOut = (r['lastCheckOut'] ?? r['last_check_out'] ?? r['checkOut'] ?? r['check_out']) != null;
             final isCheckedIn = r['isCheckedIn'] == true || r['is_checked_in'] == 1 || r['is_checked_in'] == true;
-            final av = (r['name'] ?? '').toString().length >= 2 ? r['name'].toString().substring(0, 2) : L.tr('pm');
+            final rName = L.localName(r);
+            final av = rName.length >= 2 ? rName.substring(0, 2) : L.tr('pm');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -734,7 +735,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     decoration: BoxDecoration(shape: BoxShape.circle, color: isCheckedIn ? const Color(0xFF17B26A) : const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
                 ]),
                 const SizedBox(width: 10),
-                Expanded(child: Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: _fg))),
+                Expanded(child: Text(rName, style: _tj(14, weight: FontWeight.w600, color: _fg))),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -753,7 +754,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 600;
     final allUsers = _users.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin' && u['role'] != 'superadmin').toList();
-    allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    allUsers.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
 
     final attMap = <String, Map<String, dynamic>>{};
     for (final r in _attRecords) {
@@ -821,7 +822,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ...inList.map((u) {
             final att = u['_att'] as Map<String, dynamic>?;
             final checkInTime = att?['firstCheckIn'] ?? att?['first_check_in'] ?? att?['checkIn'] ?? att?['check_in'];
-            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : L.tr('pm');
+            final uName = L.localName(u);
+            final av = uName.length >= 2 ? uName.substring(0, 2) : L.tr('pm');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
@@ -833,7 +835,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ]),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg)),
+                  Text(uName, style: _tj(13, weight: FontWeight.w600, color: _fg)),
                   if (checkInTime != null) Text(_fmtTs(checkInTime), style: GoogleFonts.ibmPlexMono(fontSize: 10, color: _muted)),
                 ])),
               ]),
@@ -846,7 +848,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), color: const Color(0xFFFEF3F2),
             child: Text(L.tr('not_available'), style: _tj(12, weight: FontWeight.w600, color: const Color(0xFFB42318)), textDirection: L.textDirection)),
           ...outList.take(10).map((u) {
-            final av = (u['name'] ?? '').toString().length >= 2 ? u['name'].toString().substring(0, 2) : L.tr('pm');
+            final uName2 = L.localName(u);
+            final av = uName2.length >= 2 ? uName2.substring(0, 2) : L.tr('pm');
             final st = u['_status'] ?? L.tr('absent');
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -858,7 +861,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   Positioned(bottom: 0, right: 0, child: Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD0D5DD), border: Border.all(color: Colors.white, width: 1.5)))),
                 ]),
                 const SizedBox(width: 10),
-                Expanded(child: Text(u['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _muted))),
+                Expanded(child: Text(uName2, style: _tj(13, weight: FontWeight.w600, color: _muted))),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: st == L.tr('complete') ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
                   child: Text(st, style: _tj(10, weight: FontWeight.w500, color: st == L.tr('complete') ? const Color(0xFF166534) : _muted))),
               ]),
@@ -893,7 +896,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFD1D5DB)))),
           child: Row(textDirection: L.textDirection, children: [
-            Expanded(flex: 2, child: Text(r['name'] ?? '', style: _tj(13, weight: FontWeight.w600, color: _fg))),
+            Expanded(flex: 2, child: Text(L.localName(r), style: _tj(13, weight: FontWeight.w600, color: _fg))),
             Expanded(flex: 2, child: Text('${L.serverText(r['requestType'] ?? r['request_type'] ?? '')} — ${L.serverText(r['leaveType'] ?? r['leave_type'] ?? r['permType'] ?? r['perm_type'] ?? '')}', style: _tj(13, color: _muted), overflow: TextOverflow.ellipsis)),
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

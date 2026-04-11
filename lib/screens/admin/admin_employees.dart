@@ -84,7 +84,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     );
 
     final allUsers = _users.where((e) => (e['name'] ?? '').toString().isNotEmpty && e['role'] != 'admin' && e['role'] != 'superadmin').toList();
-    allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    allUsers.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
 
     final attMap = <String, Map<String, dynamic>>{};
     for (final r in _attList) attMap[r['uid'] ?? ''] = r;
@@ -102,7 +102,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
 
     final depts = <String>{L.tr('all'), ...merged.map((e) => (e['dept'] ?? '').toString()).where((d) => d.isNotEmpty)};
     final filtered = merged.where((e) {
-      if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['empId'] ?? e['emp_id'] ?? '').toString().contains(_search)) return false;
+      if (_search.isNotEmpty && !(e['name'] ?? '').toString().contains(_search) && !(e['name_en'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) && !(e['empId'] ?? e['emp_id'] ?? '').toString().contains(_search)) return false;
       if (_fDept != L.tr('all') && e['dept'] != _fDept) return false;
       if (_fSt != L.tr('all') && e['_status'] != _fSt) return false;
       return true;
@@ -182,7 +182,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   Widget _empCard(Map<String, dynamic> e) {
     final screenW = MediaQuery.of(context).size.width;
     final isSmall = screenW < 400;
-    final n = e['name'] ?? '—';
+    final n = L.localName(e).isNotEmpty ? L.localName(e) : '—';
     final av = n.length >= 2 ? n.substring(0,2) : L.tr('pm');
     final status = e['_status'] ?? L.tr('not_present');
     final att = e['_att'] as Map<String, dynamic>?;
@@ -211,7 +211,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
               if (byAdmin) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1), decoration: BoxDecoration(color: W.orangeL, borderRadius: BorderRadius.circular(4)), child: Text(L.tr('admin_tag'), style: GoogleFonts.tajawal(fontSize: 8, fontWeight: FontWeight.w600, color: W.orange))),
               Flexible(child: Text(n, style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 15, fontWeight: FontWeight.w700, color: W.text))),
             ]),
-            Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
+            Text('${L.localDept(e)} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
           Stack(children: [
@@ -244,7 +244,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   //  ADMIN PUNCH — بصمة إدارية (دخول أو خروج)
   // ═══════════════════════════════════════════════
   void _adminPunchDialog(Map<String, dynamic> e) {
-    final empName = e['name'] ?? '—';
+    final empName = L.localName(e).isNotEmpty ? L.localName(e) : '—';
     final uid = e['uid'] ?? e['_id'] ?? '';
     final empId = e['empId'] ?? e['emp_id'] ?? '';
     final isCheckedIn = e['_isCheckedIn'] == true;
@@ -356,7 +356,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
   //  EMPLOYEE HISTORY — سجل حضور الموظف التفصيلي
   // ═══════════════════════════════════════════════
   void _openEmployeeHistory(Map<String, dynamic> e) {
-    final empName = e['name'] ?? '—';
+    final empName = L.localName(e).isNotEmpty ? L.localName(e) : '—';
     final uid = e['uid'] ?? e['_id'] ?? '';
     final av = empName.length >= 2 ? empName.substring(0,2) : L.tr('pm');
 
@@ -383,7 +383,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 const Spacer(),
                 Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Text(L.tr('record_label', args: {'name': empName}), style: GoogleFonts.tajawal(fontSize: isNarrow ? 14 : 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                  Text('${e['dept'] ?? ''} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: Colors.white70), overflow: TextOverflow.ellipsis),
+                  Text('${L.localDept(e)} • ${e['empId'] ?? e['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 11, color: Colors.white70), overflow: TextOverflow.ellipsis),
                 ])),
                 const SizedBox(width: 8),
                 Container(width: isNarrow ? 36 : 44, height: isNarrow ? 36 : 44, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.15)),
@@ -552,7 +552,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
                 final locLng = (loc['lng'] as num?)?.toDouble() ?? 0;
                 final radius = ((loc['radius'] as num?)?.toDouble() ?? 300) / 111000;
                 final dist = ((lat!.toDouble() - locLat).abs() + (lng!.toDouble() - locLng).abs());
-                if (dist < radius * 3) { locName = loc['name'] ?? ''; break; }
+                if (dist < radius * 3) { locName = L.localName(loc); break; }
               }
               if (locName.isEmpty) locName = '${lat!.toStringAsFixed(4)}, ${lng!.toStringAsFixed(4)}';
             }

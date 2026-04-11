@@ -371,7 +371,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         if (!mounted) return;
         Navigator.push(context, MaterialPageRoute(builder: (_) => FaceRegistrationPage(
           uid: uid,
-          userName: widget.user['name'] ?? '',
+          userName: L.localName(widget.user).isNotEmpty ? L.localName(widget.user) : (widget.user['name'] ?? ''),
           onComplete: () { if (mounted) _checkIn(); },
         )));
         return;
@@ -417,7 +417,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       // Same formula as server: distance + accuracy must be within radius
       final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc['name'] ?? L.tr('selected_location'));
+        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('selected_location'));
         return;
       }
     }
@@ -546,7 +546,7 @@ class EmpHomePageState extends State<EmpHomePage> {
       // Same formula as server: distance + accuracy must be within radius
       final effectiveDistance = distance + pos.accuracy;
       if (effectiveDistance > radius) {
-        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, loc2['name'] ?? L.tr('selected_location'));
+        _showOutOfRangeDialog(pos.latitude, pos.longitude, adminLat, adminLng, radius, distance, L.localName(loc2).isNotEmpty ? L.localName(loc2) : L.tr('selected_location'));
         return;
       }
     }
@@ -665,7 +665,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final adminLat = (adminLoc?['lat'] as num?)?.toDouble();
     final adminLng = (adminLoc?['lng'] as num?)?.toDouble();
     final adminRadius = (adminLoc?['radius'] as num?)?.toDouble() ?? 300.0;
-    final adminName = adminLoc?['name'] ?? L.tr('selected_location');
+    final adminName = adminLoc != null ? (L.localName(adminLoc).isNotEmpty ? L.localName(adminLoc) : L.tr('selected_location')) : L.tr('selected_location');
     if (!mounted) return;
     final empLat = (lat as num?)?.toDouble() ?? 0;
     final empLng = (lng as num?)?.toDouble() ?? 0;
@@ -738,7 +738,8 @@ class EmpHomePageState extends State<EmpHomePage> {
     }
     final status = hasCheckOut && !isCurrentlyCheckedIn ? L.tr('complete') : isCurrentlyCheckedIn ? L.tr('present') : hasCheckIn ? L.tr('present') : L.tr('not_registered');
     final stColor = isCurrentlyCheckedIn ? C.green : (hasCheckOut && !isCurrentlyCheckedIn) ? C.green : hasCheckIn ? C.pri : C.muted;
-    final av = (widget.user['name'] ?? L.tr('pm')).toString().length >= 2 ? (widget.user['name'] ?? L.tr('pm')).toString().substring(0, 2) : L.tr('pm');
+    final _dispName = L.localName(widget.user);
+    final av = _dispName.length >= 2 ? _dispName.substring(0, 2) : L.tr('pm');
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.light),
@@ -770,7 +771,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             Row(children: [
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(greeting, style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
-                Text(widget.user['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white.withOpacity(0.65))),
+                Text(_dispName, style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white.withOpacity(0.65))),
               ]),
               const SizedBox(width: 12),
               Stack(children: [
@@ -790,7 +791,7 @@ class EmpHomePageState extends State<EmpHomePage> {
             child: Column(children: [
               ValueListenableBuilder<String>(valueListenable: _currentTime, builder: (_, t, __) => Text(t, style: GoogleFonts.ibmPlexMono(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 3))),
               const SizedBox(height: 4),
-              Text('$dayName ${now.day} $monthName — ${widget.user['dept'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+              Text('$dayName ${now.day} $monthName — ${L.localDept(widget.user)}', style: GoogleFonts.tajawal(fontSize: 12, color: Colors.white.withOpacity(0.5))),
             ]),
           ),
           const SizedBox(height: 16),
@@ -818,7 +819,7 @@ class EmpHomePageState extends State<EmpHomePage> {
                 items: _allLocations.map((loc) => DropdownMenuItem<String>(
                   value: loc['id'].toString(),
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Flexible(child: Text(loc['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.right)),
+                    Flexible(child: Text(L.localName(loc), style: GoogleFonts.tajawal(fontSize: 13, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.right)),
                     const SizedBox(width: 8),
                     const Icon(Icons.location_on_rounded, size: 16, color: Colors.white70),
                   ]),
@@ -836,7 +837,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(child: Text(_allLocations.first['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.center)),
+                Flexible(child: Text(L.localName(_allLocations.first), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white), overflow: TextOverflow.ellipsis, maxLines: 1, textAlign: TextAlign.center)),
                 const SizedBox(width: 8),
                 const Icon(Icons.location_on_rounded, size: 16, color: Colors.white70),
               ]),
@@ -1015,7 +1016,7 @@ class EmpHomePageState extends State<EmpHomePage> {
     final authLat = (loc?['lat'] as num?)?.toDouble();
     final authLng = (loc?['lng'] as num?)?.toDouble();
     final authRadius = (loc?['radius'] as num?)?.toDouble() ?? 300.0;
-    final authName = loc?['name'] ?? L.tr('authorized_location');
+    final authName = loc != null ? (L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('authorized_location')) : L.tr('authorized_location');
 
     final empLat = _livePosition?.latitude;
     final empLng = _livePosition?.longitude;
@@ -1264,7 +1265,7 @@ class EmpHomePageState extends State<EmpHomePage> {
         adminLat = (loc['lat'] as num?)?.toDouble() ?? 0;
         adminLng = (loc['lng'] as num?)?.toDouble() ?? 0;
         radius = (loc['radius'] as num?)?.toDouble() ?? 300;
-        locName = loc['name'] ?? L.tr('selected_location');
+        locName = L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('selected_location');
       } else {
         // Fallback: load locations from API
         try {
@@ -1277,7 +1278,7 @@ class EmpHomePageState extends State<EmpHomePage> {
               adminLat = (l['lat'] as num?)?.toDouble() ?? 0;
               adminLng = (l['lng'] as num?)?.toDouble() ?? 0;
               radius = (l['radius'] as num?)?.toDouble() ?? 300;
-              locName = l['name'] ?? L.tr('selected_location');
+              locName = L.localName(l).isNotEmpty ? L.localName(l) : L.tr('selected_location');
             }
           }
         } catch (_) {}

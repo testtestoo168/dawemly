@@ -248,7 +248,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
           ],
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text)),
+            Text(L.localName(r), style: GoogleFonts.tajawal(fontSize: isSmall ? 13 : 14, fontWeight: FontWeight.w700, color: W.text)),
             Text(r['emp_id'] ?? r['empId'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),

@@ -145,7 +145,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
       final lat = (loc['lat'] as num?)?.toDouble();
       final lng = (loc['lng'] as num?)?.toDouble();
       final radius = (loc['radius'] as num?)?.toDouble() ?? 300;
-      final name = loc['name'] ?? L.tr('location_n', args: {'n': (i + 1).toString()});
+      final name = L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('location_n', args: {'n': (i + 1).toString()});
       final isSelected = i == _selectedIndex;
 
       if (lat != null && lng != null) {
@@ -272,7 +272,7 @@ class _EmpLocationsPageState extends State<EmpLocationsPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        loc['name'] ?? L.tr('locations'),
+                        L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('locations'),
                         style: _tj(14, weight: FontWeight.w700, color: C.text),
                         overflow: TextOverflow.ellipsis,
                       ),

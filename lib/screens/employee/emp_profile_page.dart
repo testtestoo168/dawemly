@@ -52,13 +52,13 @@ class EmpProfilePage extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      _getInitials(user['name'] ?? L.tr('pm')),
+                      _getInitials(L.localName(user).isNotEmpty ? L.localName(user) : L.tr('pm')),
                       style: _tj(26, weight: FontWeight.w700, color: Colors.white),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(user['name'] ?? '', style: _tj(18, weight: FontWeight.w700, color: C.text)),
+                Text(L.localName(user), style: _tj(18, weight: FontWeight.w700, color: C.text)),
                 const SizedBox(height: 4),
                 Text(user['empId'] ?? '', style: _tj(13, color: C.sub)),
                 const SizedBox(height: 8),
@@ -81,7 +81,7 @@ class EmpProfilePage extends StatelessWidget {
 
           // ─── Info Cards ───
           _infoCard(Icons.mail_outline_rounded, L.tr('email'), user['email'] ?? '—'),
-          _infoCard(Icons.apartment_rounded, L.tr('department'), user['dept'] ?? '—'),
+          _infoCard(Icons.apartment_rounded, L.tr('department'), L.localDept(user).isNotEmpty ? L.localDept(user) : '—'),
           _infoCard(Icons.badge_outlined, L.tr('employee_id'), user['empId'] ?? '—'),
           _infoCard(Icons.phone_outlined, L.tr('phone_number'), user['phone'] ?? '—'),
           _infoCard(Icons.fingerprint_rounded, L.tr('auth_method'), L.tr('fingerprint_face')),

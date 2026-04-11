@@ -64,7 +64,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
             final empIds = ((data['empIds'] ?? data['emp_ids']) as List? ?? []).map((e) => e.toString()).toList();
             if (empIds.contains(widget.user['uid']) || empIds.contains(widget.user['empId'])) {
               assignedSchedule = data;
-              scheduleName = data['name'] ?? L.tr('default_schedule');
+              scheduleName = L.localName(data).isNotEmpty ? L.localName(data) : L.tr('default_schedule');
               break;
             }
           }
@@ -72,7 +72,7 @@ class _EmpSchedulePageState extends State<EmpSchedulePage> {
           // If no specific assignment, use the first schedule (default)
           if (assignedSchedule == null && allSchedules.isNotEmpty) {
             assignedSchedule = allSchedules.first;
-            scheduleName = assignedSchedule['name'] ?? L.tr('default_schedule');
+            scheduleName = L.localName(assignedSchedule!).isNotEmpty ? L.localName(assignedSchedule) : L.tr('default_schedule');
           }
 
           final shiftId = int.tryParse('${assignedSchedule?['shiftId'] ?? assignedSchedule?['shift_id'] ?? 1}') ?? 1;

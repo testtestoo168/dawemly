@@ -133,7 +133,7 @@ class _SuperadminAppState extends State<SuperadminApp> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.user['name'] ?? 'Super Admin', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
+                    Text(L.localName(widget.user).isNotEmpty ? L.localName(widget.user) : 'Super Admin', style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
                     Text(L.tr('higher_admin'), style: _tj(11, color: Colors.white.withOpacity(0.5))),
                   ])),
                 ]),

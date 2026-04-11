@@ -65,7 +65,7 @@ class _AdminReportsState extends State<AdminReports> {
       if (usersRes['success'] == true) {
         final list = (usersRes['users'] as List? ?? []).cast<Map<String, dynamic>>();
         _allUsers = list.where((u) => (u['name'] ?? '').toString().isNotEmpty && u['role'] != 'admin').toList();
-        _allUsers.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+        _allUsers.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
       }
       // Fetch records filtered by month and employee (server-side)
       final params = <String, String>{
@@ -163,7 +163,7 @@ class _AdminReportsState extends State<AdminReports> {
 
       rows.add({
         'empId': user['emp_id'] ?? user['empId'] ?? '—',
-        'name': user['name'] ?? '—',
+        'name': L.localName(user).isNotEmpty ? L.localName(user) : '—',
         'date': dateKey,
         'day': dayName,
         'checkIn': _fmtTs(ci),
@@ -225,7 +225,8 @@ class _AdminReportsState extends State<AdminReports> {
       final headerStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 9, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
       final titleStyle = hasArabic ? pw.TextStyle(font: arabicFont, fontSize: 16, fontWeight: pw.FontWeight.bold) : pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold);
 
-      final empName = _selectedUid == L.tr('all') ? 'All Employees' : (_allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == _selectedUid, orElse: () => {'name': ''})['name'] ?? '');
+      final _empUser = _selectedUid == L.tr('all') ? <String, dynamic>{} : _allUsers.firstWhere((u) => (u['uid'] ?? u['id']) == _selectedUid, orElse: () => {'name': ''});
+      final empName = _selectedUid == L.tr('all') ? 'All Employees' : L.localName(_empUser);
 
       final titleAr = hasArabic ? L.tr('attendance_report', args: {'month': _months[_selMonth - 1], 'year': _selYear.toString()}) + '${_selectedUid != L.tr('all') ? ' — $empName' : ''}' : 'Attendance Report - ${_months[_selMonth - 1]} $_selYear - $empName';
       final headersAr = hasArabic
@@ -321,7 +322,7 @@ class _AdminReportsState extends State<AdminReports> {
                   ),
                   items: [
                     DropdownMenuItem(value: L.tr('all'), child: Text(L.tr('all_employees_filter'), style: GoogleFonts.tajawal(fontSize: 13))),
-                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${u['name']} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
+                    ..._allUsers.map((u) => DropdownMenuItem(value: u['uid'] ?? u['id'] ?? '', child: Text('${L.localName(u)} (${u['emp_id'] ?? u['empId'] ?? ''})', style: GoogleFonts.tajawal(fontSize: 13)))),
                   ],
                   onChanged: (v) { setState(() { _selectedUid = v ?? L.tr('all'); _page = 0; }); _loadAll(); },
                 )),
@@ -385,7 +386,7 @@ class _AdminReportsState extends State<AdminReports> {
                     DataCell(Center(child: Text(r['checkIn'] ?? '—', style: _mono(fontSize: isWide ? 13 : 12, color: W.text)))),
                     DataCell(Center(child: Text(r['day'] ?? '', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, color: W.sub)))),
                     DataCell(Center(child: Text(r['date'] ?? '', style: _mono(fontSize: isWide ? 13 : 12, color: W.text)))),
-                    DataCell(Center(child: Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, fontWeight: FontWeight.w600, color: W.text)))),
+                    DataCell(Center(child: Text(L.localName(r), style: GoogleFonts.tajawal(fontSize: isWide ? 13 : 12, fontWeight: FontWeight.w600, color: W.text)))),
                     DataCell(Center(child: Text(r['empId'] ?? '', style: _mono(fontSize: isWide ? 12 : 11, color: W.muted)))),
                   ])).toList(),
                 ),

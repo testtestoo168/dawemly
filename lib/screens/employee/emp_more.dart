@@ -56,7 +56,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
         }).toList();
         if (mounted) {
           setState(() {
-            _locationName = userLocs.isNotEmpty ? (userLocs.first['name'] ?? L.tr('organization')) : null;
+            _locationName = userLocs.isNotEmpty ? (L.localName(userLocs.first).isNotEmpty ? L.localName(userLocs.first) : L.tr('organization')) : null;
             _loadingLoc = false;
           });
         }
@@ -138,7 +138,7 @@ class _EmpMorePageState extends State<EmpMorePage> {
                     ),
                     child: Center(
                       child: Text(
-                        _getInitials(widget.user['name'] ?? L.tr('pm')),
+                        _getInitials(L.localName(widget.user).isNotEmpty ? L.localName(widget.user) : L.tr('pm')),
                         style: _tj(15, weight: FontWeight.w700, color: Colors.white),
                       ),
                     ),

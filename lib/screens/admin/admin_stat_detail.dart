@@ -103,9 +103,9 @@ class _AdminStatDetailState extends State<AdminStatDetail> {
                     itemBuilder: (ctx, i) {
                       final emp = _filtered[i];
                       final uid = emp['uid'] ?? '';
-                      final name = emp['name'] ?? '';
+                      final name = L.localName(emp);
                       final empId = emp['empId'] ?? emp['emp_id'] ?? '';
-                      final dept = emp['dept'] ?? '';
+                      final dept = L.localDept(emp);
                       final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
                       final att = emp['_att'] as Map<String, dynamic>?;
 

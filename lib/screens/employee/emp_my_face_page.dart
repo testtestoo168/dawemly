@@ -53,7 +53,7 @@ class EmpMyFacePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(user['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w700, color: C.text)),
+              Text(L.localName(user).isNotEmpty ? L.localName(user) : (user['name'] ?? ''), style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w700, color: C.text)),
               const SizedBox(height: 4),
               Text(user['empId'] ?? '', style: GoogleFonts.ibmPlexMono(fontSize: 13, color: C.muted)),
 

@@ -87,7 +87,7 @@ class _AdminVerifyState extends State<AdminVerify> {
     final dateKeyForAttendance = _filterDateKey.isNotEmpty ? _filterDateKey : todayKey;
 
     final all = _allUsers.where((e) => (e['name'] ?? '').toString().isNotEmpty).toList();
-    all.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+    all.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
 
     final presentUids = <String>{};
     for (final rec in _todayAttendance) {
@@ -138,7 +138,7 @@ class _AdminVerifyState extends State<AdminVerify> {
               // Locations with their employees
               ...locations.map((loc) {
                 final locId = loc['_locId'] ?? loc['id'] ?? '';
-                final locName = loc['name'] ?? L.tr('locations');
+                final locName = L.localName(loc).isNotEmpty ? L.localName(loc) : L.tr('locations');
                 final assignedEmps = ((loc['assigned_employees'] ?? loc['assignedEmployees']) as List?)?.cast<String>() ?? [];
                 // Get employees for this location ONLY (strictly assigned, or all if empty)
                 final locEmployees = active.where((emp) {
@@ -186,7 +186,8 @@ class _AdminVerifyState extends State<AdminVerify> {
                       final empKey = emp['_id'] ?? emp['uid'] ?? '';
                       final selKey = '${locId}_$empKey';
                       final sel = _sel.contains(selKey);
-                      final av = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0,2) : L.tr('pm');
+                      final empVN = L.localName(emp);
+                      final av = empVN.length >= 2 ? empVN.substring(0,2) : L.tr('pm');
                       return InkWell(
                         onTap: () => setState(() { sel ? _sel.remove(selKey) : _sel.add(selKey); }),
                         child: Container(
@@ -195,7 +196,7 @@ class _AdminVerifyState extends State<AdminVerify> {
                           child: Row(children: [
                             Icon(sel ? Icons.check_circle : Icons.circle_outlined, size: 16, color: sel ? W.pri : W.muted),
                             const SizedBox(width: 6),
-                            Expanded(child: Text(emp['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text))),
+                            Expanded(child: Text(empVN, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: sel ? FontWeight.w600 : FontWeight.w400, color: sel ? W.pri : W.text))),
                             Container(width: 24, height: 24, decoration: BoxDecoration(color: W.pri.withOpacity(0.08), shape: BoxShape.circle), child: Center(child: Text(av, style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: W.pri)))),
                           ]),
                         ),

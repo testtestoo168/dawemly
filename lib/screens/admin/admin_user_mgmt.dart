@@ -41,6 +41,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
 
   void _showAddEditDialog({Map<String, dynamic>? existing, String? docId}) {
     final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
+    final nameEnCtrl = TextEditingController(text: existing?['name_en'] ?? '');
     final emailCtrl = TextEditingController(text: existing?['email'] ?? '');
     final phoneCtrl = TextEditingController(text: existing?['phone'] ?? '');
     final passCtrl = TextEditingController();
@@ -91,12 +92,14 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                   child: Column(children: [
                     if (isWebWide)
                       Row(children: [
-                        Expanded(child: _formField(L.tr('email_required'), emailCtrl, hint: 'user@dawemli.sa', isLtr: true)),
+                        Expanded(child: _formField(L.tr('name_en_label'), nameEnCtrl, hint: 'e.g. Ahmed', isLtr: true)),
                         const SizedBox(width: 12),
-                        Expanded(child: _formField(L.tr('full_name'), nameCtrl)),
+                        Expanded(child: _formField(L.tr('name_ar'), nameCtrl)),
                       ])
                     else ...[
-                      _formField(L.tr('full_name'), nameCtrl),
+                      _formField(L.tr('name_ar'), nameCtrl),
+                      const SizedBox(height: 12),
+                      _formField(L.tr('name_en_label'), nameEnCtrl, hint: 'e.g. Ahmed', isLtr: true),
                     ],
                     const SizedBox(height: 12),
                     if (isMobile) ...[
@@ -253,7 +256,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       const SizedBox(width: 10),
                       Expanded(child: ElevatedButton(
                         onPressed: loading ? null : () async {
-                          if (nameCtrl.text.isEmpty || emailCtrl.text.isEmpty) return;
+                          if (nameCtrl.text.isEmpty || emailCtrl.text.isEmpty || nameEnCtrl.text.isEmpty) return;
                           setDState(() => loading = true);
                           final nav = Navigator.of(ctx);
                           try {
@@ -267,7 +270,8 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                                 return;
                               }
                               result = await ApiService.post('users.php?action=create', {
-                                'name': nameCtrl.text.trim(), 'email': emailCtrl.text.trim(),
+                                'name': nameCtrl.text.trim(), 'name_en': nameEnCtrl.text.trim(),
+                                'email': emailCtrl.text.trim(),
                                 'password': passCtrl.text, 'phone': phoneCtrl.text.trim(),
                                 'dept': dept, 'role': userRole, 'jobTitle': roleCtrl.text.trim(),
                                 'shift': shift, 'customSchedule': customSchedule,
@@ -285,7 +289,8 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                             } else {
                               result = await ApiService.post('users.php?action=update', {
                                 'uid': existing['uid'] ?? docId,
-                                'name': nameCtrl.text.trim(), 'email': emailCtrl.text.trim(),
+                                'name': nameCtrl.text.trim(), 'name_en': nameEnCtrl.text.trim(),
+                                'email': emailCtrl.text.trim(),
                                 'phone': phoneCtrl.text.trim(), 'dept': dept, 'role': userRole,
                                 'jobTitle': roleCtrl.text.trim(), 'shift': shift,
                                 'customSchedule': customSchedule, 'workStart': workStart,
@@ -468,7 +473,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           child: Builder(builder: (context) {
             if (_loading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
             final filtered = _users.where((r) {
-              if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['email'] ?? '').toString().contains(_search)) return false;
+              if (_search.isNotEmpty && !(r['name'] ?? '').toString().contains(_search) && !(r['name_en'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) && !(r['email'] ?? '').toString().contains(_search)) return false;
               if (_fRole != L.tr('all') && r['role'] != _fRole) return false;
               if (_fActive == L.tr('active') && r['active'] != true && r['active'] != 1) return false;
               if (_fActive == L.tr('inactive') && r['active'] != false && r['active'] != 0) return false;
@@ -512,7 +517,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                             title: Text(L.tr('delete_user'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                            content: Text(L.tr('confirm_delete', args: {'name': r['name'] ?? ''}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            content: Text(L.tr('confirm_delete', args: {'name': L.localName(r)}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal())),
                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.tr('delete'), style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
@@ -524,11 +529,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                       DataCell(_badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
                       DataCell(_badge(roleLabel[role] ?? L.tr('employee_unit'), roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
                       DataCell(_badge(L.tr('shift_n', args: {'n': (r['shift'] ?? 1).toString()}), r['shift'] == 2 ? Color(0xFF7F56D9) : r['shift'] == 3 ? Color(0xFF0BA5EC) : W.pri, r['shift'] == 2 ? Color(0xFFF4F3FF) : r['shift'] == 3 ? Color(0xFFE8F8FD) : W.priLight)),
-                      DataCell(Text(r['dept'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+                      DataCell(Text(L.localDept(r).isNotEmpty ? L.localDept(r) : '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['phone'] ?? '—', style: GoogleFonts.ibmPlexMono(fontSize: 12, color: W.sub))),
                       DataCell(Text(r['email'] ?? '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
                       DataCell(Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Text(r['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
+                        Text(L.localName(r), style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
                         Text('${r['empId'] ?? r['emp_id'] ?? ''}', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
                       ])),
                     ]);
@@ -543,7 +548,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                 final role = r['role'] ?? 'employee';
                 final roleLabel = {'admin': L.tr('role_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
                 final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
-                final name = r['name'] ?? '—';
+                final name = L.localName(r).isNotEmpty ? L.localName(r) : '—';
                 final av = name.length >= 2 ? name.substring(0, 2) : L.tr('pm');
 
                 return InkWell(
@@ -569,7 +574,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         _actionBtn(Icons.delete_outline, W.red, Color(0xFFFEF3F2), () async {
                           final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
                             title: Text(L.tr('delete_user'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700), textAlign: TextAlign.right),
-                            content: Text(L.tr('confirm_delete', args: {'name': r['name'] ?? ''}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
+                            content: Text(L.tr('confirm_delete', args: {'name': L.localName(r)}), style: GoogleFonts.tajawal(), textAlign: TextAlign.right),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal())),
                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.tr('delete'), style: GoogleFonts.tajawal(color: W.red, fontWeight: FontWeight.w700))),
@@ -605,7 +610,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     final role = r['role'] ?? 'employee';
     final roleLabel = {'admin': L.tr('system_admin'), 'moderator': L.tr('role_supervisor'), 'employee': L.tr('employee_unit')};
     final roleColor = {'admin': W.red, 'moderator': Color(0xFF7F56D9), 'employee': W.pri};
-    final name = r['name'] ?? '—';
+    final name = L.localName(r).isNotEmpty ? L.localName(r) : '—';
     final av = name.length >= 2 ? name.substring(0, 2) : L.tr('pm');
 
     showModalBottomSheet(
@@ -641,7 +646,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
             child: Column(children: [
               _detailRow(Icons.email, L.tr('email'), r['email'] ?? '—'),
               _detailRow(Icons.phone, L.tr('phone_number'), r['phone'] ?? '—'),
-              _detailRow(Icons.business, L.tr('department'), r['dept'] ?? '—'),
+              _detailRow(Icons.business, L.tr('department'), L.localDept(r).isNotEmpty ? L.localDept(r) : '—'),
               _detailRow(Icons.work, L.tr('job_title'), r['jobTitle'] ?? '—'),
               _detailRow(Icons.schedule, L.tr('shift_label'), L.tr('shift_n', args: {'n': (r['shift'] ?? 1).toString()})),
               _detailRow(Icons.vpn_key, L.tr('permission'), roleLabel[role] ?? L.tr('employee_unit')),

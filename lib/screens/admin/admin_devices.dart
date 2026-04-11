@@ -31,7 +31,7 @@ class _AdminDevicesState extends State<AdminDevices> {
       final r3 = await ApiService.get('admin.php?action=get_sessions');
 
       final users = (r1['users'] as List? ?? []).cast<Map<String, dynamic>>();
-      users.sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+      users.sort((a, b) => L.localName(a).compareTo(L.localName(b)));
 
       final attMap = <String, Map<String, dynamic>>{};
       for (final a in (r2['records'] as List? ?? [])) attMap[(a as Map<String, dynamic>)['uid'] ?? ''] = a;
@@ -51,6 +51,7 @@ class _AdminDevicesState extends State<AdminDevices> {
       final q = _search.toLowerCase();
       list = list.where((u) =>
         (u['name'] ?? '').toString().toLowerCase().contains(q) ||
+        (u['name_en'] ?? '').toString().toLowerCase().contains(q) ||
         (u['dept'] ?? '').toString().toLowerCase().contains(q) ||
         (u['last_device_model'] ?? u['lastDeviceModel'] ?? '').toString().toLowerCase().contains(q)
       ).toList();
@@ -320,7 +321,7 @@ class _AdminDevicesState extends State<AdminDevices> {
     final pIcon  = _platformIcon(platform);
     final pLabel = _platformLabel(platform);
 
-    final name = (emp['name'] ?? '').toString();
+    final name = L.localName(emp);
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
 
     // Status
@@ -371,7 +372,7 @@ class _AdminDevicesState extends State<AdminDevices> {
                   maxLines: 1,
                 ),
                 Text(
-                  '${emp['dept'] ?? ''} · ${emp['emp_id'] ?? emp['empId'] ?? ''}',
+                  '${L.localDept(emp)} · ${emp['emp_id'] ?? emp['empId'] ?? ''}',
                   style: _tj(10, color: W.muted),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -461,7 +462,7 @@ class _AdminDevicesState extends State<AdminDevices> {
               _actionBtn(L.tr('disconnect'), Icons.logout_rounded, W.red, () async {
                 await ApiService.post('users.php?action=clear_session', {'uid': uid});
                 if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(L.tr('disconnected_name', args: {'name': emp['name'] ?? ''}), style: _tj(13, color: Colors.white)),
+                  content: Text(L.tr('disconnected_name', args: {'name': L.localName(emp)}), style: _tj(13, color: Colors.white)),
                   backgroundColor: W.green, behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
                 ));

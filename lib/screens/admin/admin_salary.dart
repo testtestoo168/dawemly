@@ -577,10 +577,10 @@ class _AdminSalaryState extends State<AdminSalary> {
 
   // ─── Salary card per employee ───
   Widget _salaryCard(Map<String, dynamic> emp, bool isMobile) {
-    final name = emp['name'] ?? '---';
+    final name = L.localName(emp).isNotEmpty ? L.localName(emp) : '---';
     final uid = emp['uid'] ?? '';
     final empId = emp['emp_id'] ?? '';
-    final dept = emp['dept'] ?? '';
+    final dept = L.localDept(emp);
     final baseSalary = _toDouble(emp['base_salary']);
     final netSalary = _toDouble(emp['net_salary']);
     final workingDays = _toInt(emp['working_days']);
@@ -779,9 +779,9 @@ class _AdminSalaryState extends State<AdminSalary> {
     final rows = <List<String>>[headers];
     for (final r in _records) {
       rows.add([
-        '${r['name'] ?? ''}',
+        L.localName(r),
         '${r['emp_id'] ?? ''}',
-        '${r['dept'] ?? ''}',
+        L.localDept(r),
         '${r['working_days'] ?? 0}',
         '${r['days_present'] ?? 0}',
         '${r['days_absent'] ?? 0}',

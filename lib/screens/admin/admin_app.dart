@@ -122,7 +122,7 @@ class _AdminAppState extends State<AdminApp> {
   //  📱 MOBILE — Redesigned with المزيد page
   // ════════════════════════════════════════════
   Widget _mobile() {
-    final av = _getInitials(widget.user['name'] ?? L.tr('app_name'));
+    final av = _getInitials(L.localName(widget.user).isNotEmpty ? L.localName(widget.user) : L.tr('app_name'));
     return Scaffold(
       backgroundColor: W.bg,
       appBar: PreferredSize(preferredSize: const Size.fromHeight(56), child: Container(
@@ -518,12 +518,12 @@ class _AdminAppState extends State<AdminApp> {
                           child: Text(L.tr('pending'), style: _tj(10, weight: FontWeight.w600, color: const Color(0xFF854D0E)))),
                         const Spacer(),
                         Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          Text(r['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+                          Text(L.localName(r), style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
                           Text('${L.serverText(r['requestType'] ?? '')} — ${L.serverText(r['leaveType'] ?? r['permType'] ?? '')}', style: _tj(11, color: W.sub), overflow: TextOverflow.ellipsis),
                         ])),
                         const SizedBox(width: 10),
                         Container(width: 40, height: 40, decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(DS.radiusMd)),
-                          child: Center(child: Text(_getInitials(r['name'] ?? L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
+                          child: Center(child: Text(_getInitials(L.localName(r).isNotEmpty ? L.localName(r) : L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: W.pri)))),
                       ]),
                     );
                   }).toList()),
@@ -588,12 +588,12 @@ class _AdminAppState extends State<AdminApp> {
                           ),
                           const Spacer(),
                           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                            Text(emp['name'] ?? '', style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
+                            Text(L.localName(emp), style: _tj(14, weight: FontWeight.w600, color: W.text), overflow: TextOverflow.ellipsis),
                             Text(emp['empId'] ?? emp['emp_id'] ?? '', style: _tj(11, color: W.muted)),
                           ])),
                           const SizedBox(width: 10),
                           Container(width: 40, height: 40, decoration: BoxDecoration(color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(DS.radiusMd)),
-                            child: Center(child: Text(_getInitials(emp['name'] ?? L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
+                            child: Center(child: Text(_getInitials(L.localName(emp).isNotEmpty ? L.localName(emp) : L.tr('pm')), style: _tj(13, weight: FontWeight.w700, color: isPresent ? Color(0xFF166534) : W.muted)))),
                         ]),
                       );
                     }).toList();
@@ -698,7 +698,7 @@ class _AdminAppState extends State<AdminApp> {
                     child: ClipRRect(borderRadius: BorderRadius.circular(DS.radiusMd), child: Image.asset('assets/app_icon_192.png', fit: BoxFit.cover))),
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.user['name'] ?? L.tr('name'), style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
+                    Text(L.localName(widget.user).isNotEmpty ? L.localName(widget.user) : L.tr('name'), style: _tj(13, color: Colors.white), overflow: TextOverflow.ellipsis),
                     Text(L.tr('system_admin'), style: _tj(11, color: Colors.white.withOpacity(0.5))),
                   ])),
                 ]),

@@ -57,7 +57,7 @@ class _AdminFaceDetailState extends State<AdminFaceDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.employee['name'] ?? '—';
+    final name = L.localName(widget.employee).isNotEmpty ? L.localName(widget.employee) : '—';
     final empId = widget.employee['empId'] ?? '';
     final registered = _faceData?['registered'] == true;
     final photoUrl = _faceData?['photoUrl'] as String?;

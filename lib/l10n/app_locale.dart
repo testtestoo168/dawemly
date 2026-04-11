@@ -37,6 +37,25 @@ class L {
     return val;
   }
 
+  /// Returns the appropriate name based on current locale.
+  /// Falls back to Arabic name if English is empty.
+  static String localName(Map<String, dynamic> item, {String arKey = 'name', String enKey = 'name_en'}) {
+    if (isEn) {
+      final en = (item[enKey] ?? '').toString();
+      if (en.isNotEmpty) return en;
+    }
+    return (item[arKey] ?? '').toString();
+  }
+
+  /// Returns the appropriate department based on current locale.
+  static String localDept(Map<String, dynamic> item) {
+    return localName(item, arKey: 'dept', enKey: 'dept_en');
+  }
+
+  /// Aliases for convenience (pickName/pickDept).
+  static String pickName(Map<String, dynamic> item) => localName(item);
+  static String pickDept(Map<String, dynamic> item) => localDept(item);
+
   // ═══════════════════════════════════════════════════════
   //  ARABIC MAP (original strings)
   // ═══════════════════════════════════════════════════════
@@ -338,6 +357,13 @@ class L {
     'edit_user_data': 'تعديل بيانات المستخدم',
     'delete_user': 'حذف المستخدم',
     'full_name': 'الاسم الكامل *',
+    'name_ar': 'الاسم بالعربي *',
+    'name_en_label': 'الاسم بالإنجليزي *',
+    'dept_ar': 'القسم بالعربي',
+    'dept_en_label': 'القسم بالإنجليزي',
+    'name_en_required': 'الاسم بالإنجليزي مطلوب',
+    'location_name_en': 'اسم الموقع بالإنجليزي',
+    'schedule_name_en': 'اسم الجدول بالإنجليزي',
     'password_required': 'كلمة المرور *',
     'employee_id': 'الرقم الوظيفي',
     'department': 'القسم / الإدارة',
@@ -1492,6 +1518,13 @@ class L {
     'edit_user_data': 'Edit User Data',
     'delete_user': 'Delete User',
     'full_name': 'Full Name *',
+    'name_ar': 'Name (Arabic) *',
+    'name_en_label': 'Name (English) *',
+    'dept_ar': 'Department (Arabic)',
+    'dept_en_label': 'Department (English)',
+    'name_en_required': 'English name is required',
+    'location_name_en': 'Location Name (English)',
+    'schedule_name_en': 'Schedule Name (English)',
     'password_required': 'Password *',
     'employee_id': 'Employee ID',
     'department': 'Department',

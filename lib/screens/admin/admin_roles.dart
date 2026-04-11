@@ -125,6 +125,7 @@ class _AdminRolesState extends State<AdminRoles> {
     final q = _search.toLowerCase();
     return _users.where((u) =>
       (u['name'] ?? '').toString().toLowerCase().contains(q) ||
+      (u['name_en'] ?? '').toString().toLowerCase().contains(q) ||
       (u['emp_id'] ?? u['empId'] ?? '').toString().contains(q) ||
       (u['dept'] ?? '').toString().contains(q)).toList();
   }
@@ -254,7 +255,7 @@ class _AdminRolesState extends State<AdminRoles> {
   }
 
   Widget _empTile(Map<String, dynamic> u) {
-    final name = (u['name'] ?? '').toString();
+    final name = L.localName(u);
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final isSelected = _selectedUser?['uid'] == u['uid'];
     final count = _permCount(u);
@@ -276,7 +277,7 @@ class _AdminRolesState extends State<AdminRoles> {
           const Spacer(),
           Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(name, style: _tj(13, w: FontWeight.w600, color: isSelected ? W.pri : W.text)),
-            Text('${u['dept'] ?? ''} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted), overflow: TextOverflow.ellipsis),
+            Text('${L.localDept(u)} · ${u['emp_id'] ?? u['empId'] ?? ''}', style: _tj(10, color: W.muted), overflow: TextOverflow.ellipsis),
           ])),
           const SizedBox(width: 8),
           CircleAvatar(radius: 16, backgroundColor: isSelected ? W.pri : W.div,
@@ -289,7 +290,7 @@ class _AdminRolesState extends State<AdminRoles> {
   // ══════ PERMISSIONS PANEL ══════
   Widget _permsPanel() {
     final u = _selectedUser!;
-    final name = (u['name'] ?? '').toString();
+    final name = L.localName(u);
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final enabledCount = _editPerms.values.where((v) => v).length;
     final total = _allKeys.length;
@@ -352,7 +353,7 @@ class _AdminRolesState extends State<AdminRoles> {
   // ══════ PERMISSIONS PANEL (mobile - no Expanded) ══════
   Widget _permsPanelMobile() {
     final u = _selectedUser!;
-    final name = (u['name'] ?? '').toString();
+    final name = L.localName(u);
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
     final enabledCount = _editPerms.values.where((v) => v).length;
     final total = _allKeys.length;
