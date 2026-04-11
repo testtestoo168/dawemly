@@ -66,9 +66,6 @@ void main() async {
     ]);
   }
 
-  // Use bundled fonts only — never download from network
-  GoogleFonts.config.allowRuntimeFetching = false;
-
   // Non-blocking background tasks
   ServerTimeService().startPeriodicSync();
   _setupFcm();
