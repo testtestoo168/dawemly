@@ -281,24 +281,22 @@ class _AdminDevicesState extends State<AdminDevices> {
   // ══════ DEVICE GRID ══════
   Widget _buildDeviceGrid(int cols, bool isWide) {
     final items = _filtered;
-    final rows = <Widget>[];
-
-    for (int i = 0; i < items.length; i += cols) {
-      final rowItems = <Widget>[];
-      for (int j = 0; j < cols; j++) {
-        if (i + j < items.length) {
-          if (j > 0) rowItems.add(SizedBox(width: isWide ? 14 : 10));
-          rowItems.add(Expanded(child: _deviceCard(items[i + j], isWide)));
-        } else {
-          if (j > 0) rowItems.add(SizedBox(width: isWide ? 14 : 10));
-          rowItems.add(const Expanded(child: SizedBox()));
-        }
-      }
-      if (i > 0) rows.add(SizedBox(height: isWide ? 14 : 10));
-      rows.add(Row(crossAxisAlignment: CrossAxisAlignment.start, children: rowItems));
+    if (cols <= 1) {
+      // Mobile: simple list
+      return Column(children: items.map((e) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _deviceCard(e, isWide),
+      )).toList());
     }
-
-    return Column(children: rows);
+    // Web: use Wrap for natural flow that respects text direction
+    return Wrap(
+      spacing: 14,
+      runSpacing: 14,
+      children: items.map((e) => SizedBox(
+        width: cols == 3 ? (MediaQuery.of(context).size.width - 56 - 28) / 3 : (MediaQuery.of(context).size.width - 56 - 14) / 2,
+        child: _deviceCard(e, isWide),
+      )).toList(),
+    );
   }
 
   // ══════ DEVICE CARD ══════
