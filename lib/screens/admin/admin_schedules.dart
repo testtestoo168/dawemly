@@ -23,6 +23,10 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   String? _editSchId;
   String _empSearch = '';
 
+  // ═══ أرصدة الإجازات ═══
+  List<Map<String, dynamic>> _leaveBalances = [];
+  bool _loadingLeaves = false;
+
   // Schedule form state
   String _schName = '';
   int _schShift = 1;
@@ -49,7 +53,12 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl.addListener(() {
+      if (_tabCtrl.index == 2 && _leaveBalances.isEmpty && !_loadingLeaves) {
+        _loadLeaveBalances();
+      }
+    });
     _loadAll();
   }
 
@@ -185,7 +194,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           indicator: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(7)),
           indicatorPadding: const EdgeInsets.all(3),
           dividerColor: Colors.transparent,
-          tabs: [Tab(text: L.tr('schedules_tab')), Tab(text: L.tr('leaves_tab'))],
+          tabs: [Tab(text: L.tr('schedules_tab')), Tab(text: L.tr('leaves_tab')), Tab(text: L.tr('leave_balance'))],
         ),
       ),
       const SizedBox(height: 8),
@@ -194,6 +203,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         child: TabBarView(controller: _tabCtrl, children: [
           _buildSchedulesTab(isMobile, isWide),
           _buildHolidaysTab(isMobile, isWide),
+          _buildLeaveBalancesTab(isMobile, isWide),
         ]),
       ),
     ]);
@@ -879,6 +889,303 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
         );
       }),
     );
+  }
+
+  // ═══════════════════════════════════════════
+  //           LEAVE BALANCES TAB
+  // ═══════════════════════════════════════════
+
+  Future<void> _loadLeaveBalances() async {
+    setState(() => _loadingLeaves = true);
+    try {
+      final res = await ApiService.get('leaves.php?action=all_balances&year=${DateTime.now().year}');
+      if (res['success'] == true) {
+        _leaveBalances = (res['balances'] as List? ?? []).cast<Map<String, dynamic>>();
+      }
+      // Ensure every active employee has a balance row
+      for (final u in _emps) {
+        final uid = _uidOf(u);
+        if (uid.isEmpty) continue;
+        final exists = _leaveBalances.any((b) => b['uid'] == uid);
+        if (!exists) {
+          await ApiService.get('leaves.php?action=balance&uid=$uid&year=${DateTime.now().year}');
+        }
+      }
+      // Reload after creating missing ones
+      final res2 = await ApiService.get('leaves.php?action=all_balances&year=${DateTime.now().year}');
+      if (res2['success'] == true) {
+        _leaveBalances = (res2['balances'] as List? ?? []).cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingLeaves = false);
+  }
+
+  Future<void> _saveLeaveBalance(String uid, {int? annual, int? sick, int? emergency}) async {
+    try {
+      await ApiService.post('leaves.php?action=set_balance', {
+        'uid': uid,
+        'year': DateTime.now().year,
+        if (annual != null) 'annual_total': annual,
+        if (sick != null) 'sick_total': sick,
+        if (emergency != null) 'emergency_total': emergency,
+      });
+      await _loadLeaveBalances();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(L.tr('leave_balance_saved'), style: GoogleFonts.tajawal()),
+          backgroundColor: W.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(L.tr('error_prefix', args: {'error': e.toString()}), style: GoogleFonts.tajawal()),
+          backgroundColor: W.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd)),
+        ));
+      }
+    }
+  }
+
+  Widget _buildLeaveBalancesTab(bool isMobile, bool isWide) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isWide ? 28 : (isMobile ? 14 : 18)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        // Header
+        isMobile
+          ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _loadLeaveBalances,
+                icon: const Icon(Icons.refresh, size: 14),
+                label: Text(L.tr('update_balances'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)),
+                style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
+              ),
+            ])
+          : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              ElevatedButton.icon(
+                onPressed: _loadLeaveBalances,
+                icon: const Icon(Icons.refresh, size: 14),
+                label: Text(L.tr('update_balances'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)),
+                style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
+              ),
+              Flexible(child: Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
+            ]),
+        const SizedBox(height: 14),
+
+        if (_loadingLeaves)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+        else if (_leaveBalances.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: W.border)),
+            child: Center(child: Column(children: [
+              Icon(Icons.event_busy_outlined, size: 36, color: W.hint),
+              const SizedBox(height: 8),
+              Text(L.tr('no_data_check'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
+            ])),
+          )
+        else
+          // Responsive grid: 2 columns on wide, 1 on mobile
+          LayoutBuilder(builder: (ctx, constraints) {
+            if (isWide) {
+              // 2-column grid
+              final cards = _leaveBalances.map((bal) => _leaveBalanceCard(bal, isMobile)).toList();
+              final rows = <Widget>[];
+              for (var i = 0; i < cards.length; i += 2) {
+                if (i + 1 < cards.length) {
+                  rows.add(Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: cards[i + 1]),
+                    const SizedBox(width: 14),
+                    Expanded(child: cards[i]),
+                  ]));
+                } else {
+                  rows.add(Row(children: [
+                    const Expanded(child: SizedBox()),
+                    const SizedBox(width: 14),
+                    Expanded(child: cards[i]),
+                  ]));
+                }
+                rows.add(const SizedBox(height: 14));
+              }
+              return Column(children: rows);
+            } else {
+              // Single column
+              return Column(children: _leaveBalances.map((bal) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _leaveBalanceCard(bal, isMobile),
+              )).toList());
+            }
+          }),
+      ]),
+    );
+  }
+
+  Widget _leaveBalanceCard(Map<String, dynamic> bal, bool isMobile) {
+    final name = bal['name'] ?? '';
+    final empId = bal['emp_id'] ?? '';
+    final dept = bal['dept'] ?? '';
+    final uid = bal['uid'] ?? '';
+    final annualTotal = (bal['annual_total'] as num?)?.toInt() ?? 21;
+    final annualUsed = (bal['annual_used'] as num?)?.toInt() ?? 0;
+    final sickTotal = (bal['sick_total'] as num?)?.toInt() ?? 10;
+    final sickUsed = (bal['sick_used'] as num?)?.toInt() ?? 0;
+    final emergencyTotal = (bal['emergency_total'] as num?)?.toInt() ?? 5;
+    final emergencyUsed = (bal['emergency_used'] as num?)?.toInt() ?? 0;
+    final unpaidUsed = (bal['unpaid_used'] as num?)?.toInt() ?? 0;
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 14 : 22),
+      decoration: BoxDecoration(
+        color: W.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: W.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        // Employee info row
+        Row(children: [
+          const Spacer(),
+          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 15, fontWeight: FontWeight.w700, color: W.text)),
+            if (dept.isNotEmpty || empId.isNotEmpty)
+              Text('${dept.isNotEmpty ? dept : ''} ${empId.isNotEmpty ? '\u00b7 $empId' : ''}', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
+          ])),
+          const SizedBox(width: 10),
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: W.priLight, shape: BoxShape.circle),
+            child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.pri))),
+          ),
+        ]),
+        const SizedBox(height: 14),
+
+        // Leave type rows
+        _leaveTypeRow(
+          label: L.tr('annual'),
+          icon: Icons.beach_access,
+          color: W.pri,
+          total: annualTotal,
+          used: annualUsed,
+          onTotalChanged: (v) => _saveLeaveBalance(uid, annual: v),
+        ),
+        const SizedBox(height: 8),
+        _leaveTypeRow(
+          label: L.tr('sick'),
+          icon: Icons.local_hospital,
+          color: W.red,
+          total: sickTotal,
+          used: sickUsed,
+          onTotalChanged: (v) => _saveLeaveBalance(uid, sick: v),
+        ),
+        const SizedBox(height: 8),
+        _leaveTypeRow(
+          label: L.tr('emergency'),
+          icon: Icons.warning_amber,
+          color: W.orange,
+          total: emergencyTotal,
+          used: emergencyUsed,
+          onTotalChanged: (v) => _saveLeaveBalance(uid, emergency: v),
+        ),
+        if (unpaidUsed > 0) ...[
+          const SizedBox(height: 8),
+          Row(children: [
+            Text('$unpaidUsed ${L.tr("day_unit")}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
+            const Spacer(),
+            Text(L.tr('unpaid'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+            const SizedBox(width: 6),
+            Icon(Icons.money_off, size: 16, color: W.muted),
+          ]),
+        ],
+      ]),
+    );
+  }
+
+  Widget _leaveTypeRow({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required int total,
+    required int used,
+    required Function(int) onTotalChanged,
+  }) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+    final remaining = total - used;
+    final progress = total > 0 ? (used / total).clamp(0.0, 1.0) : 0.0;
+    return Row(children: [
+      // Edit button
+      InkWell(
+        onTap: () {
+          final ctrl = TextEditingController(text: '$total');
+          showDialog(context: context, builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: Text(L.tr('edit_balance_label', args: {'label': label}), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+            content: TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.ibmPlexMono(fontSize: 20, fontWeight: FontWeight.w800, color: color),
+              decoration: InputDecoration(
+                hintText: L.tr('number_of_days'),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                suffixText: L.tr('day_unit'),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(color: W.sub))),
+              ElevatedButton(
+                onPressed: () {
+                  final v = int.tryParse(ctrl.text);
+                  if (v != null && v >= 0) {
+                    Navigator.pop(ctx);
+                    onTotalChanged(v);
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white),
+                child: Text(L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ));
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(DS.radiusMd)),
+          child: Icon(Icons.edit, size: 14, color: color),
+        ),
+      ),
+      const SizedBox(width: 8),
+      // Progress bar + numbers
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Row(children: [
+          Text(L.tr('n_remaining_of_total', args: {'remaining': remaining.toString(), 'total': total.toString()}), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: W.muted)),
+          const Spacer(),
+          Text(L.tr('n_used', args: {'used': used.toString()}), style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, color: color)),
+        ]),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: color.withOpacity(0.1),
+            color: color,
+            minHeight: 6,
+          ),
+        ),
+      ])),
+      const SizedBox(width: 10),
+      // Label + icon
+      Text(label, style: GoogleFonts.tajawal(fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w600, color: W.text)),
+      const SizedBox(width: 6),
+      Container(
+        width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(DS.radiusMd)),
+        child: Icon(icon, size: isMobile ? 14 : 16, color: color),
+      ),
+    ]);
   }
 
   // ───────────────── Shared Widgets ─────────────────
