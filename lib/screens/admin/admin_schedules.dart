@@ -219,28 +219,173 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     return _mobileSchedules(isMobile);
   }
 
-  // ── Wide: left form (1/3) + right grid & employees (2/3) ──
+  // ── Wide: left list+employees (2/3) + right form (1/3) ──
   Widget _wideSchedules() {
     final activeSch = _schedules.firstWhere(
       (s) => s['id']?.toString() == _selSchId,
       orElse: () => _schedules.isNotEmpty ? _schedules.first : {},
     );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 16, 28, 28),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // RIGHT 2/3: grid + employees
-        Expanded(flex: 2, child: Column(children: [
-          _scheduleGrid(),
-          if (activeSch.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _employeePanel(activeSch),
-          ],
-        ])),
-        const SizedBox(width: 20),
-        // LEFT 1/3: form
-        Expanded(flex: 1, child: _scheduleForm(false)),
+    return Directionality(
+      textDirection: L.textDirection,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // LEFT 2/3: schedule list + employees
+          Expanded(flex: 2, child: Column(children: [
+            _scheduleListPanel(),
+            if (activeSch.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _employeePanel(activeSch),
+            ],
+          ])),
+          const SizedBox(width: 24),
+          // RIGHT 1/3: form
+          Expanded(flex: 1, child: _scheduleForm(false)),
+        ]),
+      ),
+    );
+  }
+
+  // ── Wide: schedule list as clean table rows ──
+  Widget _scheduleListPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: W.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: W.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
+      ),
+      child: Column(children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: W.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            border: Border(bottom: BorderSide(color: W.div)),
+          ),
+          child: Row(children: [
+            Icon(Icons.calendar_today_outlined, size: 18, color: W.pri),
+            const SizedBox(width: 10),
+            Text(L.tr('schedules_tab'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: W.priLight, borderRadius: BorderRadius.circular(20)),
+              child: Text('${_schedules.length}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: W.pri)),
+            ),
+          ]),
+        ),
+        if (_schedules.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(children: [
+              Icon(Icons.event_note_outlined, size: 40, color: W.hint),
+              const SizedBox(height: 12),
+              Text(L.tr('no_schedules_yet'), style: GoogleFonts.tajawal(fontSize: 14, color: W.muted)),
+            ]),
+          )
+        else
+          ..._schedules.asMap().entries.map((entry) {
+            final i = entry.key;
+            final sch = entry.value;
+            return _scheduleListRow(sch, i);
+          }),
       ]),
+    );
+  }
+
+  // ── Single schedule row in wide list ──
+  Widget _scheduleListRow(Map<String, dynamic> sch, int index) {
+    final sh = _shiftFor(sch['shiftId']);
+    final c = sh['color'] as Color;
+    final days = List<String>.from(sch['days'] ?? []);
+    final empCount = (sch['empIds'] as List?)?.length ?? 0;
+    final isSel = _selSchId == sch['id']?.toString();
+
+    return InkWell(
+      onTap: () => setState(() => _selSchId = sch['id']?.toString()),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSel ? W.priLight.withOpacity(0.5) : (index.isEven ? W.white : W.bg.withOpacity(0.3)),
+          border: Border(
+            bottom: BorderSide(color: W.div),
+            left: BorderSide(color: isSel ? W.pri : Colors.transparent, width: 3),
+          ),
+        ),
+        child: Row(children: [
+          // Schedule name
+          Expanded(
+            flex: 3,
+            child: Row(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: c.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.schedule, size: 18, color: c),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+              ),
+            ]),
+          ),
+          // Shift badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: c.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
+              const SizedBox(width: 6),
+              Text('${sh['start']} - ${sh['end']}', style: _mono(fontSize: 10, color: c)),
+            ]),
+          ),
+          const SizedBox(width: 16),
+          // Day circles
+          Row(mainAxisSize: MainAxisSize.min, children: _allDays.map((d) {
+            final active = days.contains(d);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: active ? c.withOpacity(0.15) : W.bg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: active ? c.withOpacity(0.3) : W.border, width: 1),
+                ),
+                child: Center(child: Text(
+                  d.length >= 2 ? d.substring(0, 2) : d,
+                  style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: active ? c : W.hint),
+                )),
+              ),
+            );
+          }).toList()),
+          const SizedBox(width: 16),
+          // Employee count
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.people_outline, size: 14, color: W.muted),
+              const SizedBox(width: 4),
+              Text('$empCount', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          // Action buttons
+          _iconBtn(Icons.edit_outlined, W.orange, W.orangeL, () {
+            _editSchId = sch['id']?.toString();
+            _resetSchForm(sch);
+            setState(() {});
+          }),
+          const SizedBox(width: 6),
+          _iconBtn(Icons.delete_outline, W.red, W.redL, () => _deleteSchedule(sch['id'])),
+        ]),
+      ),
     );
   }
 
@@ -280,7 +425,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     ]);
   }
 
-  // ── Schedule card (used in both mobile list and wide grid) ──
+  // ── Schedule card (mobile only) ──
   Widget _scheduleCard(Map<String, dynamic> sch, bool compact) {
     final sh = _shiftFor(sch['shiftId']);
     final c = sh['color'] as Color;
@@ -291,76 +436,73 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     return InkWell(
       onTap: () => setState(() => _selSchId = sch['id']?.toString()),
       child: Container(
-        padding: EdgeInsets.all(compact ? 12 : 16),
+        padding: EdgeInsets.all(compact ? 14 : 16),
         decoration: BoxDecoration(
           color: isSel ? c.withOpacity(0.03) : W.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSel ? c : W.border, width: isSel ? 2 : 1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSel ? c : W.border, width: isSel ? 1.5 : 1),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          // Row 1: name + actions
-          Row(children: [
-            // Actions
-            _iconBtn(Icons.delete_outline, W.red, W.redL, () => _deleteSchedule(sch['id'])),
-            const SizedBox(width: 6),
-            _iconBtn(Icons.edit_outlined, W.orange, W.orangeL, () {
-              _editSchId = sch['id']?.toString();
-              _resetSchForm(sch);
-              if (MediaQuery.of(context).size.width < 800) _showSchBottomSheet();
-              setState(() {});
-            }),
-            const Spacer(),
-            Flexible(child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w700, color: W.text))),
-          ]),
-          const SizedBox(height: 8),
-          // Row 2: shift badge + employee count
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(12)),
-              child: Text(L.tr('n_employee', args: {'n': empCount.toString()}), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted, fontWeight: FontWeight.w600)),
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: c.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('${sh['start']} - ${sh['end']}', style: _mono(fontSize: 10, color: c)),
-                const SizedBox(width: 6),
-                Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 10),
-          // Row 3: day chips
-          Row(children: _allDays.map((d) {
-            final active = days.contains(d);
-            return Expanded(child: Container(
-              height: 26,
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              decoration: BoxDecoration(
-                color: active ? c.withOpacity(0.12) : W.bg,
-                borderRadius: BorderRadius.circular(DS.radiusMd),
+        child: Directionality(
+          textDirection: L.textDirection,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Row 1: name + actions
+            Row(children: [
+              Flexible(child: Text(sch['name'] ?? '', style: GoogleFonts.tajawal(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w700, color: W.text))),
+              const Spacer(),
+              _iconBtn(Icons.edit_outlined, W.orange, W.orangeL, () {
+                _editSchId = sch['id']?.toString();
+                _resetSchForm(sch);
+                _showSchBottomSheet();
+                setState(() {});
+              }),
+              const SizedBox(width: 6),
+              _iconBtn(Icons.delete_outline, W.red, W.redL, () => _deleteSchedule(sch['id'])),
+            ]),
+            const SizedBox(height: 10),
+            // Row 2: shift badge + employee count
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: c.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('${sh['name']}', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: c)),
+                  const SizedBox(width: 6),
+                  Text('${sh['start']} - ${sh['end']}', style: _mono(fontSize: 10, color: c)),
+                ]),
               ),
-              child: Center(child: Text(
-                d.substring(0, 2),
-                style: GoogleFonts.tajawal(fontSize: 9, fontWeight: FontWeight.w700, color: active ? c : W.hint),
-              )),
-            ));
-          }).toList()),
-        ]),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.people_outline, size: 13, color: W.muted),
+                  const SizedBox(width: 4),
+                  Text(L.tr('n_employee', args: {'n': empCount.toString()}), style: GoogleFonts.tajawal(fontSize: 11, color: W.muted, fontWeight: FontWeight.w600)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            // Row 3: day circles
+            Row(children: _allDays.map((d) {
+              final active = days.contains(d);
+              return Expanded(child: Container(
+                height: 28,
+                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                decoration: BoxDecoration(
+                  color: active ? c.withOpacity(0.12) : W.bg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(child: Text(
+                  d.length >= 2 ? d.substring(0, 2) : d,
+                  style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: active ? c : W.hint),
+                )),
+              ));
+            }).toList()),
+          ]),
+        ),
       ),
     );
-  }
-
-  // ── Wide-only: 2-column grid of schedule cards ──
-  Widget _scheduleGrid() {
-    return Wrap(spacing: 14, runSpacing: 14, children: _schedules.map((sch) {
-      return SizedBox(
-        width: (MediaQuery.of(context).size.width * 2 / 3 - 80) / 2,
-        child: _scheduleCard(sch, false),
-      );
-    }).toList());
   }
 
   // ── Schedule form (wide: always visible panel, mobile: bottom sheet content) ──
@@ -369,88 +511,105 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final accent = isEditing ? W.orange : W.pri;
 
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 22),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent, width: isEditing ? 2 : 1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: W.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-        // Header
-        Row(children: [
-          const Spacer(),
-          Icon(isEditing ? Icons.edit_note : Icons.add_circle_outline, size: 18, color: accent),
-          const SizedBox(width: 8),
-          Text(isEditing ? L.tr('edit_schedule') : L.tr('new_schedule'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700, color: W.text)),
-        ]),
-        const Divider(height: 24),
-        // Name
-        _inputField(L.tr('schedule_name'), L.tr('schedule_example'), _schName, (v) => setState(() => _schName = v)),
-        const SizedBox(height: 14),
-        // Shift dropdown
-        Text(L.tr('linked_period'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          width: double.infinity,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(DS.radiusMd), border: Border.all(color: W.border)),
-          child: DropdownButtonHideUnderline(child: DropdownButton<int>(
-            value: _schShift,
-            isExpanded: true,
-            style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
-            items: _shifts.map((s) => DropdownMenuItem(
-              value: s['id'] as int,
-              child: Text('${s['name']} (${s['start']} - ${s['end']})'),
-            )).toList(),
-            onChanged: (v) => setState(() => _schShift = v ?? 1),
-          )),
-        ),
-        const SizedBox(height: 14),
-        // Day toggles
-        Text(L.tr('work_days'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
-        const SizedBox(height: 6),
-        Row(children: _allDays.map((d) {
-          final on = _schDays.contains(d);
-          return Expanded(child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: InkWell(
-              onTap: () => setState(() => on ? _schDays.remove(d) : _schDays.add(d)),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: on ? accent.withOpacity(0.1) : W.white,
-                  borderRadius: BorderRadius.circular(DS.radiusMd),
-                  border: Border.all(color: on ? accent : W.border, width: on ? 2 : 1),
-                ),
-                child: Center(child: Text(
-                  isMobile ? d.substring(0, 2) : d,
-                  style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: on ? accent : W.muted),
-                )),
+      child: Directionality(
+        textDirection: L.textDirection,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          // Header
+          Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(isEditing ? Icons.edit_note : Icons.add_circle_outline, size: 20, color: accent),
             ),
-          ));
-        }).toList()),
-        const SizedBox(height: 20),
-        // Buttons
-        Row(children: [
-          Expanded(child: _actionBtn(
-            L.tr('cancel'), W.white, W.sub,
-            border: W.border,
-            onTap: () {
-              setState(() { _editSchId = null; _resetSchForm(); });
-              if (isMobile) Navigator.pop(context);
-            },
-          )),
-          const SizedBox(width: 10),
-          Expanded(flex: 2, child: _actionBtn(
-            isEditing ? L.tr('save_edits') : L.tr('create_schedule'), accent, Colors.white,
-            onTap: () async {
-              await _saveSchedule();
-              if (isMobile && mounted) Navigator.pop(context);
-            },
-          )),
+            const SizedBox(width: 10),
+            Text(isEditing ? L.tr('edit_schedule') : L.tr('new_schedule'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: W.text)),
+          ]),
+          const SizedBox(height: 6),
+          Divider(color: W.div, height: 24),
+          // Name
+          _inputField(L.tr('schedule_name'), L.tr('schedule_example'), _schName, (v) => setState(() => _schName = v)),
+          const SizedBox(height: 16),
+          // Shift dropdown
+          Text(L.tr('linked_period'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(DS.radiusMd),
+              border: Border.all(color: W.border),
+              color: W.white,
+            ),
+            child: DropdownButtonHideUnderline(child: DropdownButton<int>(
+              value: _schShift,
+              isExpanded: true,
+              style: GoogleFonts.tajawal(fontSize: 13, color: W.text),
+              icon: Icon(Icons.keyboard_arrow_down, color: W.muted, size: 20),
+              items: _shifts.map((s) => DropdownMenuItem(
+                value: s['id'] as int,
+                child: Text('${s['name']} (${s['start']} - ${s['end']})'),
+              )).toList(),
+              onChanged: (v) => setState(() => _schShift = v ?? 1),
+            )),
+          ),
+          const SizedBox(height: 16),
+          // Day toggles
+          Text(L.tr('work_days'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.sub)),
+          const SizedBox(height: 8),
+          Row(children: _allDays.map((d) {
+            final on = _schDays.contains(d);
+            return Expanded(child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(() => on ? _schDays.remove(d) : _schDays.add(d)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: on ? accent.withOpacity(0.1) : W.bg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: on ? accent : W.border, width: on ? 1.5 : 1),
+                  ),
+                  child: Center(child: Text(
+                    isMobile ? (d.length >= 2 ? d.substring(0, 2) : d) : d,
+                    style: GoogleFonts.tajawal(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: on ? accent : W.muted),
+                  )),
+                ),
+              ),
+            ));
+          }).toList()),
+          const SizedBox(height: 24),
+          // Buttons
+          Row(children: [
+            Expanded(child: _actionBtn(
+              L.tr('cancel'), W.white, W.sub,
+              border: W.border,
+              onTap: () {
+                setState(() { _editSchId = null; _resetSchForm(); });
+                if (isMobile) Navigator.pop(context);
+              },
+            )),
+            const SizedBox(width: 10),
+            Expanded(flex: 2, child: _actionBtn(
+              isEditing ? L.tr('save_edits') : L.tr('create_schedule'), accent, Colors.white,
+              onTap: () async {
+                await _saveSchedule();
+                if (isMobile && mounted) Navigator.pop(context);
+              },
+            )),
+          ]),
         ]),
-      ]),
+      ),
     );
   }
 
@@ -460,7 +619,6 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => StatefulBuilder(builder: (ctx, setBS) {
-        // Wrap in a listener so setState in the main widget updates the sheet
         return Container(
           margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(16)),
@@ -489,43 +647,53 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     return Container(
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: W.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: c.withOpacity(0.03),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             border: Border(bottom: BorderSide(color: W.div)),
           ),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-              child: Text('${assigned.length} / ${_emps.length}', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
-            ),
-            const Spacer(),
-            Icon(Icons.people_outline, size: 18, color: c),
-            const SizedBox(width: 8),
-            Flexible(child: Text(L.tr('assign_employees', args: {'name': sch['name'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
-          ]),
+          child: Directionality(
+            textDirection: L.textDirection,
+            child: Row(children: [
+              Icon(Icons.people_outline, size: 18, color: c),
+              const SizedBox(width: 10),
+              Flexible(child: Text(L.tr('assign_employees', args: {'name': sch['name'] ?? ''}), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text))),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text('${assigned.length} / ${_emps.length}', style: _mono(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
+              ),
+            ]),
+          ),
         ),
         // Split: available | assigned
         if (isWide)
-          IntrinsicHeight(child: Row(children: [
-            Expanded(child: _empList(L.tr('available_employees'), filtered, true, c, sch, search: true)),
-            Container(width: 1, color: W.div),
-            Expanded(child: _empList(L.tr('assigned_employees'), assigned, false, c, sch)),
-          ]))
+          IntrinsicHeight(child: Directionality(
+            textDirection: L.textDirection,
+            child: Row(children: [
+              Expanded(child: _empList(L.tr('assigned_employees'), assigned, false, c, sch)),
+              Container(width: 1, color: W.div),
+              Expanded(child: _empList(L.tr('available_employees'), filtered, true, c, sch, search: true)),
+            ]),
+          ))
         else
-          Column(children: [
-            _empList(L.tr('assigned_employees'), assigned, false, c, sch),
-            Divider(height: 1, color: W.div),
-            _empList(L.tr('available_employees'), filtered, true, c, sch, search: true),
-          ]),
+          Directionality(
+            textDirection: L.textDirection,
+            child: Column(children: [
+              _empList(L.tr('assigned_employees'), assigned, false, c, sch),
+              Divider(height: 1, color: W.div),
+              _empList(L.tr('available_employees'), filtered, true, c, sch, search: true),
+            ]),
+          ),
       ]),
     );
   }
@@ -533,21 +701,25 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   Widget _empList(String title, List<Map<String, dynamic>> emps, bool isAdd, Color c, Map<String, dynamic> sch, {bool search = false}) {
     return Column(children: [
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
         child: Column(children: [
           Row(children: [
-            Text('${emps.length}', style: _mono(fontSize: 12, color: W.muted)),
-            const Spacer(),
+            Icon(isAdd ? Icons.person_add_outlined : Icons.group_outlined, size: 16, color: isAdd ? W.green : c),
+            const SizedBox(width: 8),
             Text(title, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: W.text)),
-            const SizedBox(width: 6),
-            Icon(isAdd ? Icons.person_add_outlined : Icons.group_outlined, size: 15, color: isAdd ? W.green : c),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: W.bg, borderRadius: BorderRadius.circular(12)),
+              child: Text('${emps.length}', style: _mono(fontSize: 11, fontWeight: FontWeight.w600, color: W.muted)),
+            ),
           ]),
           if (search) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             TextField(
               onChanged: (v) => setState(() => _empSearch = v),
-              textAlign: TextAlign.right,
+              textDirection: L.textDirection,
               style: GoogleFonts.tajawal(fontSize: 12),
               decoration: InputDecoration(
                 hintText: L.tr('search'),
@@ -556,8 +728,9 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 filled: true,
                 fillColor: W.bg,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(DS.radiusMd), borderSide: BorderSide(color: W.border)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: W.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: W.border)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: W.pri)),
                 isDense: true,
               ),
             ),
@@ -567,7 +740,11 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       if (emps.isEmpty)
         Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(isAdd ? L.tr('no_available_employees') : L.tr('no_assigned_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+          child: Column(children: [
+            Icon(isAdd ? Icons.person_add_disabled_outlined : Icons.group_off_outlined, size: 28, color: W.hint),
+            const SizedBox(height: 8),
+            Text(isAdd ? L.tr('no_available_employees') : L.tr('no_assigned_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+          ]),
         )
       else
         ConstrainedBox(
@@ -581,32 +758,35 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _empRow(Map<String, dynamic> emp, bool isAdd, Color c, VoidCallback onTap) {
-    final initials = (emp['name'] ?? '').toString().length >= 2 ? emp['name'].toString().substring(0, 2) : L.tr('pm');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
-      child: Row(children: [
-        InkWell(
-          onTap: onTap,
-          child: Container(
-            width: 28, height: 28,
+    final name = (emp['name'] ?? '').toString();
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : '?');
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
+        child: Row(children: [
+          // Avatar
+          Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(color: c.withOpacity(0.08), shape: BoxShape.circle),
+            child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: c))),
+          ),
+          const SizedBox(width: 10),
+          // Name
+          Expanded(child: Text(name, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.text))),
+          // Action button
+          Container(
+            width: 30, height: 30,
             decoration: BoxDecoration(
               color: isAdd ? W.greenL : W.redL,
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: isAdd ? W.greenBd : W.redBd),
             ),
-            child: Icon(isAdd ? Icons.add : Icons.close, size: 13, color: isAdd ? W.green : W.red),
+            child: Icon(isAdd ? Icons.add : Icons.close, size: 14, color: isAdd ? W.green : W.red),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Text(emp['name'] ?? '', textAlign: TextAlign.right, style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.text))),
-        const SizedBox(width: 8),
-        Container(
-          width: 28, height: 28,
-          decoration: BoxDecoration(color: c.withOpacity(0.08), shape: BoxShape.circle),
-          child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: c))),
-        ),
-      ]),
+        ]),
+      ),
     );
   }
 
