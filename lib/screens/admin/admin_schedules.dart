@@ -26,6 +26,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   // ═══ أرصدة الإجازات ═══
   List<Map<String, dynamic>> _leaveBalances = [];
   bool _loadingLeaves = false;
+  String? _expandedLeaveUid;
 
   // Schedule form state
   String _schName = '';
@@ -951,85 +952,59 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _buildLeaveBalancesTab(bool isMobile, bool isWide) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isWide ? 28 : (isMobile ? 14 : 18)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // Header
-        isMobile
-          ? Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: _loadLeaveBalances,
-                icon: const Icon(Icons.refresh, size: 14),
-                label: Text(L.tr('update_balances'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
-              ),
-            ])
-          : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              ElevatedButton.icon(
-                onPressed: _loadLeaveBalances,
-                icon: const Icon(Icons.refresh, size: 14),
-                label: Text(L.tr('update_balances'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)),
-                style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
-              ),
-              Flexible(child: Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
-            ]),
-        const SizedBox(height: 14),
+    final hPad = isWide ? 28.0 : (isMobile ? 14.0 : 18.0);
+    return Column(children: [
+      // Header bar
+      Padding(
+        padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 0),
+        child: Row(children: [
+          ElevatedButton.icon(
+            onPressed: _loadLeaveBalances,
+            icon: const Icon(Icons.refresh, size: 14),
+            label: Text(L.tr('update_balances'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13)),
+            style: ElevatedButton.styleFrom(backgroundColor: W.priLight, foregroundColor: W.pri, side: BorderSide(color: W.pri), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DS.radiusMd))),
+          ),
+          const Spacer(),
+          Text(L.tr('set_leave_balances'), style: GoogleFonts.tajawal(fontSize: 12, color: W.sub)),
+        ]),
+      ),
+      const SizedBox(height: 10),
 
-        if (_loadingLeaves)
-          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-        else if (_leaveBalances.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(color: W.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: W.border)),
-            child: Center(child: Column(children: [
+      // Content
+      Expanded(child: _loadingLeaves
+        ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+        : _leaveBalances.isEmpty
+          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.event_busy_outlined, size: 36, color: W.hint),
               const SizedBox(height: 8),
               Text(L.tr('no_data_check'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted)),
-            ])),
-          )
-        else
-          // Responsive grid: 2 columns on wide, 1 on mobile
-          LayoutBuilder(builder: (ctx, constraints) {
-            if (isWide) {
-              // 2-column grid
-              final cards = _leaveBalances.map((bal) => _leaveBalanceCard(bal, isMobile)).toList();
-              final rows = <Widget>[];
-              for (var i = 0; i < cards.length; i += 2) {
-                if (i + 1 < cards.length) {
-                  rows.add(Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Expanded(child: cards[i + 1]),
-                    const SizedBox(width: 14),
-                    Expanded(child: cards[i]),
-                  ]));
-                } else {
-                  rows.add(Row(children: [
-                    const Expanded(child: SizedBox()),
-                    const SizedBox(width: 14),
-                    Expanded(child: cards[i]),
-                  ]));
-                }
-                rows.add(const SizedBox(height: 14));
-              }
-              return Column(children: rows);
-            } else {
-              // Single column
-              return Column(children: _leaveBalances.map((bal) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _leaveBalanceCard(bal, isMobile),
-              )).toList());
-            }
-          }),
-      ]),
-    );
+            ]))
+          : Container(
+              margin: EdgeInsets.fromLTRB(hPad, 0, hPad, hPad),
+              decoration: BoxDecoration(
+                color: W.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: W.border),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ListView.builder(
+                  itemCount: _leaveBalances.length,
+                  itemBuilder: (ctx, i) => _leaveBalanceRow(_leaveBalances[i], i),
+                ),
+              ),
+            ),
+      ),
+    ]);
   }
 
-  Widget _leaveBalanceCard(Map<String, dynamic> bal, bool isMobile) {
-    final name = bal['name'] ?? '';
-    final empId = bal['emp_id'] ?? '';
-    final dept = bal['dept'] ?? '';
-    final uid = bal['uid'] ?? '';
+  Widget _leaveBalanceRow(Map<String, dynamic> bal, int index) {
+    final name = (bal['name'] ?? '').toString();
+    final dept = (bal['dept'] ?? '').toString();
+    final uid = (bal['uid'] ?? '').toString();
+    final isExpanded = _expandedLeaveUid == uid;
+    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : '?');
+
     final annualTotal = (bal['annual_total'] as num?)?.toInt() ?? 21;
     final annualUsed = (bal['annual_used'] as num?)?.toInt() ?? 0;
     final sickTotal = (bal['sick_total'] as num?)?.toInt() ?? 10;
@@ -1037,72 +1012,103 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final emergencyTotal = (bal['emergency_total'] as num?)?.toInt() ?? 5;
     final emergencyUsed = (bal['emergency_used'] as num?)?.toInt() ?? 0;
     final unpaidUsed = (bal['unpaid_used'] as num?)?.toInt() ?? 0;
-    final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : L.tr('pm'));
 
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 14 : 22),
-      decoration: BoxDecoration(
-        color: W.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: W.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // Employee info row
-        Row(children: [
-          const Spacer(),
-          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(name, style: GoogleFonts.tajawal(fontSize: isMobile ? 14 : 15, fontWeight: FontWeight.w700, color: W.text)),
-            if (dept.isNotEmpty || empId.isNotEmpty)
-              Text('${dept.isNotEmpty ? dept : ''} ${empId.isNotEmpty ? '\u00b7 $empId' : ''}', style: GoogleFonts.tajawal(fontSize: 10, color: W.muted)),
-          ])),
-          const SizedBox(width: 10),
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: W.priLight, shape: BoxShape.circle),
-            child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.pri))),
+    return Column(children: [
+      // Employee header row (always visible)
+      InkWell(
+        onTap: () => setState(() => _expandedLeaveUid = isExpanded ? null : uid),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isExpanded ? W.priLight.withOpacity(0.5) : (index.isEven ? W.white : W.bg.withOpacity(0.4)),
+            border: Border(bottom: BorderSide(color: W.div)),
           ),
-        ]),
-        const SizedBox(height: 14),
-
-        // Leave type rows
-        _leaveTypeRow(
-          label: L.tr('annual'),
-          icon: Icons.beach_access,
-          color: W.pri,
-          total: annualTotal,
-          used: annualUsed,
-          onTotalChanged: (v) => _saveLeaveBalance(uid, annual: v),
+          child: Directionality(
+            textDirection: L.textDirection,
+            child: Row(children: [
+              // Avatar
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  color: isExpanded ? W.pri.withOpacity(0.12) : W.priLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.pri))),
+              ),
+              const SizedBox(width: 12),
+              // Name + dept
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
+                  if (dept.isNotEmpty)
+                    Text(dept, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+                ],
+              )),
+              // Arrow
+              AnimatedRotation(
+                turns: isExpanded ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(Icons.keyboard_arrow_down, size: 22, color: isExpanded ? W.pri : W.muted),
+              ),
+            ]),
+          ),
         ),
-        const SizedBox(height: 8),
-        _leaveTypeRow(
-          label: L.tr('sick'),
-          icon: Icons.local_hospital,
-          color: W.red,
-          total: sickTotal,
-          used: sickUsed,
-          onTotalChanged: (v) => _saveLeaveBalance(uid, sick: v),
-        ),
-        const SizedBox(height: 8),
-        _leaveTypeRow(
-          label: L.tr('emergency'),
-          icon: Icons.warning_amber,
-          color: W.orange,
-          total: emergencyTotal,
-          used: emergencyUsed,
-          onTotalChanged: (v) => _saveLeaveBalance(uid, emergency: v),
-        ),
-        if (unpaidUsed > 0) ...[
-          const SizedBox(height: 8),
-          Row(children: [
-            Text('$unpaidUsed ${L.tr("day_unit")}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
-            const Spacer(),
-            Text(L.tr('unpaid'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
-            const SizedBox(width: 6),
-            Icon(Icons.money_off, size: 16, color: W.muted),
+      ),
+      // Expandable detail section
+      AnimatedCrossFade(
+        firstChild: const SizedBox(width: double.infinity),
+        secondChild: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+          decoration: BoxDecoration(
+            color: W.bg.withOpacity(0.5),
+            border: Border(bottom: BorderSide(color: W.div)),
+          ),
+          child: Column(children: [
+            _leaveTypeRow(
+              label: L.tr('annual'),
+              icon: Icons.beach_access,
+              color: W.pri,
+              total: annualTotal,
+              used: annualUsed,
+              onTotalChanged: (v) => _saveLeaveBalance(uid, annual: v),
+            ),
+            const SizedBox(height: 10),
+            _leaveTypeRow(
+              label: L.tr('sick'),
+              icon: Icons.local_hospital,
+              color: W.red,
+              total: sickTotal,
+              used: sickUsed,
+              onTotalChanged: (v) => _saveLeaveBalance(uid, sick: v),
+            ),
+            const SizedBox(height: 10),
+            _leaveTypeRow(
+              label: L.tr('emergency'),
+              icon: Icons.warning_amber,
+              color: W.orange,
+              total: emergencyTotal,
+              used: emergencyUsed,
+              onTotalChanged: (v) => _saveLeaveBalance(uid, emergency: v),
+            ),
+            if (unpaidUsed > 0) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                Text('$unpaidUsed ${L.tr("day_unit")}', style: GoogleFonts.ibmPlexMono(fontSize: 12, fontWeight: FontWeight.w700, color: W.muted)),
+                const Spacer(),
+                Text(L.tr('unpaid'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
+                const SizedBox(width: 6),
+                Icon(Icons.money_off, size: 16, color: W.muted),
+              ]),
+            ],
           ]),
-        ],
-      ]),
-    );
+        ),
+        crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 250),
+        sizeCurve: Curves.easeInOut,
+      ),
+    ]);
   }
 
   Widget _leaveTypeRow({
