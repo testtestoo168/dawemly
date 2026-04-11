@@ -22,6 +22,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   String? _selSchId;
   String? _editSchId;
   String _empSearch = '';
+  bool _showAllAssigned = false;
+  bool _showAllAvailable = false;
 
   // ═══ أرصدة الإجازات ═══
   List<Map<String, dynamic>> _leaveBalances = [];
@@ -252,9 +254,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     return Container(
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: W.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(children: [
         // Header
@@ -262,7 +263,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: W.bg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             border: Border(bottom: BorderSide(color: W.div)),
           ),
           child: Row(children: [
@@ -305,15 +306,12 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final isSel = _selSchId == sch['id']?.toString();
 
     return InkWell(
-      onTap: () => setState(() => _selSchId = sch['id']?.toString()),
+      onTap: () => setState(() { _selSchId = sch['id']?.toString(); _showAllAssigned = false; _showAllAvailable = false; }),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: isSel ? W.priLight.withOpacity(0.5) : (index.isEven ? W.white : W.bg.withOpacity(0.3)),
-          border: Border(
-            bottom: BorderSide(color: W.div),
-            left: BorderSide(color: isSel ? W.pri : Colors.transparent, width: 3),
-          ),
+          color: isSel ? W.priLight : (index.isEven ? W.white : W.bg.withOpacity(0.3)),
+          border: Border(bottom: BorderSide(color: W.div)),
         ),
         child: Row(children: [
           // Schedule name
@@ -324,7 +322,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 width: 36, height: 36,
                 decoration: BoxDecoration(
                   color: c.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.schedule, size: 18, color: c),
               ),
@@ -434,14 +432,13 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     final isSel = _selSchId == sch['id']?.toString();
 
     return InkWell(
-      onTap: () => setState(() => _selSchId = sch['id']?.toString()),
+      onTap: () => setState(() { _selSchId = sch['id']?.toString(); _showAllAssigned = false; _showAllAvailable = false; }),
       child: Container(
         padding: EdgeInsets.all(compact ? 14 : 16),
         decoration: BoxDecoration(
-          color: isSel ? c.withOpacity(0.03) : W.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSel ? c : W.border, width: isSel ? 1.5 : 1),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          color: isSel ? W.priLight : W.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: W.border),
         ),
         child: Directionality(
           textDirection: L.textDirection,
@@ -514,9 +511,8 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: W.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Directionality(
         textDirection: L.textDirection,
@@ -527,7 +523,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
               width: 36, height: 36,
               decoration: BoxDecoration(
                 color: accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(isEditing ? Icons.edit_note : Icons.add_circle_outline, size: 20, color: accent),
             ),
@@ -647,17 +643,16 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
     return Container(
       decoration: BoxDecoration(
         color: W.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: W.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(children: [
         // Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: c.withOpacity(0.03),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            color: W.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             border: Border(bottom: BorderSide(color: W.div)),
           ),
           child: Directionality(
@@ -699,6 +694,10 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
   }
 
   Widget _empList(String title, List<Map<String, dynamic>> emps, bool isAdd, Color c, Map<String, dynamic> sch, {bool search = false}) {
+    final showAll = isAdd ? _showAllAvailable : _showAllAssigned;
+    final hasMore = emps.length > 4;
+    final visibleEmps = (showAll || !hasMore) ? emps : emps.sublist(0, 4);
+
     return Column(children: [
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -746,19 +745,38 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             Text(isAdd ? L.tr('no_available_employees') : L.tr('no_assigned_employees'), style: GoogleFonts.tajawal(fontSize: 12, color: W.muted)),
           ]),
         )
-      else
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 300),
-          child: ListView(shrinkWrap: true, children: emps.map((emp) {
-            final uid = _uidOf(emp);
-            return _empRow(emp, isAdd, c, () => _toggleEmp(sch, uid, isAdd));
-          }).toList()),
-        ),
+      else ...[
+        ...visibleEmps.map((emp) {
+          final uid = _uidOf(emp);
+          return _empRow(emp, isAdd, c, () => _toggleEmp(sch, uid, isAdd));
+        }),
+        if (hasMore)
+          InkWell(
+            onTap: () => setState(() {
+              if (isAdd) {
+                _showAllAvailable = !_showAllAvailable;
+              } else {
+                _showAllAssigned = !_showAllAssigned;
+              }
+            }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: W.div))),
+              child: Center(
+                child: Text(
+                  showAll ? L.tr('show_less') : '${L.tr('show_more')} (${emps.length - 4})',
+                  style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: W.pri),
+                ),
+              ),
+            ),
+          ),
+      ],
     ]);
   }
 
   Widget _empRow(Map<String, dynamic> emp, bool isAdd, Color c, VoidCallback onTap) {
     final name = (emp['name'] ?? '').toString();
+    final dept = (emp['dept'] ?? emp['department'] ?? '').toString();
     final initials = name.length >= 2 ? name.substring(0, 2) : (name.isNotEmpty ? name[0] : '?');
     return InkWell(
       onTap: onTap,
@@ -773,8 +791,16 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
             child: Center(child: Text(initials, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: c))),
           ),
           const SizedBox(width: 10),
-          // Name
-          Expanded(child: Text(name, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.text))),
+          // Name + department
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(name, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: W.text)),
+              if (dept.isNotEmpty)
+                Text(dept, style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
+            ],
+          )),
           // Action button
           Container(
             width: 30, height: 30,
