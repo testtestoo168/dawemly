@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.rasd_app"
+    namespace = "com.dawemly.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.rasd_app"
+        applicationId = "com.dawemly.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
