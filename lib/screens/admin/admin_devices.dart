@@ -279,25 +279,30 @@ class _AdminDevicesState extends State<AdminDevices> {
     ]);
   }
 
-  // ══════ DEVICE GRID ══════
+  // ══════ DEVICE LIST ══════
   Widget _buildDeviceGrid(int cols, bool isWide) {
     final items = _filtered;
-    if (cols <= 1) {
-      // Mobile: simple list
-      return Column(children: items.map((e) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _deviceCard(e, isWide),
-      )).toList());
-    }
-    // Web: use Wrap for natural flow that respects text direction
-    return Wrap(
-      spacing: 14,
-      runSpacing: 14,
-      children: items.map((e) => SizedBox(
-        width: cols == 3 ? (MediaQuery.of(context).size.width - 56 - 28) / 3 : (MediaQuery.of(context).size.width - 56 - 14) / 2,
-        child: _deviceCard(e, isWide),
-      )).toList(),
-    );
+    // Use LayoutBuilder to get actual content width (not full screen)
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final availW = constraints.maxWidth;
+      // 2 columns if width >= 900px, else 1 column
+      final useGrid = availW >= 900;
+      if (!useGrid) {
+        return Column(children: items.map((e) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _deviceCard(e, isWide),
+        )).toList());
+      }
+      // 2-column layout
+      return Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        children: items.map((e) => SizedBox(
+          width: (availW - 14) / 2,
+          child: _deviceCard(e, isWide),
+        )).toList(),
+      );
+    });
   }
 
   // ══════ DEVICE CARD ══════
