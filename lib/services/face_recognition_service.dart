@@ -249,11 +249,28 @@ class FaceRecognitionService {
       };
     }
 
-    // 3) Match — upload photo + log verification in background, don't block user
-    // ignore: unawaited_futures
-    _uploadAndLogVerification(uid, currentFeatures, photoBytes, similarity);
+    // 3) Match — upload photo and wait for URL so check-in can save it
+    String photoUrl = '';
+    try {
+      final uploadRes = await ApiService.postMultipart(
+        'admin.php?action=upload',
+        {'uid': uid, 'type': 'face_verification'},
+        fileBytes: photoBytes,
+        fileField: 'photo',
+        fileName: 'verify_${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      photoUrl = uploadRes['url'] as String? ?? '';
+    } catch (_) {}
 
-    return {'success': true, 'similarity': similarity};
+    // Log verification in background — don't block
+    // ignore: unawaited_futures
+    ApiService.post('face.php?action=verify', {
+      'uid': uid,
+      'features': currentFeatures,
+      'photo_url': photoUrl,
+    });
+
+    return {'success': true, 'similarity': similarity, 'photoUrl': photoUrl};
   }
 
   // Background: upload the verification photo and notify the server.
