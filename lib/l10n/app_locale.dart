@@ -1215,6 +1215,18 @@ class L {
     'api_err_out_of_range': 'أنت خارج نطاق العمل — اقترب من موقع العمل',
     'api_err_use_official_app': 'يجب استخدام التطبيق الرسمي لتسجيل الحضور',
     'api_err_max_employees': 'تم الوصول للحد الأقصى لعدد الموظفين',
+
+    // ─── Offline Mode ───
+    'offline_mode': 'الوضع الأوفلاين',
+    'offline_enabled': 'الأوفلاين مفعّل',
+    'enable_offline': 'تفعيل الوضع الأوفلاين',
+    'offline_not_allowed': 'لا يمكن تسجيل الحضور بدون اتصال — تواصل مع المدير',
+    'pending_sync': 'قيد المزامنة: {n}',
+    'sync_success': 'تم المزامنة بنجاح',
+    'offline_check_in_saved': 'تم حفظ البصمة — ستُرفع عند عودة الاتصال',
+    'offline_mode_toggle_hint': 'يسمح للموظف بتسجيل الحضور دون اتصال',
+    'offline_sync_now': 'مزامنة الآن',
+    'offline_sync_failed': 'فشلت بعض عمليات المزامنة',
   };
 
   // ═══════════════════════════════════════════════════════
@@ -2376,6 +2388,18 @@ class L {
     'api_err_out_of_range': 'You are outside the work zone — move closer',
     'api_err_use_official_app': 'You must use the official app to check in',
     'api_err_max_employees': 'Maximum employee limit reached',
+
+    // ─── Offline Mode ───
+    'offline_mode': 'Offline Mode',
+    'offline_enabled': 'Offline Enabled',
+    'enable_offline': 'Enable Offline Mode',
+    'offline_not_allowed': 'Cannot check in offline — contact your manager',
+    'pending_sync': 'Pending sync: {n}',
+    'sync_success': 'Synced successfully',
+    'offline_check_in_saved': 'Check-in saved — will sync when online',
+    'offline_mode_toggle_hint': 'Allow this employee to check in without internet',
+    'offline_sync_now': 'Sync now',
+    'offline_sync_failed': 'Some sync operations failed',
   };
 
   // ═══════════════════════════════════════════════════════

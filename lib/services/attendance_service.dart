@@ -1,9 +1,11 @@
+import 'dart:io' show InternetAddress, SocketException;
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator_android/geolocator_android.dart';
 import 'package:geolocator_apple/geolocator_apple.dart';
 import 'package:local_auth/local_auth.dart';
 import 'api_service.dart';
+import 'offline_queue_service.dart';
 import '../l10n/app_locale.dart';
 
 class AttendanceService {
@@ -189,6 +191,22 @@ class AttendanceService {
     return (settings: results[0], user: results[1]);
   }
 
+  /// Fast connectivity probe — resolves one DNS lookup, no-op on web.
+  /// Returns false only when we're confident there's no reachable network.
+  Future<bool> _hasInternet() async {
+    if (kIsWeb) return true; // Browsers manage offline/online directly.
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } catch (_) {
+      // DNS failure, timeout, airplane mode → treat as offline
+      return false;
+    }
+  }
+
   // ─── Check In ───
   Future<Map<String, dynamic>> checkIn(
     String uid, String empId, String name, {
@@ -215,6 +233,34 @@ class AttendanceService {
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;
       isMocked = locResult.isMocked;
+    }
+
+    // ─── Offline path ───
+    // If we have no internet, try to queue locally (only if offline mode
+    // was previously enabled by admin for this user). GPS validation already
+    // happened locally at the call site (caller checks geofence).
+    if (!await _hasInternet()) {
+      final queue = OfflineQueueService.instance;
+      if (await queue.isEnabledFor(uid)) {
+        try {
+          await queue.queuePunch(
+            uid: uid, empId: empId, name: name, type: 'checkIn',
+            lat: finalLat ?? 0.0, lng: finalLng ?? 0.0,
+            accuracy: finalAccuracy ?? 0.0,
+            authMethod: authMethod, facePhotoUrl: facePhotoUrl,
+            biometric: requireBiometric,
+          );
+          return {
+            'success': true,
+            'offline': true,
+            'message': L.tr('offline_check_in_saved'),
+            'lat': finalLat, 'lng': finalLng,
+          };
+        } catch (_) {
+          return {'success': false, 'error': L.tr('offline_not_allowed')};
+        }
+      }
+      return {'success': false, 'error': L.tr('offline_not_allowed')};
     }
 
     final body = <String, dynamic>{
@@ -258,6 +304,31 @@ class AttendanceService {
       finalLng = pos.longitude;
       finalAccuracy = pos.accuracy;
       isMocked = locResult.isMocked;
+    }
+
+    // ─── Offline path ───
+    if (!await _hasInternet()) {
+      final queue = OfflineQueueService.instance;
+      if (await queue.isEnabledFor(uid)) {
+        try {
+          await queue.queuePunch(
+            uid: uid, empId: empId, name: name, type: 'checkOut',
+            lat: finalLat ?? 0.0, lng: finalLng ?? 0.0,
+            accuracy: finalAccuracy ?? 0.0,
+            authMethod: authMethod, facePhotoUrl: facePhotoUrl,
+            biometric: requireBiometric,
+          );
+          return {
+            'success': true,
+            'offline': true,
+            'message': L.tr('offline_check_in_saved'),
+            'lat': finalLat, 'lng': finalLng,
+          };
+        } catch (_) {
+          return {'success': false, 'error': L.tr('offline_not_allowed')};
+        }
+      }
+      return {'success': false, 'error': L.tr('offline_not_allowed')};
     }
 
     final body = <String, dynamic>{

@@ -10,6 +10,7 @@ import '../../theme/shimmer.dart';
 import '../../services/attendance_service.dart';
 import '../../services/face_recognition_service.dart';
 import '../../services/api_service.dart';
+import '../../services/offline_queue_service.dart';
 import '../../services/server_time_service.dart';
 import 'face_registration_page.dart';
 import 'face_verify_dialog.dart';
@@ -23,7 +24,7 @@ class EmpHomePage extends StatefulWidget {
   State<EmpHomePage> createState() => EmpHomePageState();
 }
 
-class EmpHomePageState extends State<EmpHomePage> {
+class EmpHomePageState extends State<EmpHomePage> with WidgetsBindingObserver {
   // Called externally (e.g. from FCM handler) to trigger verification
   void triggerVerification({dynamic verificationId}) {
     final uid = widget.user['uid'] ?? '';
@@ -63,12 +64,18 @@ class EmpHomePageState extends State<EmpHomePage> {
   bool _cachedFaceRequired = false;
   bool _authReqsLoaded = false;
 
+  // Offline sync state
+  int _pendingSyncCount = 0;
+  bool _syncingNow = false;
+  Timer? _syncRetryTimer;
+
   final _months = L.months;
   final _days = L.dayNamesFull;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startClock();
     // Fire ALL network calls in parallel for fastest startup
     Future.wait([
@@ -77,9 +84,76 @@ class EmpHomePageState extends State<EmpHomePage> {
       Future(() => _loadAuthRequirements()),
       Future(() => _loadUnreadNotifCount()),
       Future(() => _checkPendingVerification()),
+      Future(() => _refreshOfflineConfig()),
     ]);
     _verifyPollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkPendingVerification());
+    // Poll pending queue count + attempt sync every minute while on home screen.
+    _syncRetryTimer = Timer.periodic(const Duration(seconds: 60), (_) => _trySync(showToast: false));
     _startLiveLocation();
+    // First sync attempt after init — if we have any stale queued punches.
+    _trySync(showToast: true);
+  }
+
+  /// Called when app lifecycle changes. When returning to the foreground we
+  /// try to flush the offline queue in case connectivity came back while
+  /// the app was backgrounded.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _trySync(showToast: true);
+      _refreshOfflineConfig();
+    }
+  }
+
+  Future<void> _refreshOfflineConfig() async {
+    final uid = widget.user['uid'] ?? '';
+    if (uid.isEmpty) return;
+    try {
+      await OfflineQueueService.instance.refreshConfig(uid);
+    } catch (_) {}
+    await _refreshPendingCount();
+  }
+
+  Future<void> _refreshPendingCount() async {
+    final n = await OfflineQueueService.instance.pendingCount();
+    if (mounted && n != _pendingSyncCount) {
+      setState(() => _pendingSyncCount = n);
+    }
+  }
+
+  /// Attempts to flush the offline queue. Shows a success toast on the first
+  /// successful sync of the session. Silent on network failure.
+  Future<void> _trySync({bool showToast = false}) async {
+    if (_syncingNow) return;
+    final n = await OfflineQueueService.instance.pendingCount();
+    if (n == 0) {
+      await _refreshPendingCount();
+      return;
+    }
+    _syncingNow = true;
+    try {
+      final res = await OfflineQueueService.instance.syncAll();
+      await _refreshPendingCount();
+      if (!mounted) return;
+      final synced = res['synced'] ?? 0;
+      final failed = res['failed'] ?? 0;
+      if (synced > 0 && showToast) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(L.tr('sync_success'), style: GoogleFonts.tajawal()),
+          backgroundColor: C.green,
+        ));
+        _loadToday();
+      } else if (failed > 0 && showToast && synced == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(L.tr('offline_sync_failed'), style: GoogleFonts.tajawal()),
+          backgroundColor: C.red,
+        ));
+      }
+    } catch (_) {
+      // Silent — retry on next tick.
+    } finally {
+      _syncingNow = false;
+    }
   }
 
   void _loadUnreadNotifCount() async {
@@ -209,6 +283,8 @@ class EmpHomePageState extends State<EmpHomePage> {
     _locationTimer?.cancel();
     _locationStreamSub?.cancel();
     _verifyPollTimer?.cancel();
+    _syncRetryTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _liveMapController?.dispose();
     _currentTime.dispose();
     _elapsed.dispose();
@@ -755,19 +831,46 @@ class EmpHomePageState extends State<EmpHomePage> {
         child: Column(children: [
           // Top row
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            InkWell(
-              onTap: () => _showNotifications(),
-              child: Stack(clipBehavior: Clip.none, children: [
-                Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
-                if (_unreadNotifCount > 0)
-                  Positioned(top: -4, left: -4, child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                    child: Text('$_unreadNotifCount', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white), textAlign: TextAlign.center),
-                  )),
-              ]),
-            ),
+            Row(children: [
+              InkWell(
+                onTap: () => _showNotifications(),
+                child: Stack(clipBehavior: Clip.none, children: [
+                  Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(DS.radiusMd)), child: const Icon(Icons.notifications_none_rounded, size: 20, color: Colors.white)),
+                  if (_unreadNotifCount > 0)
+                    Positioned(top: -4, left: -4, child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      child: Text('$_unreadNotifCount', style: GoogleFonts.ibmPlexMono(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white), textAlign: TextAlign.center),
+                    )),
+                ]),
+              ),
+              if (_pendingSyncCount > 0) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _trySync(showToast: true),
+                  borderRadius: BorderRadius.circular(DS.radiusMd),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: C.orange.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(DS.radiusMd),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      _syncingNow
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.cloud_upload_rounded, size: 16, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        L.tr('pending_sync', args: {'n': '$_pendingSyncCount'}),
+                        style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    ]),
+                  ),
+                ),
+              ],
+            ]),
             Row(children: [
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(greeting, style: GoogleFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),

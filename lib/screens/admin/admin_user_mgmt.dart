@@ -59,6 +59,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     bool customSchedule = existing?['customSchedule'] ?? false;
     String scheduleType = existing?['scheduleType'] ?? L.tr('permanent'); // دائم أو مؤقت
     String scheduleUntil = existing?['scheduleUntil'] ?? '';
+    // Offline mode toggle (opt-in per employee)
+    bool offlineModeEnabled = (existing?['offline_mode_enabled'] == 1 ||
+        existing?['offline_mode_enabled'] == true);
 
     showDialog(
       context: context,
@@ -250,6 +253,63 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         ],
                       ]),
                     ),
+                    // ─── Offline Mode Toggle ───
+                    if (existing != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: W.bg,
+                          borderRadius: BorderRadius.circular(DS.radiusMd),
+                          border: Border.all(color: W.border),
+                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Row(children: [
+                            Switch(
+                              value: offlineModeEnabled,
+                              activeColor: W.green,
+                              onChanged: (v) async {
+                                setDState(() => offlineModeEnabled = v);
+                                final uid = existing['uid'] ?? docId ?? '';
+                                if (uid.toString().isEmpty) return;
+                                final res = await ApiService.post(
+                                  'users.php?action=toggle_offline_mode',
+                                  {'uid': uid, 'enabled': v},
+                                );
+                                if (res['success'] == true) {
+                                  await _audit(
+                                    L.tr('edit_user'),
+                                    L.localName(existing),
+                                    '${v ? L.tr('enable_offline') : L.tr('offline_mode')}',
+                                    'edit',
+                                  );
+                                  _load();
+                                } else if (ctx.mounted) {
+                                  // Revert on failure
+                                  setDState(() => offlineModeEnabled = !v);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                    content: Text(res['error'] ?? L.tr('err_edit_user'),
+                                      style: GoogleFonts.tajawal()),
+                                    backgroundColor: Colors.red,
+                                  ));
+                                }
+                              },
+                            ),
+                            const Spacer(),
+                            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                              Text(L.tr('enable_offline'),
+                                style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: W.text)),
+                              const SizedBox(height: 2),
+                              Text(L.tr('offline_mode_toggle_hint'),
+                                style: GoogleFonts.tajawal(fontSize: 11, color: W.sub)),
+                            ]),
+                            const SizedBox(width: 6),
+                            Icon(Icons.cloud_off, size: 16,
+                              color: offlineModeEnabled ? W.green : W.muted),
+                          ]),
+                        ]),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Row(children: [
                       TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w600, color: W.sub))),
@@ -526,7 +586,13 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           if (ok == true) { await ApiService.post('users.php?action=delete', {'uid': uid}); _load(); }
                         }),
                       ])),
-                      DataCell(_badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2))),
+                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                        _badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
+                        if (r['offline_mode_enabled'] == 1 || r['offline_mode_enabled'] == true) ...[
+                          const SizedBox(width: 4),
+                          _badge(L.tr('offline_enabled'), const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
+                        ],
+                      ])),
                       DataCell(_badge(roleLabel[role] ?? L.tr('employee_unit'), roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight)),
                       DataCell(_badge(L.tr('shift_n', args: {'n': (r['shift'] ?? 1).toString()}), r['shift'] == 2 ? Color(0xFF7F56D9) : r['shift'] == 3 ? Color(0xFF0BA5EC) : W.pri, r['shift'] == 2 ? Color(0xFFF4F3FF) : r['shift'] == 3 ? Color(0xFFE8F8FD) : W.priLight)),
                       DataCell(Text(L.localDept(r).isNotEmpty ? L.localDept(r) : '—', style: GoogleFonts.tajawal(fontSize: 12, color: W.sub))),
@@ -588,10 +654,11 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         Text(name, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: W.text)),
                         Text(r['email'] ?? '', style: GoogleFonts.tajawal(fontSize: 11, color: W.muted)),
                         const SizedBox(height: 4),
-                        Row(mainAxisSize: MainAxisSize.min, children: [
+                        Wrap(spacing: 4, runSpacing: 4, children: [
                           _badge(active ? L.tr('active') : L.tr('inactive'), active ? W.green : W.red, active ? Color(0xFFECFDF3) : Color(0xFFFEF3F2)),
-                          const SizedBox(width: 4),
                           _badge(roleLabel[role] ?? L.tr('role_employee'), roleColor[role] ?? W.pri, role == 'admin' ? Color(0xFFFEF3F2) : role == 'moderator' ? Color(0xFFF4F3FF) : W.priLight),
+                          if (r['offline_mode_enabled'] == 1 || r['offline_mode_enabled'] == true)
+                            _badge(L.tr('offline_enabled'), const Color(0xFF7F56D9), const Color(0xFFF4F3FF)),
                         ]),
                       ]),
                     ]),
