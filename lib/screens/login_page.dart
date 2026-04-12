@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import '../theme/app_colors.dart';
@@ -19,8 +21,37 @@ class _LoginPageState extends State<LoginPage> {
   final _localAuth = LocalAuthentication();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  // Encrypted storage for biometric credentials (Android KeyStore / iOS Keychain).
+  // On web, flutter_secure_storage is unreliable — fall back to SharedPreferences.
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device),
+  );
   bool _showPass = false, _loading = false, _remember = false;
   String? _error;
+
+  // Platform-aware read/write for biometric creds.
+  Future<String?> _readCred(String key) async {
+    if (kIsWeb) return prefs.getString(key);
+    // One-time migration: move old plaintext creds into secure storage, then wipe.
+    final legacy = prefs.getString(key);
+    if (legacy != null && legacy.isNotEmpty) {
+      await _secureStorage.write(key: key, value: legacy);
+      await prefs.remove(key);
+      return legacy;
+    }
+    return await _secureStorage.read(key: key);
+  }
+
+  Future<void> _writeCred(String key, String value) async {
+    if (kIsWeb) {
+      await prefs.setString(key, value);
+    } else {
+      await _secureStorage.write(key: key, value: value);
+      // Ensure no plaintext copy lingers from older builds.
+      if (prefs.containsKey(key)) await prefs.remove(key);
+    }
+  }
 
   static const _navy = Color(0xFF0C2D57);
 
@@ -48,9 +79,9 @@ class _LoginPageState extends State<LoginPage> {
   void _biometricLogin() async {
     setState(() { _loading = true; _error = null; });
     try {
-      // Check if we have saved credentials from a previous login
-      final savedEmail = prefs.getString('bio_email');
-      final savedPass = prefs.getString('bio_pass');
+      // Check if we have saved credentials from a previous login (encrypted on mobile)
+      final savedEmail = await _readCred('bio_email');
+      final savedPass = await _readCred('bio_pass');
       if (savedEmail == null || savedPass == null) {
         setState(() { _error = L.tr('err_biometric_email_first'); _loading = false; });
         return;
@@ -76,9 +107,9 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final user = await _auth.loginWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
       if (user != null) {
-        // Save credentials for biometric quick-login
-        prefs.setString('bio_email', _emailCtrl.text.trim());
-        prefs.setString('bio_pass', _passCtrl.text);
+        // Save credentials for biometric quick-login (encrypted at rest on mobile)
+        await _writeCred('bio_email', _emailCtrl.text.trim());
+        await _writeCred('bio_pass', _passCtrl.text);
         widget.onLogin(user);
       } else { setState(() { _error = L.tr('err_login'); _loading = false; }); }
     } catch (e) {

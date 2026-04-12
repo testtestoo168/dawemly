@@ -46,6 +46,10 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
     final phoneCtrl = TextEditingController(text: existing?['phone'] ?? '');
     final passCtrl = TextEditingController();
     final roleCtrl = TextEditingController(text: existing?['jobTitle'] ?? '');
+    // Hoisted out of the builder so they aren't recreated (and leaked) per rebuild.
+    final workStartCtrl = TextEditingController(text: existing?['workStart'] ?? '08:00 ${L.tr('am')}');
+    final workEndCtrl = TextEditingController(text: existing?['workEnd'] ?? '04:00 ${L.tr('pm')}');
+    final scheduleUntilCtrl = TextEditingController(text: existing?['scheduleUntil'] ?? '');
     String dept = existing?['dept'] ?? L.tr('it');
     if (!_depts.contains(dept)) dept = _depts.first;
     String userRole = existing?['role'] ?? 'employee';
@@ -229,9 +233,9 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                         if (customSchedule) ...[
                           const SizedBox(height: 12),
                           Row(children: [
-                            Expanded(child: _formField(L.tr('departure_time'), TextEditingController(text: workEnd), hint: '04:00 ${L.tr('pm')}', isLtr: true, onChanged: (v) => workEnd = v)),
+                            Expanded(child: _formField(L.tr('departure_time'), workEndCtrl, hint: '04:00 ${L.tr('pm')}', isLtr: true, onChanged: (v) => workEnd = v)),
                             const SizedBox(width: 12),
-                            Expanded(child: _formField(L.tr('attendance_time'), TextEditingController(text: workStart), hint: '08:00 ${L.tr('am')}', isLtr: true, onChanged: (v) => workStart = v)),
+                            Expanded(child: _formField(L.tr('attendance_time'), workStartCtrl, hint: '08:00 ${L.tr('am')}', isLtr: true, onChanged: (v) => workStart = v)),
                           ]),
                           const SizedBox(height: 10),
                           Row(children: [
@@ -248,7 +252,7 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
                           ]),
                           if (scheduleType == L.tr('temporary')) ...[
                             const SizedBox(height: 10),
-                            _formField(L.tr('until_date'), TextEditingController(text: scheduleUntil), hint: '2026-04-30', isLtr: true, onChanged: (v) => scheduleUntil = v),
+                            _formField(L.tr('until_date'), scheduleUntilCtrl, hint: '2026-04-30', isLtr: true, onChanged: (v) => scheduleUntil = v),
                           ],
                         ],
                       ]),
@@ -387,7 +391,17 @@ class _AdminUserMgmtState extends State<AdminUserMgmt> {
           ),
         );
       }),
-    );
+    ).whenComplete(() {
+      nameCtrl.dispose();
+      nameEnCtrl.dispose();
+      emailCtrl.dispose();
+      phoneCtrl.dispose();
+      passCtrl.dispose();
+      roleCtrl.dispose();
+      workStartCtrl.dispose();
+      workEndCtrl.dispose();
+      scheduleUntilCtrl.dispose();
+    });
   }
 
   InputDecoration _dropDecor() => InputDecoration(

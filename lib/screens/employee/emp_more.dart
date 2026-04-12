@@ -550,7 +550,11 @@ class _EmpMorePageState extends State<EmpMorePage> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      currentCtrl.dispose();
+      newCtrl.dispose();
+      confirmCtrl.dispose();
+    });
   }
 
   void _showLogoutDialog(BuildContext context) {

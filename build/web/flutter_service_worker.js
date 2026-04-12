@@ -3,7 +3,7 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "399bf2e6d536f5883f76a297b28c89b7",
+const RESOURCES = {"flutter_bootstrap.js": "ceb31fed0341f569e16a27b16ea0d7db",
 "version.json": "4541c2bf6bfb11be93d41d88af6274dd",
 "canvaskit/skwasm_st.js": "d1326ceef381ad382ab492ba5d96f04d",
 "canvaskit/canvaskit.js.symbols": "68eb703b9a609baef8ee0e413b442f33",
@@ -19,7 +19,7 @@ const RESOURCES = {"flutter_bootstrap.js": "399bf2e6d536f5883f76a297b28c89b7",
 "canvaskit/skwasm.js": "f2ad9363618c5f62e813740099a80e63",
 "assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
 "assets/fonts/MaterialIcons-Regular.otf": "e7069dfd19b331be16bed984668fe080",
-"assets/NOTICES": "26c4939b2061a6f827ed291d8c1f0b5c",
+"assets/NOTICES": "d643b83fdfe4c7db4579cd5ba3cbea14",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/AssetManifest.bin.json": "ddb070b4b6f0b4d772a63dbe9b0b370f",
 "assets/assets/fonts/Tajawal-Regular.ttf": "49af8ae2e03043c7b60cd1ce02576fb1",
@@ -42,7 +42,7 @@ const RESOURCES = {"flutter_bootstrap.js": "399bf2e6d536f5883f76a297b28c89b7",
 "/": "f0f2966e183143ad15b9c2b1fa38b671",
 "flutter.js": "76f08d47ff9f5715220992f993002504",
 "manifest.json": "a0cce61c88c006600576a5a74bb084d8",
-"main.dart.js": "4ee4b94bd64226080f0d52b418357b46"};
+"main.dart.js": "c8410ad94f2be6042001c5066a6e8891"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",

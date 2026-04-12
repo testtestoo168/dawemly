@@ -193,6 +193,26 @@ class _AdminSettingsState extends State<AdminSettings> {
     _loadSettings();
   }
 
+  @override
+  void dispose() {
+    _shiftName.dispose();
+    _shiftStart.dispose();
+    _shiftEnd.dispose();
+    _attDate.dispose();
+    _attStart.dispose();
+    _attEnd.dispose();
+    _attReason.dispose();
+    _locName.dispose();
+    _locNameEn.dispose();
+    _locLat.dispose();
+    _locLng.dispose();
+    _locRadius.dispose();
+    _locSearchCtrl.dispose();
+    _searchDebounce?.cancel();
+    _mapCtrl?.dispose();
+    super.dispose();
+  }
+
   void _loadSettings() async {
     try {
       final results = await Future.wait([

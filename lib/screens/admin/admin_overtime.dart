@@ -720,7 +720,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
-    ));
+    )).whenComplete(() { hoursCtrl.dispose(); reasonCtrl.dispose(); });
   }
 
   // ────────────────────────────────────────────────────────
@@ -773,7 +773,7 @@ class _AdminOvertimeState extends State<AdminOvertime> {
           const SizedBox(height: 6),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('back'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
         ]))),
-    ));
+    )).whenComplete(reasonCtrl.dispose);
   }
 
   Widget _stat(IconData icon, String label, String value, Color color, Color bg, String sub) {

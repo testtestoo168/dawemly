@@ -755,6 +755,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
     final ciCtrl = TextEditingController();
     final coCtrl = TextEditingController();
     final minCtrl = TextEditingController(text: '${((record['totalWorkedMinutes'] ?? record['total_worked_minutes']) as num?)?.toInt() ?? 0}');
+    void _disposeCtrls() { ciCtrl.dispose(); coCtrl.dispose(); minCtrl.dispose(); }
 
     showDialog(context: context, builder: (ctx) { final ew = MediaQuery.of(ctx).size.width; return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -800,7 +801,7 @@ class _AdminEmployeesState extends State<AdminEmployees> {
         const SizedBox(height: 8),
         TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.tr('cancel'), style: GoogleFonts.tajawal(fontSize: 13, color: W.muted))),
       ])),
-    )); });
+    )); }).whenComplete(_disposeCtrls);
   }
 
   // ═══ Helpers ═══

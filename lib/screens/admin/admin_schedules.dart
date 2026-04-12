@@ -1366,7 +1366,7 @@ class _AdminSchedulesState extends State<AdminSchedules> with SingleTickerProvid
                 child: Text(L.tr('save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               ),
             ],
-          ));
+          )).whenComplete(ctrl.dispose);
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

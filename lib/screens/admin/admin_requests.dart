@@ -105,6 +105,7 @@ class _AdminRequestsState extends State<AdminRequests> with SingleTickerProvider
         _loadRequests();
       }
     }
+    noteCtrl.dispose();
   }
 
   @override

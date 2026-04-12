@@ -446,7 +446,7 @@ class _AdminSalaryState extends State<AdminSalary> {
           ]),
         ]),
       ),
-    ));
+    )).whenComplete(ctrl.dispose);
   }
 
   // ─── Edit per-employee deduction dialog ───
@@ -572,7 +572,10 @@ class _AdminSalaryState extends State<AdminSalary> {
           ),
         ]),
       ),
-    ));
+    )).whenComplete(() {
+      for (final c in lateControllers) c.dispose();
+      for (final c in absentControllers) c.dispose();
+    });
   }
 
   // ─── Salary card per employee ───
